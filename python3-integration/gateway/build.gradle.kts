@@ -2,12 +2,21 @@ plugins {
     `java-library`
 }
 
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(17))
+    }
+}
+
 dependencies {
-    compileOnly("com.inductiveautomation.ignitionsdk:gateway-api:8.3.0")
+    // Common subproject dependency
+    implementation(projects.common)
+
+    // SDK dependencies (provided by Ignition)
+    compileOnly(libs.ignition.common)
+    compileOnly(libs.ignition.gateway.api)
     compileOnly("com.google.code.gson:gson:2.10.1")
 
-    // For tar.gz extraction
+    // Third-party libraries to bundle in module
     modlImplementation("org.apache.commons:commons-compress:1.24.0")
-
-    api(project(":common"))
 }

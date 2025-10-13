@@ -4,7 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Purpose
 
-This is a **Python 3 Integration module** for Ignition 8.3 SDK. This is a standalone repository with all necessary SDK documentation, guides, and examples included.
+This is a **Python 3 Integration module** for Ignition 8.3 SDK. The repository contains both:
+1. **Active module implementation** (`python3-integration/` directory) - a working Python 3 integration module
+2. **SDK documentation and examples** for reference
 
 ## Repository Structure
 
@@ -13,6 +15,25 @@ ignition-module-python3/
 ├── CLAUDE.md                        # This file - AI guidance
 ├── README.md                        # Project overview
 ├── .gitignore                       # Git ignore rules
+│
+├── python3-integration/             # ACTIVE MODULE IMPLEMENTATION
+│   ├── build.gradle.kts            # Root build configuration
+│   ├── settings.gradle.kts         # Gradle settings
+│   ├── common/                     # Common scope (shared code)
+│   ├── gateway/                    # Gateway scope implementation
+│   │   ├── build.gradle.kts
+│   │   └── src/main/
+│   │       ├── java/com/inductiveautomation/ignition/examples/python3/gateway/
+│   │       │   ├── GatewayHook.java              # Module lifecycle
+│   │       │   ├── Python3ProcessPool.java       # Process pool manager
+│   │       │   ├── Python3Executor.java          # Single process wrapper
+│   │       │   ├── Python3ScriptModule.java      # Scripting functions
+│   │       │   └── PythonDistributionManager.java # Self-contained Python
+│   │       └── resources/
+│   │           └── python_bridge.py              # Python-side bridge script
+│   ├── ARCHITECTURE.md             # Detailed architecture documentation
+│   ├── README.md                   # Module-specific README
+│   └── EMBEDDING-PYTHON.md         # Self-contained Python distribution guide
 │
 ├── docs/
 │   └── knowledge-base/              # Complete SDK documentation
@@ -27,164 +48,316 @@ ignition-module-python3/
 │       └── 08-Quick-Reference-Cheat-Sheet.md
 │
 └── examples/                        # Official Ignition SDK examples
-    └── (reference implementations)
+    └── (reference implementations from Inductive Automation)
 ```
 
-## Knowledge Base
+## Working with the Active Module
+
+The `python3-integration/` directory contains a complete, working module implementation. Key aspects:
+
+### Architecture Overview
+
+The module uses a **subprocess process pool** approach to bridge Ignition's Jython 2.7 with Python 3:
+
+1. **GatewayHook** - Module lifecycle, initializes process pool during startup()
+2. **Python3ProcessPool** - Manages 3-5 warm Python processes, thread-safe borrowing/returning
+3. **Python3Executor** - Wraps single Python subprocess, handles JSON communication via stdin/stdout
+4. **Python3ScriptModule** - Exposes scripting functions like `system.python3.exec()`, `system.python3.eval()`
+5. **python_bridge.py** - Python-side request handler running in each subprocess
+
+See `python3-integration/ARCHITECTURE.md` for detailed component interactions and data flow.
+
+### Build Commands
+
+```bash
+# Build the module (from python3-integration/ directory)
+cd python3-integration
+./gradlew clean build
+
+# Output location
+ls -lh build/libs/*.modl
+
+# Build from repository root
+cd /modules/ignition-module-python3
+./gradlew -p python3-integration clean build
+```
+
+### Testing the Module
+
+```bash
+# Install in local Ignition Gateway
+# 1. Navigate to http://localhost:8088
+# 2. Config → System → Modules → Install or Upgrade a Module
+# 3. Upload: python3-integration/build/libs/python3-integration-1.0.0-SNAPSHOT.modl
+
+# Test in Script Console (once installed)
+# system.python3.example()
+# system.python3.getVersion()
+# system.python3.getPoolStats()
+```
+
+### Key Implementation Files
+
+When modifying module functionality, focus on these files:
+
+- **GatewayHook.java:712** - Module lifecycle (setup, startup, shutdown)
+- **Python3ProcessPool.java** - Pool management, health checking, borrow/return logic
+- **Python3Executor.java** - Single process communication, timeout handling
+- **Python3ScriptModule.java** - Scripting function definitions with @ScriptFunction annotations
+- **python_bridge.py** - Python-side command processing (execute, evaluate, call_module)
+
+### SDK Documentation Reference
 
 The complete Ignition SDK documentation is in `docs/knowledge-base/`:
 
 1. **00-CLAUDE-CODE-INSTRUCTIONS.md** - Specific workflows for Claude Code
 2. **01-SDK-Overview-Getting-Started.md** - SDK fundamentals, prerequisites
 3. **02-Module-Architecture-Structure.md** - Module scopes, hooks, lifecycle
-4. **03-Build-Systems-Gradle-Maven.md** - Build configuration
-5. **04-Perspective-Component-Development.md** - React/TypeScript components
-6. **05-Vision-Component-Development.md** - Java Swing components
-7. **06-OPC-UA-Device-Driver-Development.md** - Device drivers
-8. **07-Scripting-Functions-RPC-Communication.md** - Python functions, RPC
-9. **08-Quick-Reference-Cheat-Sheet.md** - Quick lookup, snippets
+4. **07-Scripting-Functions-RPC-Communication.md** - Most relevant for this module
 
-## Python 3 Integration Goals
+### Official Examples Reference
 
-This module aims to provide Python 3 integration for Ignition. Potential goals:
+The `examples/` directory contains reference implementations:
 
-- Python 3 runtime in Ignition
-- Custom Python 3 scripting functions
-- Gateway-side Python 3 scripts
-- Designer integration for Python 3 tools
-- Python package management
-
-## Module Development Approach
-
-### 1. Choose Module Type
-
-For Python 3 integration, likely approaches:
-- **Scripting Functions**: Add Python 3 functions to Ignition's scripting environment
-- **Gateway Hooks**: Background Python 3 processes on Gateway
-- **Designer Tools**: Python 3-based utilities in Designer
-
-### 2. Review SDK Documentation
-
-Always start with the knowledge base:
 ```bash
-# Read in order
-cat docs/knowledge-base/01-SDK-Overview-Getting-Started.md
-cat docs/knowledge-base/02-Module-Architecture-Structure.md
-cat docs/knowledge-base/03-Build-Systems-Gradle-Maven.md
+# Most relevant examples for this module
+ls -la examples/scripting-function/        # Scripting function implementation pattern
+ls -la examples/perspective-component-minimal/  # Gradle build configuration reference
 ```
 
-### 3. Reference Official Examples
+## Module Development Patterns
 
-The `examples/` directory contains official Ignition SDK examples:
+### Module Lifecycle Critical Phases
+
+Every GatewayHook goes through three phases (see `GatewayHook.java` for implementation):
+
+1. **setup(GatewayContext)** - Early initialization
+   - Load configuration (system properties, environment variables)
+   - Register extension points
+   - **DO NOT** start threads or access database
+   - Current module: Loads Python path configuration, initializes logger
+
+2. **startup(LicenseState)** - Main initialization
+   - Platform services now available
+   - Start background threads, initialize process pools
+   - Register script managers
+   - Current module: Creates Python3ProcessPool, registers Python3ScriptModule
+
+3. **shutdown()** - Clean shutdown
+   - Stop all threads, close connections
+   - Release resources to prevent memory leaks
+   - Current module: Shuts down process pool, terminates all Python subprocesses
+
+### Scripting Function Registration
+
+To expose functions to Ignition scripts (pattern from `Python3ScriptModule.java`):
+
+```java
+@ScriptFunction(docBundlePrefix = "Python3ScriptModule")
+public Object exec(String code, @KeywordArgs Map<String, Object> variables) {
+    // Implementation
+}
+```
+
+Then register in GatewayHook.startup():
+```java
+context.getScriptManager().addScriptModule(
+    "system.python3",
+    new Python3ScriptModule(processPool),
+    new ScriptModuleDocProvider()
+);
+```
+
+Documentation properties file: `src/main/resources/Python3ScriptModule.properties`
+
+### Build Configuration
+
+This module uses Gradle with the Ignition SDK plugin (`io.ia.sdk.modl`):
+
+- **Root build.gradle.kts**: Defines module metadata, scopes, hooks
+- **Scope build.gradle.kts**: Dependencies for each scope (common, gateway, designer)
+- **settings.gradle.kts**: Declares subprojects
+
+Key configuration in root `build.gradle.kts`:
+```kotlin
+ignitionModule {
+    projectScopes.putAll(mapOf(
+        ":gateway" to "G",      // Gateway scope
+        ":common" to "GC"       // Common scope (Gateway + Client)
+    ))
+
+    hooks.putAll(mapOf(
+        "com.inductiveautomation.ignition.examples.python3.gateway.GatewayHook" to "G"
+    ))
+}
+```
+
+## Thread Safety and Concurrency
+
+The module handles concurrent script execution through process pooling:
+
+### Process Pool Pattern
+
+```java
+// From Python3ProcessPool.java
+private final BlockingQueue<Python3Executor> availableExecutors;
+
+// Borrow (blocks if pool exhausted)
+Python3Executor executor = pool.borrowExecutor(30, TimeUnit.SECONDS);
+
+// Execute with borrowed executor
+try {
+    result = executor.execute(code, variables);
+} finally {
+    pool.returnExecutor(executor);  // CRITICAL: Always return
+}
+```
+
+### Concurrency Constraints
+
+- Pool size (default: 3) = max concurrent Python executions
+- Each executor handles one request at a time (synchronized)
+- Requests beyond pool size wait up to 30 seconds
+- Health checker runs every 30 seconds (separate thread)
+
+### Thread-Safe Patterns Used
+
+1. **BlockingQueue** for executor availability
+2. **synchronized** blocks in Python3Executor for command execution
+3. **AtomicInteger** for pool statistics
+4. **ExecutorService** for health checking
+
+## Configuration System
+
+Configuration is loaded in GatewayHook.setup() via system properties and environment variables:
+
+### Python Path Detection (Priority Order)
+
+1. System property: `-Dignition.python3.path=/path/to/python3`
+2. Environment variable: `IGNITION_PYTHON3_PATH`
+3. Auto-detection (OS-specific paths in GatewayHook.java)
+4. Fallback: `python3`
+
+### Pool Size Configuration
+
+System property: `-Dignition.python3.poolsize=5` (default: 3)
+
+To add to Ignition, edit `ignition.conf`:
+```properties
+wrapper.java.additional.100=-Dignition.allowunsignedmodules=true
+wrapper.java.additional.101=-Dignition.python3.path=/usr/bin/python3.11
+wrapper.java.additional.102=-Dignition.python3.poolsize=5
+```
+
+## Subprocess Communication Protocol
+
+The module uses **line-based JSON** protocol between Java and Python:
+
+### Request Format (Java → Python via stdin)
+
+```json
+{"command": "execute", "code": "result = 2 + 2", "variables": {}}
+{"command": "evaluate", "expression": "x + y", "variables": {"x": 10, "y": 20}}
+{"command": "call_module", "module": "math", "function": "sqrt", "args": [16]}
+```
+
+### Response Format (Python → Java via stdout)
+
+```json
+{"success": true, "result": 4}
+{"success": false, "error": "NameError: name 'x' is not defined", "traceback": "..."}
+```
+
+### Critical Implementation Details
+
+1. **Line-based protocol**: Each request/response is a single line (no pretty-printing)
+2. **Unbuffered I/O**: Python started with `-u` flag
+3. **Timeout handling**: Java reads with 30s timeout
+4. **stderr ignored**: Only stdout used for responses (stderr logged separately)
+
+See `Python3Executor.java` and `python_bridge.py` for full protocol implementation.
+
+## Common Development Tasks
+
+### Adding a New Scripting Function
+
+1. Add method to `Python3ScriptModule.java` with `@ScriptFunction` annotation
+2. Add documentation to `Python3ScriptModule.properties`
+3. Rebuild: `./gradlew -p python3-integration clean build`
+4. Reinstall module in Gateway
+5. Test in Script Console
+
+### Extending Python Bridge
+
+1. Add new command handler to `python_bridge.py`:
+   ```python
+   def process_request(self, request):
+       if request['command'] == 'my_command':
+           return self.handle_my_command(request)
+   ```
+2. Add Java method to `Python3Executor.java` to send the new command
+3. Update `Python3ScriptModule.java` to expose to scripts
+
+### Debugging
+
+**Gateway logs location**: `<ignition-install>/logs/wrapper.log`
+
+**Check module status**:
 ```bash
-ls -la examples/
+tail -f wrapper.log | grep Python3
 ```
 
-### 4. Create Module Structure
+**Common issues**:
+- "Python process is not alive" → Check Python path, verify `python3 --version` works
+- "Timeout waiting for executor" → Pool exhausted, increase pool size
+- "Failed to parse response" → Check python_bridge.py for print statements (breaks JSON protocol)
 
-Use Gradle (recommended) or Maven:
+## Module Package Structure
 
+Current module uses:
+- **Module ID**: `com.inductiveautomation.ignition.examples.python3`
+- **Package**: `com.inductiveautomation.ignition.examples.python3.gateway`
+- **Hook**: `com.inductiveautomation.ignition.examples.python3.gateway.GatewayHook`
+
+Follows reverse domain notation (Inductive Automation convention for examples).
+
+## Resource Files
+
+Resources in `src/main/resources/` are bundled into the .modl file:
+
+- **python_bridge.py**: Extracted to temp file at runtime, executed by subprocess
+- **Python3ScriptModule.properties**: Scripting function documentation
+
+Access at runtime:
+```java
+InputStream is = getClass().getResourceAsStream("/python_bridge.py");
 ```
-python3-module/
-├── build.gradle.kts
-├── settings.gradle.kts
-├── version.properties
-├── common/
-│   └── src/main/java/
-├── gateway/
-│   └── src/main/java/
-└── designer/
-    └── src/main/java/
-```
-
-## Core Concepts
-
-### Module Scopes
-- **Gateway (G)**: Server-side logic (Python runtime, background scripts)
-- **Designer (D)**: Design-time tools (Python editors, utilities)
-- **Client (C)**: Vision client runtime (usually not needed)
-- **Common**: Shared code between scopes
-
-### Module Lifecycle
-Every module hook goes through three phases:
-1. **setup()** - Early initialization, register extension points
-2. **startup()** - Main initialization when platform services are available
-3. **shutdown()** - Clean shutdown, stop threads, release resources
-
-### Build Systems
-Both Gradle (recommended) and Maven are supported:
-- **Gradle**: `./gradlew build` → `build/*.modl`
-- **Maven**: `mvn clean package` → `target/*.modl`
-
-## Prerequisites
-
-- Java JDK 17 (for Ignition 8.3)
-- Ignition 8.3+ running locally (usually port 8088)
-- Gradle or Maven
-- Python 3.x (for integration)
-- Enable unsigned modules: Add `-Dignition.allowunsignedmodules=true` to `ignition.conf`
-
-## Official Resources
-
-- **SDK Documentation**: https://www.sdk-docs.inductiveautomation.com/
-- **Official Examples**: https://github.com/inductiveautomation/ignition-sdk-examples
-- **Forum**: https://forum.inductiveautomation.com/c/module-development/7
 
 ## Critical Best Practices
 
-### Always Do
-- Use SLF4J logger (never System.out.println)
-- Implement proper shutdown() to prevent memory leaks
-- Handle exceptions gracefully
-- Use thread-safe operations in Gateway scope
-- Test module installation/uninstallation
+### Subprocess Management
 
-### Never Do
-- Block in setup() method
-- Modify database in setup() (wait for startup())
-- Forget to stop threads in shutdown()
-- Use SNAPSHOT dependencies in production
-- Hardcode configuration values
+- **Always** terminate processes in shutdown() to prevent orphaned processes
+- **Never** use process.waitFor() without timeout (can hang forever)
+- **Always** return executors to pool in finally blocks
+- **Monitor** process health continuously (already implemented)
 
-## Package Naming Convention
+### JSON Communication
 
-Use reverse domain notation:
-- Module ID: `com.company.python3integration`
-- Package structure: `com.company.python3integration.{scope}`
-- Example: `com.company.python3integration.gateway.GatewayHook`
+- **Never** use print() in python_bridge.py (breaks protocol)
+- **Always** use single-line JSON (no newlines in JSON strings)
+- **Handle** serialization failures gracefully (complex objects → str)
 
-## Getting Started
+### Ignition Module Development
 
-1. **Define goals** - What Python 3 functionality do you want?
-2. **Review docs** - Read SDK guides in `docs/knowledge-base/`
-3. **Check examples** - Reference implementations in `examples/`
-4. **Create structure** - Initialize Gradle project
-5. **Implement hooks** - Gateway/Designer hooks with lifecycle
-6. **Build and test** - Iterate on implementation
+- **Use** SLF4J logger, never System.out.println
+- **Test** module install/uninstall cycles (check for memory leaks)
+- **Version** carefully: SNAPSHOT vs release versions
+- **Document** configuration properties
 
-## Quick Commands
+## Repository Resources
 
-```bash
-# Initialize Gradle project
-gradle init --type java-library
-
-# Build module (once created)
-./gradlew clean build
-
-# Check build output
-ls -lh build/*.modl
-
-# Install in Gateway
-# Upload .modl file at http://localhost:8088
-# Navigate to: Config → System → Modules
-```
-
-## Notes
-
-This is a standalone repository with all necessary resources included:
-- ✅ Complete SDK documentation (docs/knowledge-base/)
-- ✅ Official SDK examples (examples/)
-- ✅ Independent git repository ready
-- ✅ No external dependencies on other module projects
-
-Ready to start building Python 3 integration for Ignition! 🐍
+- **Active module code**: `python3-integration/`
+- **Architecture deep-dive**: `python3-integration/ARCHITECTURE.md`
+- **SDK documentation**: `docs/knowledge-base/` (read 01, 02, 07 for this module type)
+- **SDK examples**: `examples/scripting-function/` (most similar pattern)

@@ -1,36 +1,37 @@
 plugins {
-    `java-library`
+    base
     id("io.ia.sdk.modl") version "0.1.1"
 }
 
+// Load version from version.properties
+val versionProps = java.util.Properties()
+file("version.properties").inputStream().use { versionProps.load(it) }
+val versionMajor = versionProps.getProperty("version.major")
+val versionMinor = versionProps.getProperty("version.minor")
+val versionPatch = versionProps.getProperty("version.patch")
+val moduleVersion = "$versionMajor.$versionMinor.$versionPatch"
+
+version = moduleVersion
+group = "com.gaskony"
+
 allprojects {
-    group = "com.inductiveautomation.ignition.examples"
-    version = "1.0.0-SNAPSHOT"
-
-    repositories {
-        mavenCentral()
-        maven {
-            url = uri("https://nexus.inductiveautomation.com/repository/inductiveautomation-releases")
-        }
-        maven {
-            url = uri("https://nexus.inductiveautomation.com/repository/inductiveautomation-snapshots")
-        }
-    }
-}
-
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(17))
-    }
+    version = moduleVersion
+    group = "com.gaskony"
 }
 
 ignitionModule {
-    fileName.set("Python3Integration")
+    // Include version in filename for version control
+    fileName.set("Python3Integration-${project.version}")
+
     name.set("Python 3 Integration")
-    id.set("com.inductiveautomation.ignition.examples.python3")
-    moduleVersion.set("${project.version}")
-    moduleDescription.set("Enables Python 3 scripting functions in Ignition via subprocess process pool")
+    id.set("com.gaskony.python3integration")
+    moduleVersion.set(project.version.toString())
+
+    // Include vendor name in description
+    moduleDescription.set("Enables Python 3 scripting functions in Ignition via subprocess process pool. Developed by Gaskony.")
+
     requiredIgnitionVersion.set("8.3.0")
+    requiredFrameworkVersion.set("8")
     freeModule.set(true)
 
     projectScopes.putAll(
@@ -50,6 +51,7 @@ ignitionModule {
         )
     )
 
-    applyInductiveArtifactRepo.set(true)
+    // Skip signing for development/testing
+    // Enable signing (false) when you have proper certificates
     skipModlSigning.set(true)
 }

@@ -1,0 +1,6 @@
+[versions]
+ignition = "8.3.0"
+
+[libraries]
+ignition-common = { module = "com.inductiveautomation.ignitionsdk:ignition-common", version.ref = "ignition" }
+ignition-gateway-api = { module = "com.inductiveautomation.ignitionsdk:gateway-api", version.ref = "ignition" }
