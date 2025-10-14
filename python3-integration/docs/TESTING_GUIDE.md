@@ -2,17 +2,16 @@
 
 This guide will help you test the Python 3 Integration module after installation in your Ignition 8.3 Gateway.
 
-## ⚠️ IMPORTANT: Script Console Location
+## Script Console Usage
 
-**The Python 3 Integration module runs on the Gateway only.**
+**Use the Designer Script Console** with a Gateway Scripting Project:
 
-✅ **Use the Gateway Script Console:**
-- Gateway Web Interface → Config → System → Console → **Script Console**
+✅ **Designer Script Console** (with Gateway project):
+- Designer → Tools → **Script Console**
+- Make sure your project is set as a **Gateway Scripting Project**
+- Python execution happens on the Gateway server via the process pool
 
-❌ **Do NOT use the Designer Script Console:**
-- Designer → Tools → Script Console ❌ (This will NOT work)
-
-**Why?** Python execution happens on the Gateway server where the Python process pool runs. The Designer Script Console executes scripts in the Designer scope, which does not have access to the Gateway's Python process pool.
+**How it works:** The module is available in Gateway, Client, and Designer scopes. When you run scripts from Designer with a Gateway Scripting Project, the `system.python3.*` functions execute on the Gateway where the Python process pool runs.
 
 ## Module Overview
 
@@ -74,13 +73,14 @@ ERROR [GatewayHook]   2. Enable auto-download: -Dignition.python3.autodownload=t
 ERROR [GatewayHook]   3. Specify Python path: -Dignition.python3.path=/path/to/python3
 ```
 
-## Step 2: Test in Gateway Script Console
+## Step 2: Test in Designer Script Console
 
-### Access Gateway Script Console
+### Access Designer Script Console
 
-1. Open Gateway web interface: `http://localhost:9088` (or your Gateway URL)
-2. Navigate to: **Config → System → Console → Script Console**
-3. **IMPORTANT**: Make sure you're in the Gateway Script Console, NOT the Designer Script Console
+1. Open Ignition Designer
+2. Go to: **Tools → Script Console**
+3. **IMPORTANT**: Make sure your project is configured as a **Gateway Scripting Project**
+   - Project Properties → General → Project Scope → **Gateway**
 
 ### Test 1: Check Availability
 

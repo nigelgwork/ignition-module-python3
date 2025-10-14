@@ -39,7 +39,7 @@ ignitionModule {
     projectScopes.putAll(
         mapOf(
             ":gateway" to "G",
-            ":common" to "GC"
+            ":common" to "GCD"  // Gateway + Client + Designer
         )
     )
 
