@@ -3,10 +3,17 @@ package com.inductiveautomation.ignition.examples.python3.gateway;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.zip.GZIPInputStream;
@@ -19,7 +26,7 @@ import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
  */
 public class PythonDistributionManager {
 
-    private static final Logger logger = LoggerFactory.getLogger(PythonDistributionManager.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(PythonDistributionManager.class);
 
     // Python standalone build URLs (Python 3.11.6)
     private static final Map<String, String> DISTRIBUTION_URLS = new HashMap<>();
@@ -54,7 +61,7 @@ public class PythonDistributionManager {
             Files.createDirectories(moduleDataDir);
             Files.createDirectories(pythonDir);
         } catch (IOException e) {
-            logger.error("Failed to create module directories", e);
+            LOGGER.error("Failed to create module directories", e);
         }
     }
 
@@ -71,27 +78,27 @@ public class PythonDistributionManager {
     public String getPythonPath() throws IOException {
         // Check if embedded Python already extracted
         if (isEmbeddedPythonInstalled()) {
-            logger.info("Using embedded Python: {}", pythonExecutable);
+            LOGGER.info("Using embedded Python: {}", pythonExecutable);
             return pythonExecutable;
         }
 
         // Try system Python
         String systemPython = detectSystemPython();
         if (systemPython != null) {
-            logger.info("Using system Python: {}", systemPython);
+            LOGGER.info("Using system Python: {}", systemPython);
             return systemPython;
         }
 
         // Download if enabled
         if (autoDownload) {
-            logger.info("No Python found, downloading embedded distribution...");
+            LOGGER.info("No Python found, downloading embedded distribution...");
             downloadAndInstall();
             return pythonExecutable;
         }
 
         throw new IOException(
-                "Python 3 not found. Please install Python 3.8+ or enable auto-download.\n" +
-                        "Set system property: -Dignition.python3.autodownload=true"
+                "Python 3 not found. Please install Python 3.8+ or enable auto-download.\n"
+                        + "Set system property: -Dignition.python3.autodownload=true"
         );
     }
 
@@ -176,7 +183,7 @@ public class PythonDistributionManager {
                     String[] parts = versionLine.split(" ")[1].split("\\.");
                     int minor = Integer.parseInt(parts[1]);
                     if (minor >= 8) {
-                        logger.debug("Valid Python found: {} ({})", pythonPath, versionLine);
+                        LOGGER.debug("Valid Python found: {} ({})", pythonPath, versionLine);
                         return true;
                     }
                 }
@@ -199,20 +206,20 @@ public class PythonDistributionManager {
             throw new IOException("No Python distribution available for OS: " + os);
         }
 
-        logger.info("Downloading Python distribution for {}", os);
-        logger.info("URL: {}", url);
+        LOGGER.info("Downloading Python distribution for {}", os);
+        LOGGER.info("URL: {}", url);
 
         // Download to temp file
         Path downloadPath = Files.createTempFile("python", ".tar.gz");
 
         try {
             downloadFile(url, downloadPath);
-            logger.info("Download complete, extracting...");
+            LOGGER.info("Download complete, extracting...");
 
             // Extract
             extractTarGz(downloadPath, pythonDir);
 
-            logger.info("Python distribution installed successfully");
+            LOGGER.info("Python distribution installed successfully");
 
             // Verify installation
             if (!isEmbeddedPythonInstalled()) {
@@ -224,7 +231,7 @@ public class PythonDistributionManager {
             try {
                 Files.deleteIfExists(downloadPath);
             } catch (IOException e) {
-                logger.warn("Failed to delete temp file: {}", downloadPath);
+                LOGGER.warn("Failed to delete temp file: {}", downloadPath);
             }
         }
     }
@@ -239,7 +246,7 @@ public class PythonDistributionManager {
         conn.setReadTimeout(30000);
 
         long fileSize = conn.getContentLengthLong();
-        logger.info("Download size: {} MB", fileSize / 1024 / 1024);
+        LOGGER.info("Download size: {} MB", fileSize / 1024 / 1024);
 
         try (InputStream in = new BufferedInputStream(conn.getInputStream());
              OutputStream out = new BufferedOutputStream(Files.newOutputStream(destination))) {
@@ -257,7 +264,7 @@ public class PythonDistributionManager {
                 long now = System.currentTimeMillis();
                 if (now - lastLog > 5000) {
                     double progress = (totalRead * 100.0) / fileSize;
-                    logger.info("Download progress: {}/{} MB ({:.1f}%)",
+                    LOGGER.info("Download progress: {}/{} MB ({:.1f}%)",
                             totalRead / 1024 / 1024,
                             fileSize / 1024 / 1024,
                             progress);
@@ -265,7 +272,7 @@ public class PythonDistributionManager {
                 }
             }
 
-            logger.info("Download complete: {} MB", totalRead / 1024 / 1024);
+            LOGGER.info("Download complete: {} MB", totalRead / 1024 / 1024);
         }
     }
 
@@ -273,7 +280,7 @@ public class PythonDistributionManager {
      * Extract tar.gz file
      */
     private void extractTarGz(Path tarGzPath, Path destDir) throws IOException {
-        logger.info("Extracting to: {}", destDir);
+        LOGGER.info("Extracting to: {}", destDir);
 
         try (InputStream fileIn = Files.newInputStream(tarGzPath);
              GZIPInputStream gzIn = new GZIPInputStream(fileIn);
@@ -312,11 +319,11 @@ public class PythonDistributionManager {
 
                 extractedFiles++;
                 if (extractedFiles % 1000 == 0) {
-                    logger.debug("Extracted {} files...", extractedFiles);
+                    LOGGER.debug("Extracted {} files...", extractedFiles);
                 }
             }
 
-            logger.info("Extraction complete: {} files", extractedFiles);
+            LOGGER.info("Extraction complete: {} files", extractedFiles);
         }
     }
 
@@ -367,7 +374,7 @@ public class PythonDistributionManager {
      * Force reinstall of embedded Python (for troubleshooting)
      */
     public void reinstall() throws IOException {
-        logger.info("Reinstalling embedded Python...");
+        LOGGER.info("Reinstalling embedded Python...");
 
         // Delete existing installation
         if (Files.exists(pythonDir)) {
@@ -394,7 +401,7 @@ public class PythonDistributionManager {
                     try {
                         Files.delete(path);
                     } catch (IOException e) {
-                        logger.warn("Failed to delete: {}", path);
+                        LOGGER.warn("Failed to delete: {}", path);
                     }
                 });
     }

@@ -16,7 +16,7 @@ import java.io.IOException;
  */
 public class GatewayHook extends AbstractGatewayModuleHook {
 
-    private static final Logger logger = LoggerFactory.getLogger(GatewayHook.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(GatewayHook.class);
 
     private GatewayContext gatewayContext;
     private Python3ProcessPool processPool;
@@ -29,7 +29,7 @@ public class GatewayHook extends AbstractGatewayModuleHook {
     @Override
     public void setup(GatewayContext context) {
         this.gatewayContext = context;
-        logger.info("Python 3 Integration module setup");
+        LOGGER.info("Python 3 Integration module setup");
 
         // Load configuration
         loadConfiguration();
@@ -43,50 +43,50 @@ public class GatewayHook extends AbstractGatewayModuleHook {
 
     @Override
     public void startup(LicenseState licenseState) {
-        logger.info("Python 3 Integration module startup");
+        LOGGER.info("Python 3 Integration module startup");
 
         try {
             // Get Python path (may download if needed)
             String pythonPath = distributionManager.getPythonPath();
-            logger.info("Using Python: {}", pythonPath);
+            LOGGER.info("Using Python: {}", pythonPath);
 
             // Initialize process pool
-            logger.info("Initializing Python 3 process pool (size: {})", poolSize);
+            LOGGER.info("Initializing Python 3 process pool (size: {})", poolSize);
             processPool = new Python3ProcessPool(pythonPath, poolSize);
 
-            logger.info("Python 3 Integration module started successfully");
+            LOGGER.info("Python 3 Integration module started successfully");
 
         } catch (IOException e) {
-            logger.error("Failed to initialize Python 3 process pool", e);
-            logger.error("Options:");
-            logger.error("  1. Install Python 3.8+ on this server");
-            logger.error("  2. Enable auto-download: -Dignition.python3.autodownload=true");
-            logger.error("  3. Specify Python path: -Dignition.python3.path=/path/to/python3");
+            LOGGER.error("Failed to initialize Python 3 process pool", e);
+            LOGGER.error("Options:");
+            LOGGER.error("  1. Install Python 3.8+ on this server");
+            LOGGER.error("  2. Enable auto-download: -Dignition.python3.autodownload=true");
+            LOGGER.error("  3. Specify Python path: -Dignition.python3.path=/path/to/python3");
             // Don't throw - allow module to load but scripting functions will fail gracefully
         }
     }
 
     @Override
     public void shutdown() {
-        logger.info("Python 3 Integration module shutdown");
+        LOGGER.info("Python 3 Integration module shutdown");
 
         // Shutdown process pool
         if (processPool != null) {
             try {
                 processPool.shutdown();
             } catch (Exception e) {
-                logger.error("Error shutting down process pool", e);
+                LOGGER.error("Error shutting down process pool", e);
             }
         }
 
-        logger.info("Python 3 Integration module shutdown complete");
+        LOGGER.info("Python 3 Integration module shutdown complete");
     }
 
     @Override
     public void initializeScriptManager(ScriptManager manager) {
         super.initializeScriptManager(manager);
 
-        logger.info("Registering Python 3 scripting functions");
+        LOGGER.info("Registering Python 3 scripting functions");
 
         // Create script module
         Python3ScriptModule scriptModule;
@@ -95,7 +95,7 @@ public class GatewayHook extends AbstractGatewayModuleHook {
             scriptModule = new Python3ScriptModule(processPool, distributionManager);
         } else {
             // Create dummy module that will report Python 3 as unavailable
-            logger.warn("Process pool not initialized, Python 3 functions will be unavailable");
+            LOGGER.warn("Process pool not initialized, Python 3 functions will be unavailable");
             scriptModule = new Python3ScriptModule(null, distributionManager);
         }
 
@@ -106,7 +106,7 @@ public class GatewayHook extends AbstractGatewayModuleHook {
                 new PropertiesFileDocProvider()
         );
 
-        logger.info("Python 3 scripting functions registered successfully");
+        LOGGER.info("Python 3 scripting functions registered successfully");
     }
 
     /**
@@ -118,9 +118,9 @@ public class GatewayHook extends AbstractGatewayModuleHook {
         if (configuredSize != null) {
             try {
                 poolSize = Integer.parseInt(configuredSize);
-                logger.info("Using configured pool size: {}", poolSize);
+                LOGGER.info("Using configured pool size: {}", poolSize);
             } catch (NumberFormatException e) {
-                logger.warn("Invalid pool size configuration: {}, using default: {}", configuredSize, poolSize);
+                LOGGER.warn("Invalid pool size configuration: {}, using default: {}", configuredSize, poolSize);
             }
         }
 
@@ -128,7 +128,7 @@ public class GatewayHook extends AbstractGatewayModuleHook {
         String configuredAutoDownload = System.getProperty("ignition.python3.autodownload");
         if (configuredAutoDownload != null) {
             autoDownload = Boolean.parseBoolean(configuredAutoDownload);
-            logger.info("Auto-download: {}", autoDownload);
+            LOGGER.info("Auto-download: {}", autoDownload);
         }
     }
 

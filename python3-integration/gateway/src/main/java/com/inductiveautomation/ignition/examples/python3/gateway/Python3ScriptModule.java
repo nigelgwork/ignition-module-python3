@@ -15,7 +15,7 @@ import java.util.Map;
  */
 public class Python3ScriptModule {
 
-    private static final Logger logger = LoggerFactory.getLogger(Python3ScriptModule.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(Python3ScriptModule.class);
     private final Python3ProcessPool processPool;
     private final PythonDistributionManager distributionManager;
 
@@ -64,12 +64,12 @@ public class Python3ScriptModule {
                 if (result.getTraceback() != null) {
                     errorMsg += "\n" + result.getTraceback();
                 }
-                logger.error(errorMsg);
+                LOGGER.error(errorMsg);
                 throw new RuntimeException(errorMsg);
             }
 
         } catch (Python3Exception e) {
-            logger.error("Failed to execute Python code", e);
+            LOGGER.error("Failed to execute Python code", e);
             throw new RuntimeException("Failed to execute Python code: " + e.getMessage(), e);
         }
     }
@@ -113,12 +113,12 @@ public class Python3ScriptModule {
                 if (result.getTraceback() != null) {
                     errorMsg += "\n" + result.getTraceback();
                 }
-                logger.error(errorMsg);
+                LOGGER.error(errorMsg);
                 throw new RuntimeException(errorMsg);
             }
 
         } catch (Python3Exception e) {
-            logger.error("Failed to evaluate Python expression", e);
+            LOGGER.error("Failed to evaluate Python expression", e);
             throw new RuntimeException("Failed to evaluate Python expression: " + e.getMessage(), e);
         }
     }
@@ -173,12 +173,12 @@ public class Python3ScriptModule {
                 if (result.getTraceback() != null) {
                     errorMsg += "\n" + result.getTraceback();
                 }
-                logger.error(errorMsg);
+                LOGGER.error(errorMsg);
                 throw new RuntimeException(errorMsg);
             }
 
         } catch (Python3Exception e) {
-            logger.error("Failed to call Python module function", e);
+            LOGGER.error("Failed to call Python module function", e);
             throw new RuntimeException("Failed to call Python module function: " + e.getMessage(), e);
         }
     }
@@ -216,7 +216,7 @@ public class Python3ScriptModule {
             }
 
         } catch (Exception e) {
-            logger.error("Failed to get Python version", e);
+            LOGGER.error("Failed to get Python version", e);
             Map<String, Object> versionInfo = new HashMap<>();
             versionInfo.put("available", false);
             versionInfo.put("error", e.getMessage());

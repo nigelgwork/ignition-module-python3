@@ -5,7 +5,12 @@ import com.google.gson.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -13,7 +18,12 @@ import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 /**
  * Manages a single Python 3 process and handles communication via stdin/stdout.
@@ -22,8 +32,8 @@ import java.util.concurrent.*;
  */
 public class Python3Executor {
 
-    private static final Logger logger = LoggerFactory.getLogger(Python3Executor.class);
-    private static final Gson gson = new Gson();
+    private static final Logger LOGGER = LoggerFactory.getLogger(Python3Executor.class);
+    private static final Gson GSON = new Gson();
     private static final long DEFAULT_TIMEOUT_MS = 30000; // 30 seconds
 
     private final String pythonPath;
@@ -61,7 +71,7 @@ public class Python3Executor {
             Files.copy(is, tempScript, StandardCopyOption.REPLACE_EXISTING);
         }
 
-        logger.debug("Extracted bridge script to: {}", tempScript);
+        LOGGER.debug("Extracted bridge script to: {}", tempScript);
         return tempScript;
     }
 
@@ -69,7 +79,7 @@ public class Python3Executor {
      * Start the Python process
      */
     private void startProcess() throws IOException {
-        logger.info("Starting Python 3 process: {}", pythonPath);
+        LOGGER.info("Starting Python 3 process: {}", pythonPath);
 
         ProcessBuilder pb = new ProcessBuilder(
                 pythonPath,
@@ -98,7 +108,7 @@ public class Python3Executor {
         // Wait for ready signal
         waitForReady();
 
-        logger.info("Python 3 process started successfully");
+        LOGGER.info("Python 3 process started successfully");
     }
 
     /**
@@ -108,10 +118,10 @@ public class Python3Executor {
         try {
             String line = processOutput.readLine();
             if (line != null) {
-                JsonObject response = gson.fromJson(line, JsonObject.class);
+                JsonObject response = GSON.fromJson(line, JsonObject.class);
                 if (response.has("status") && "ready".equals(response.get("status").getAsString())) {
                     isHealthy = true;
-                    logger.debug("Python process is ready");
+                    LOGGER.debug("Python process is ready");
                     return;
                 }
             }
@@ -203,7 +213,7 @@ public class Python3Executor {
             Python3Result result = sendRequest(request, 5000);
             return result.isSuccess();
         } catch (Exception e) {
-            logger.warn("Ping failed", e);
+            LOGGER.warn("Ping failed", e);
             return false;
         }
     }
@@ -219,8 +229,8 @@ public class Python3Executor {
 
             try {
                 // Send request
-                String requestJson = gson.toJson(request);
-                logger.debug("Sending request: {}", requestJson);
+                String requestJson = GSON.toJson(request);
+                LOGGER.debug("Sending request: {}", requestJson);
 
                 processInput.write(requestJson);
                 processInput.newLine();
@@ -234,14 +244,14 @@ public class Python3Executor {
                     throw new Python3Exception("No response from Python process (timeout: " + timeoutMs + "ms)");
                 }
 
-                logger.debug("Received response: {}", responseLine);
+                LOGGER.debug("Received response: {}", responseLine);
 
                 // Parse response
-                JsonObject response = gson.fromJson(responseLine, JsonObject.class);
+                JsonObject response = GSON.fromJson(responseLine, JsonObject.class);
                 boolean success = response.has("success") && response.get("success").getAsBoolean();
 
                 if (success) {
-                    Object result = gson.fromJson(response.get("result"), Object.class);
+                    Object result = GSON.fromJson(response.get("result"), Object.class);
                     return new Python3Result(true, result, null, null);
                 } else {
                     String error = response.has("error") ? response.get("error").getAsString() : "Unknown error";
@@ -269,7 +279,7 @@ public class Python3Executor {
             return future.get(timeoutMs, TimeUnit.MILLISECONDS);
         } catch (TimeoutException e) {
             future.cancel(true);
-            logger.warn("Read timeout after {}ms", timeoutMs);
+            LOGGER.warn("Read timeout after {}ms", timeoutMs);
             return null;
         } catch (InterruptedException | ExecutionException e) {
             throw new IOException("Error reading from process", e);
@@ -296,13 +306,13 @@ public class Python3Executor {
      * Shutdown the Python process gracefully
      */
     public void shutdown() {
-        logger.info("Shutting down Python 3 process");
+        LOGGER.info("Shutting down Python 3 process");
 
         try {
             // Send shutdown command
             Map<String, Object> request = new HashMap<>();
             request.put("command", "shutdown");
-            String requestJson = gson.toJson(request);
+            String requestJson = GSON.toJson(request);
 
             processInput.write(requestJson);
             processInput.newLine();
@@ -310,12 +320,12 @@ public class Python3Executor {
 
             // Wait for graceful shutdown
             if (!process.waitFor(5, TimeUnit.SECONDS)) {
-                logger.warn("Python process did not shutdown gracefully, forcing");
+                LOGGER.warn("Python process did not shutdown gracefully, forcing");
                 process.destroyForcibly();
             }
 
         } catch (Exception e) {
-            logger.error("Error during shutdown", e);
+            LOGGER.error("Error during shutdown", e);
             if (process != null) {
                 process.destroyForcibly();
             }
@@ -324,7 +334,7 @@ public class Python3Executor {
             closeStreams();
         }
 
-        logger.info("Python 3 process shutdown complete");
+        LOGGER.info("Python 3 process shutdown complete");
     }
 
     /**
@@ -332,11 +342,17 @@ public class Python3Executor {
      */
     private void closeStreams() {
         try {
-            if (processInput != null) processInput.close();
-            if (processOutput != null) processOutput.close();
-            if (processError != null) processError.close();
+            if (processInput != null) {
+                processInput.close();
+            }
+            if (processOutput != null) {
+                processOutput.close();
+            }
+            if (processError != null) {
+                processError.close();
+            }
         } catch (IOException e) {
-            logger.error("Error closing streams", e);
+            LOGGER.error("Error closing streams", e);
         }
     }
 
