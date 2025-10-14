@@ -55,7 +55,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: module-build
-          path: python3-integration/build/*.modl
+          path: |
+            python3-integration/build/Python3Integration-*.modl
+            !python3-integration/build/*.unsigned.modl
           retention-days: 30
 
       - name: Check module file created
@@ -167,8 +169,9 @@ jobs:
             exit 1
           fi
 
-          # Extract and verify module.xml
-          unzip -p artifacts/*.modl module.xml > module.xml
+          # Extract and verify module.xml (use first .modl file)
+          MODL_FILE=$(ls artifacts/*.modl | head -1)
+          unzip -p "$MODL_FILE" module.xml > module.xml
 
           # Check required fields
           if grep -q "<name>Python 3 Integration</name>" module.xml; then
