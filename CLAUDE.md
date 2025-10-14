@@ -12,10 +12,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Remember:** DELETE, not ignore!
 
-## ⚠️ CRITICAL: Version Management
+## ⚠️ CRITICAL: Version Management and Build Process
 
-**ALWAYS increment version before building:**
+**ALWAYS follow this complete workflow for EVERY build:**
 
+### 1. Pre-Build Cleanup
+- Delete Zone.Identifier files: `find . -name "*Zone.Identifier*" -type f -delete`
+- Review and tidy up code (remove commented code, fix formatting)
+- Update documentation if needed (README, TESTING_GUIDE, etc.)
+
+### 2. Version Increment
 Version file: `python3-integration/version.properties`
 
 **Versioning Rules:**
@@ -28,13 +34,39 @@ Version file: `python3-integration/version.properties`
 - Fixed a bug in Python executor → **PATCH** (1.1.0 → 1.1.1)
 - Rewrote entire architecture → **MAJOR** (1.1.1 → 2.0.0)
 
-**Workflow:**
-1. Make code changes
-2. Update `version.properties` BEFORE building
-3. Build module with new version
-4. Commit with version in message
+### 3. Build Module
+```bash
+cd /modules/ignition-module-python3/python3-integration
+./gradlew clean build --no-daemon
+```
 
-**Remember:** EVERY build needs a version bump!
+### 4. Git Commit and Push
+**ALWAYS commit and push after successful build:**
+```bash
+git add -A
+git commit -m "Release vX.Y.Z - [description]
+
+Version: X.Y.Z-1 → X.Y.Z (MAJOR/MINOR/PATCH)
+
+Changes:
+- [List key changes]
+- [...]
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>"
+git push
+```
+
+### Complete Build Workflow Summary
+1. **Clean**: Delete Zone.Identifier files
+2. **Tidy**: Code cleanup and documentation updates
+3. **Version**: Increment version.properties
+4. **Build**: Run ./gradlew clean build
+5. **Commit**: Add all changes
+6. **Push**: Push to GitHub
+
+**Remember:** NEVER build without incrementing version, tidying code, and pushing to git!
 
 ## Repository Purpose
 
