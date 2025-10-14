@@ -67,10 +67,10 @@ public class PythonDistributionManager {
 
     /**
      * Get Python executable path.
-     * Priority:
+     * Priority for self-contained module:
      * 1. Embedded Python (if already installed)
-     * 2. System Python (if available and valid)
-     * 3. Download embedded Python (if autoDownload enabled)
+     * 2. Download embedded Python (if autoDownload enabled)
+     * 3. System Python (fallback if autoDownload disabled)
      *
      * @return Path to Python executable
      * @throws IOException if Python cannot be found or installed
@@ -82,18 +82,18 @@ public class PythonDistributionManager {
             return pythonExecutable;
         }
 
-        // Try system Python
+        // Download if enabled (prioritize self-contained distribution)
+        if (autoDownload) {
+            LOGGER.info("Embedded Python not found, downloading distribution...");
+            downloadAndInstall();
+            return pythonExecutable;
+        }
+
+        // Try system Python as fallback (only when autoDownload disabled)
         String systemPython = detectSystemPython();
         if (systemPython != null) {
             LOGGER.info("Using system Python: {}", systemPython);
             return systemPython;
-        }
-
-        // Download if enabled
-        if (autoDownload) {
-            LOGGER.info("No Python found, downloading embedded distribution...");
-            downloadAndInstall();
-            return pythonExecutable;
         }
 
         throw new IOException(
@@ -112,7 +112,12 @@ public class PythonDistributionManager {
         if ("windows".equals(os)) {
             executable = pythonDir.resolve("python/python.exe");
         } else {
-            executable = pythonDir.resolve("python/bin/python3");
+            // Try python3.11 first (standalone builds have broken python3 symlink)
+            executable = pythonDir.resolve("python/bin/python3.11");
+            if (!Files.exists(executable) || !Files.isExecutable(executable)) {
+                // Fallback to python3
+                executable = pythonDir.resolve("python/bin/python3");
+            }
         }
 
         if (Files.exists(executable) && Files.isExecutable(executable)) {
