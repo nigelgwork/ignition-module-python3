@@ -12,6 +12,30 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Remember:** DELETE, not ignore!
 
+## ⚠️ CRITICAL: Version Management
+
+**ALWAYS increment version before building:**
+
+Version file: `python3-integration/version.properties`
+
+**Versioning Rules:**
+- **MAJOR** (x.0.0): Breaking changes, major new features, architectural changes
+- **MINOR** (1.x.0): New features, significant fixes, scope changes, API additions
+- **PATCH** (1.0.x): Bug fixes, documentation updates, minor tweaks
+
+**Examples:**
+- Added Designer scope support → **MINOR** (1.0.0 → 1.1.0)
+- Fixed a bug in Python executor → **PATCH** (1.1.0 → 1.1.1)
+- Rewrote entire architecture → **MAJOR** (1.1.1 → 2.0.0)
+
+**Workflow:**
+1. Make code changes
+2. Update `version.properties` BEFORE building
+3. Build module with new version
+4. Commit with version in message
+
+**Remember:** EVERY build needs a version bump!
+
 ## Repository Purpose
 
 This is a **Python 3 Integration module** for Ignition 8.3 SDK. The repository contains both:
