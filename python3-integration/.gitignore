@@ -31,6 +31,7 @@ Thumbs.db
 *.pfx
 *.jks
 *.keystore
+*.der
 *_rsa
 *_dsa
 *_ecdsa
@@ -47,6 +48,10 @@ credentials/
 *.credentials
 *-credentials.json
 .git-credentials
+
+# Module signing files (regenerate using instructions in README)
+sign.props
+gradle.properties
 
 # Temporary files
 *.tmp

@@ -29,6 +29,26 @@ jobs:
         working-directory: python3-integration
         run: chmod +x gradlew
 
+      - name: Generate signing certificates
+        working-directory: python3-integration
+        run: |
+          # Generate self-signed certificates for module signing
+          keytool -genkeypair -alias gaskony -keyalg RSA -keysize 2048 \
+            -validity 3650 -keystore keystore.jks \
+            -storepass gaskony2024 -keypass gaskony2024 \
+            -dname "CN=Gaskony, OU=Development, O=Gaskony, L=City, ST=State, C=US"
+
+          keytool -exportcert -alias gaskony -keystore keystore.jks \
+            -storepass gaskony2024 -file certificate.der
+
+          cat > gradle.properties <<EOF
+          ignition.signing.keystoreFile=keystore.jks
+          ignition.signing.keystorePassword=gaskony2024
+          ignition.signing.certFile=certificate.der
+          ignition.signing.certAlias=gaskony
+          ignition.signing.certPassword=gaskony2024
+          EOF
+
       - name: Build with Gradle
         working-directory: python3-integration
         run: ./gradlew clean build --no-daemon --stacktrace

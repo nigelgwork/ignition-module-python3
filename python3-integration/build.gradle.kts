@@ -53,9 +53,9 @@ ignitionModule {
         )
     )
 
-    // Skip signing for development/testing
-    // Enable signing (false) when you have proper certificates
-    skipModlSigning.set(true)
+    // Enable module signing with self-signed certificate
+    // Signing configured via sign.props file
+    skipModlSigning.set(false)
 }
 
 // OWASP Dependency Check Configuration
