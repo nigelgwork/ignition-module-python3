@@ -61,7 +61,7 @@ jobs:
       - name: Check module file created
         working-directory: python3-integration
         run: |
-          if [ -f build/*.modl ]; then
+          if ls build/*.modl 1> /dev/null 2>&1; then
             echo "✅ Module file created successfully"
             ls -lh build/*.modl
           else
