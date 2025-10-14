@@ -34,12 +34,14 @@ ignitionModule {
 
     requiredIgnitionVersion.set("8.3.0")
     requiredFrameworkVersion.set("8")
+
+    // Free module - no license required
     freeModule.set(true)
 
     projectScopes.putAll(
         mapOf(
             ":gateway" to "G",
-            ":common" to "GCD"  // Gateway + Client + Designer
+            ":common" to "GCD"  // Gateway + Client + Designer (for JAR availability)
         )
     )
 

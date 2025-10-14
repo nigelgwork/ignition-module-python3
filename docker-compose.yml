@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  ignition:
+    image: inductiveautomation/ignition:8.3.0
+    container_name: ignition-python3-test
+    ports:
+      - "9088:8088"  # Gateway web interface
+      - "8043:8043"  # Gateway SSL
+    volumes:
+      - ./python3-integration/build:/modules
+      - ignition-data:/usr/local/bin/ignition/data
+    environment:
+      - ACCEPT_IGNITION_EULA=Y
+      - GATEWAY_ADMIN_USERNAME=admin
+      - GATEWAY_ADMIN_PASSWORD=password
+      - IGNITION_EDITION=standard
+      # Allow unsigned modules for testing
+      - JAVA_OPTS=-Dignition.allowunsignedmodules=true
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8088/StatusPing"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+volumes:
+  ignition-data:
