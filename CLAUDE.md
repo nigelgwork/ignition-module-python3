@@ -2,6 +2,16 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## ⚠️ CRITICAL: File Cleanup Rules
+
+**ALWAYS DELETE Zone.Identifier files immediately:**
+- **NEVER** ignore or skip Zone.Identifier files
+- **ALWAYS** delete them using: `find . -name "*Zone.Identifier*" -type f -delete`
+- Run this check at the start of ANY code cleanup, documentation update, or file organization task
+- These are Windows WSL metadata files that should never be committed
+
+**Remember:** DELETE, not ignore!
+
 ## Repository Purpose
 
 This is a **Python 3 Integration module** for Ignition 8.3 SDK. The repository contains both:
