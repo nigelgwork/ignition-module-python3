@@ -41,13 +41,11 @@ jobs:
           keytool -exportcert -alias gaskony -keystore keystore.jks \
             -storepass gaskony2024 -file certificate.der
 
-          cat > gradle.properties <<'EOF'
-ignition.signing.keystoreFile=keystore.jks
-ignition.signing.keystorePassword=gaskony2024
-ignition.signing.certFile=certificate.der
-ignition.signing.certAlias=gaskony
-ignition.signing.certPassword=gaskony2024
-EOF
+          echo "ignition.signing.keystoreFile=keystore.jks" > gradle.properties
+          echo "ignition.signing.keystorePassword=gaskony2024" >> gradle.properties
+          echo "ignition.signing.certFile=certificate.der" >> gradle.properties
+          echo "ignition.signing.certAlias=gaskony" >> gradle.properties
+          echo "ignition.signing.certPassword=gaskony2024" >> gradle.properties
 
       - name: Build with Gradle
         working-directory: python3-integration
