@@ -466,10 +466,20 @@ This document contains:
 ### Key Features
 
 - **Code Editor**: ExtensionFunctionPanel with Python syntax highlighting
-- **Gateway Execution**: All code runs on Gateway via RPC/REST API
+- **Gateway Execution**: All code runs on Gateway via **REST API** (not RPC)
 - **Diagnostics Panel**: Execution time, pool status, Python version, memory usage
 - **Script Library**: Save, load, and organize Python scripts in folders
 - **Error Feedback**: Clear tracebacks with line number highlighting
+
+### Architecture Decision: REST API (Not RPC)
+
+**DECIDED**: Use REST API for Designer-Gateway communication, avoiding RPC complexity.
+
+**Benefits**:
+- 6-10 hours faster development
+- No Designer lockup risks (async HTTP calls)
+- Works with existing v1.6.1 REST API
+- Simpler, proven, testable
 
 ### When to Reference This Plan
 

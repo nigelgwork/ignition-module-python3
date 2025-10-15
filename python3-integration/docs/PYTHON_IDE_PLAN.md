@@ -162,16 +162,18 @@ My Python Scripts/
 
 ### Communication Layers
 
-1. **Designer → Gateway**: RPC or REST API calls
-2. **Gateway Execution**: Python3ProcessPool handles execution
-3. **Gateway → Designer**: Results + diagnostics returned
-4. **Real-time Updates**: WebSocket or polling for live pool stats
+**DECISION: Use REST API (Not RPC)** - Simpler, proven, and avoids v1.2.x Designer lockup issues
+
+1. **Designer → Gateway**: REST API calls via HTTP client (async with SwingWorker)
+2. **Gateway Execution**: Python3ProcessPool handles execution (already working in v1.6.1)
+3. **Gateway → Designer**: JSON responses with results + diagnostics
+4. **Real-time Updates**: Polling GET requests for live pool stats (1-2 second interval)
 
 ## Implementation Phases
 
 ### Phase 1: Designer UI Component (v1.7.0)
 
-**Goal**: Create basic Python IDE in Designer
+**Goal**: Create basic Python IDE in Designer using REST API
 
 **Components to Build**:
 
@@ -182,47 +184,95 @@ My Python Scripts/
        private JTextArea outputPanel;
        private JPanel diagnosticsPanel;
        private DesignerContext designerContext;
-       private Python3RPC rpc;
+       private Python3RestClient restClient;  // REST client, not RPC
    }
    ```
 
-2. **Enable Designer Scope** in `build.gradle.kts`:
+2. **Python3RestClient.java** - REST API client wrapper (NEW)
+   ```java
+   public class Python3RestClient {
+       private final HttpClient httpClient;
+       private final String gatewayUrl;
+
+       public Python3RestClient(DesignerContext context) {
+           this.httpClient = HttpClient.newHttpClient();
+           this.gatewayUrl = context.getGatewayAddress();
+       }
+
+       public CompletableFuture<ExecutionResult> executeCode(String code, Map<String, Object> vars) {
+           // POST to /data/python3integration/api/v1/exec
+           // Returns CompletableFuture for async handling
+       }
+
+       public PoolStats getPoolStats() throws IOException {
+           // GET /data/python3integration/api/v1/pool-stats
+       }
+
+       public DiagnosticsInfo getDiagnostics() throws IOException {
+           // GET /data/python3integration/api/v1/diagnostics
+       }
+   }
+   ```
+
+3. **Python3ExecutionWorker.java** - Async execution with SwingWorker (NEW)
+   ```java
+   public class Python3ExecutionWorker extends SwingWorker<ExecutionResult, Void> {
+       private final Python3RestClient restClient;
+       private final String code;
+       private final Map<String, Object> variables;
+
+       @Override
+       protected ExecutionResult doInBackground() throws Exception {
+           return restClient.executeCode(code, variables).get();
+       }
+
+       @Override
+       protected void done() {
+           try {
+               ExecutionResult result = get();
+               updateOutputPanel(result);
+               updateDiagnosticsPanel(result);
+           } catch (Exception e) {
+               displayError(e);
+           }
+       }
+   }
+   ```
+
+4. **Enable Designer Scope** in `build.gradle.kts`:
    ```kotlin
    projectScopes.putAll(
        mapOf(
            ":common" to "G",
            ":gateway" to "G",
-           ":designer" to "D"   // Enable Designer scope
+           ":designer" to "D"   // Enable Designer scope (UI only, no RPC)
        )
    )
    ```
 
-3. **DesignerHook.java** - Designer lifecycle management
+5. **DesignerHook.java** - Designer lifecycle management (NO RPC)
    ```java
    public class DesignerHook extends AbstractDesignerModuleHook {
        @Override
        public void startup(LicenseState licenseState) {
-           // Initialize RPC connection to Gateway
-           rpc = ModuleRPCFactory.create(
-               Constants.MODULE_ID,
-               Python3RpcFunctions.class
-           );
-
-           // Add Tools menu item
+           // NO RPC initialization needed!
+           // Just add Tools menu item
            addToolsMenuItem();
        }
-   }
-   ```
 
-4. **Add Tools Menu Item**:
-   ```java
-   private void addToolsMenuItem() {
-       context.addMenuAction(
-           "Python 3 IDE",
-           KeyStroke.getKeyStroke(KeyEvent.VK_P,
-               KeyEvent.CTRL_DOWN_MASK | KeyEvent.SHIFT_DOWN_MASK),
-           () -> showPython3IDE()
-       );
+       private void addToolsMenuItem() {
+           context.addMenuAction(
+               "Python 3 IDE",
+               KeyStroke.getKeyStroke(KeyEvent.VK_P,
+                   KeyEvent.CTRL_DOWN_MASK | KeyEvent.SHIFT_DOWN_MASK),
+               () -> showPython3IDE()
+           );
+       }
+
+       private void showPython3IDE() {
+           Python3IDE ide = new Python3IDE(context);
+           // Show in Designer workspace
+       }
    }
    ```
 
@@ -231,7 +281,8 @@ My Python Scripts/
 - ✅ "Run" button to execute code on Gateway
 - ✅ Output panel for results
 - ✅ Basic error handling
-- ✅ RPC communication with Gateway
+- ✅ **REST API communication** (not RPC)
+- ✅ **Async execution** via SwingWorker (prevents Designer lockups)
 
 **Testing Criteria**:
 - Can open Python IDE from Designer Tools menu
@@ -441,44 +492,35 @@ event: pool-status
 data: {"available": 3, "inUse": 0, "healthy": 3, "totalSize": 3}
 ```
 
-### Enhanced RPC Functions
+### REST API Endpoints (Already Available in v1.6.1!)
 
-**Add to Python3RpcFunctions.java**:
+**Current Endpoints** (no changes needed for Phase 1):
+
+- **POST /data/python3integration/api/v1/exec** - Execute Python code
+- **POST /data/python3integration/api/v1/eval** - Evaluate Python expressions
+- **POST /data/python3integration/api/v1/call-module** - Call Python module functions
+- **GET /data/python3integration/api/v1/version** - Python version information
+- **GET /data/python3integration/api/v1/pool-stats** - Process pool statistics
+- **GET /data/python3integration/api/v1/health** - Health check endpoint
+- **GET /data/python3integration/api/v1/diagnostics** - Performance diagnostics
+- **GET /data/python3integration/api/v1/example** - Example test endpoint
+
+**Future Enhancements** (Phase 2+):
 
 ```java
-public interface Python3RpcFunctions {
-    // Existing methods...
-    Object exec(String code, Map<String, Object> variables);
-    Object eval(String expression, Map<String, Object> variables);
-    // ...
+// Optional new endpoints for advanced features
 
-    // New methods for IDE:
+// Syntax checking without execution (Phase 4)
+POST /data/python3integration/api/v1/check-syntax
+Request: {"code": "..."}
+Response: {"valid": true/false, "errors": [...]}
 
-    /**
-     * Execute code with enhanced diagnostics
-     */
-    Python3ExecutionResult execWithDiagnostics(String code, Map<String, Object> variables);
+// Auto-completion support (Phase 4)
+GET /data/python3integration/api/v1/modules
+Response: ["math", "pandas", "numpy", ...]
 
-    /**
-     * Get real-time pool status
-     */
-    PoolStatus getPoolStatus();
-
-    /**
-     * Validate Python syntax without executing
-     */
-    SyntaxCheckResult checkSyntax(String code);
-
-    /**
-     * Get available Python modules
-     */
-    List<String> getAvailableModules();
-
-    /**
-     * Get function signatures for auto-completion
-     */
-    List<FunctionSignature> getFunctionSignatures(String module);
-}
+GET /data/python3integration/api/v1/signatures?module=math
+Response: [{"name": "sqrt", "params": ["x"], "doc": "..."}, ...]
 ```
 
 ## UI/UX Design
@@ -608,10 +650,12 @@ public interface Python3RpcFunctions {
 **Changes Required**:
 1. Enable Designer scope in `build.gradle.kts`
 2. Create `designer/` subproject
-3. Implement `DesignerHook.java`
+3. Implement `DesignerHook.java` (no RPC setup needed!)
 4. Implement `Python3IDE.java` (basic UI)
-5. Enable RPC in `GatewayHook.java`
-6. Test Designer → Gateway communication
+5. Implement `Python3RestClient.java` (REST API wrapper)
+6. Implement `Python3ExecutionWorker.java` (SwingWorker for async)
+7. **NO changes to Gateway** - REST API already working!
+8. Test Designer → Gateway communication via REST API
 
 **Testing**:
 - Install v1.7.0 in test Gateway
@@ -699,16 +743,17 @@ public interface Python3RpcFunctions {
 ## Timeline Estimate
 
 ### Phase 1: Designer UI Component
-**Effort**: 40-60 hours
+**Effort**: 34-50 hours (**6-10 hours faster** than RPC approach)
 **Timeline**: 2-3 weeks
 
 **Breakdown**:
 - Enable Designer scope: 4 hours
-- Create DesignerHook: 6 hours
+- Create DesignerHook (no RPC!): 4 hours (was 6)
 - Build Python3IDE UI: 16 hours
-- Implement RPC communication: 10 hours
-- Testing and debugging: 12 hours
-- Documentation: 8 hours
+- **Python3RestClient wrapper: 4 hours** (simpler than RPC 10 hours)
+- **SwingWorker async execution: 4 hours**
+- Testing and debugging: 10 hours (was 12, simpler to test)
+- Documentation: 6 hours (was 8, less complexity)
 
 ### Phase 2: Enhanced Diagnostics
 **Effort**: 24-32 hours
@@ -742,17 +787,20 @@ public interface Python3RpcFunctions {
 - Performance profiler: 16 hours
 - Testing and debugging: 16 hours
 
-**Total Estimated Effort**: 156-212 hours (4-6 weeks of full-time work)
+**Total Estimated Effort**: 150-202 hours (4-5 weeks of full-time work) - **6-10 hours faster with REST API**
 
 ## Risks and Mitigations
 
-### Risk 1: Designer Lockups (Experienced in v1.2.x)
+### Risk 1: Designer Lockups (Experienced in v1.2.x with RPC)
+
+**Risk Level**: LOW (REST API approach significantly reduces this risk)
 
 **Mitigation**:
-- All code execution via RPC/REST (non-blocking)
-- Use SwingWorker for background tasks
-- Implement proper timeout handling
-- Add cancel button for long executions
+- ✅ All code execution via **REST API** (naturally async, no RPC complexity)
+- ✅ Use SwingWorker for all HTTP calls (non-blocking UI)
+- ✅ Implement proper timeout handling (HTTP client timeout)
+- ✅ Add cancel button for long executions
+- ✅ **No RPC layer** = eliminates v1.2.x Designer lockup issues
 
 ### Risk 2: Performance Issues with Large Results
 
@@ -762,13 +810,17 @@ public interface Python3RpcFunctions {
 - Add pagination for datasets
 - Implement "show more" functionality
 
-### Risk 3: RPC Connection Instability
+### Risk 3: HTTP Connection Instability
+
+**Risk Level**: LOW (HTTP is more resilient than RPC)
 
 **Mitigation**:
-- Implement reconnect logic
-- Cache last known state
-- Queue operations during disconnect
-- Show clear connection status
+- ✅ Standard HTTP retry logic (built into HttpClient)
+- ✅ Connection timeout handling
+- ✅ Cache last known state (pool stats, diagnostics)
+- ✅ Show clear connection status indicator
+- ✅ Graceful degradation if Gateway unreachable
+- **Advantage**: HTTP is simpler and more reliable than RPC
 
 ### Risk 4: Complex UI Development
 
@@ -791,9 +843,9 @@ public interface Python3RpcFunctions {
 ### Decision Points
 
 **Before Phase 1**:
-- Confirm Designer scope approach (RPC vs REST vs hybrid)
-- Decide on UI framework (Swing vs JavaFX)
-- Choose code editor component
+- ✅ **DECIDED: REST API** (not RPC) - simpler, proven, avoids lockups
+- ✅ **DECIDED: Swing** (not JavaFX) - standard for Ignition Designer modules
+- ✅ **DECIDED: ExtensionFunctionPanel** - built-in Ignition component with Python highlighting
 
 **Before Phase 2**:
 - Decide on real-time update mechanism (polling vs SSE vs WebSocket)
@@ -823,10 +875,28 @@ The phased approach allows for:
 - Risk reduction
 - Course correction opportunities
 
-**Estimated Timeline**: 4-6 weeks for full implementation (all 4 phases)
+**Estimated Timeline**: 4-5 weeks for full implementation (all 4 phases) - **Faster with REST API!**
 
 **Minimum Viable Product (MVP)**: Phase 1 only (2-3 weeks)
 
+## Why REST API is the Right Choice
+
+**vs RPC Approach**:
+- ✅ **6-10 hours faster** development time
+- ✅ **Simpler architecture** - no RPC layer complexity
+- ✅ **Lower risk** - avoids v1.2.x Designer lockup issues
+- ✅ **Better testing** - can test with curl/Postman
+- ✅ **No Gateway changes** - REST API already working in v1.6.1
+- ✅ **Future-proof** - same API for external integrations
+- ✅ **Proven technology** - HTTP is simpler than RPC
+
+**REST API Advantages**:
+1. Naturally async (CompletableFuture + SwingWorker)
+2. Standard HTTP retry/timeout handling
+3. Easier to debug (HTTP traffic logs)
+4. Works with existing v1.6.1 Gateway
+5. Consistent with Ignition 8.3 API standards
+
 ---
 
-**Ready to proceed?** Awaiting approval to begin Phase 1 implementation.
+**Ready to proceed with REST API approach!** Phase 1 implementation can begin.
