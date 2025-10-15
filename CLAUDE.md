@@ -94,6 +94,7 @@ ignition-module-python3/
 │   │       │   ├── Python3ProcessPool.java       # Process pool manager
 │   │       │   ├── Python3Executor.java          # Single process wrapper
 │   │       │   ├── Python3ScriptModule.java      # Scripting functions
+│   │       │   ├── Python3RestEndpoints.java     # REST API endpoints (v1.6.0+)
 │   │       │   └── PythonDistributionManager.java # Self-contained Python
 │   │       └── resources/
 │   │           └── python_bridge.py              # Python-side bridge script
@@ -166,10 +167,11 @@ cd /modules/ignition-module-python3
 
 When modifying module functionality, focus on these files:
 
-- **GatewayHook.java:712** - Module lifecycle (setup, startup, shutdown)
+- **GatewayHook.java** - Module lifecycle (setup, startup, shutdown), REST API mounting
 - **Python3ProcessPool.java** - Pool management, health checking, borrow/return logic
 - **Python3Executor.java** - Single process communication, timeout handling
 - **Python3ScriptModule.java** - Scripting function definitions with @ScriptFunction annotations
+- **Python3RestEndpoints.java** - REST API endpoints (Ignition 8.3 OpenAPI compliant)
 - **python_bridge.py** - Python-side command processing (execute, evaluate, call_module)
 
 ### SDK Documentation Reference
@@ -427,3 +429,104 @@ InputStream is = getClass().getResourceAsStream("/python_bridge.py");
 - **Architecture deep-dive**: `python3-integration/ARCHITECTURE.md`
 - **SDK documentation**: `docs/knowledge-base/` (read 01, 02, 07 for this module type)
 - **SDK examples**: `examples/scripting-function/` (most similar pattern)
+
+## REST API Endpoints (v1.6.0+)
+
+The module exposes a **REST API** following Ignition 8.3 OpenAPI standards.
+
+### API Endpoint Pattern
+
+All endpoints follow the Ignition 8.3 convention:
+```
+/data/python3integration/api/v1/{endpoint}
+```
+
+This ensures:
+- **OpenAPI compliance** - Endpoints appear in `/openapi.json`
+- **Discoverability** via Ignition's API documentation
+- **API versioning** for future compatibility
+- **Standard authentication** via API tokens or session
+
+### Available Endpoints
+
+**POST Endpoints** (Execute Python code):
+- `/data/python3integration/api/v1/exec` - Execute Python statements
+- `/data/python3integration/api/v1/eval` - Evaluate Python expressions
+- `/data/python3integration/api/v1/call-module` - Call Python module functions
+
+**GET Endpoints** (Status & Info):
+- `/data/python3integration/api/v1/version` - Python version information
+- `/data/python3integration/api/v1/pool-stats` - Process pool statistics
+- `/data/python3integration/api/v1/health` - Health check endpoint
+- `/data/python3integration/api/v1/diagnostics` - Performance diagnostics
+- `/data/python3integration/api/v1/example` - Example test endpoint
+
+### Authentication
+
+REST API endpoints use `RouteAccess.GRANTED` for public access. They can be secured at the gateway level using:
+- **API Tokens**: Generate in Gateway → Security → API Keys
+- **Session Auth**: Login via `/data/app/login`
+
+Bearer token authentication:
+```bash
+curl -H "Authorization: Bearer <token>" http://localhost:8088/data/python3integration/api/v1/health
+```
+
+### Example Usage
+
+```bash
+# Health check (no auth for public endpoints)
+curl http://localhost:8088/data/python3integration/api/v1/health
+
+# Execute Python code
+curl -X POST http://localhost:8088/data/python3integration/api/v1/exec \
+  -H "Content-Type: application/json" \
+  -d '{"code": "result = 2 + 2", "variables": {}}'
+
+# Evaluate expression
+curl -X POST http://localhost:8088/data/python3integration/api/v1/eval \
+  -H "Content-Type": "application/json" \
+  -d '{"expression": "x + y", "variables": {"x": 10, "y": 20}}'
+
+# Call Python module
+curl -X POST http://localhost:8088/data/python3integration/api/v1/call-module \
+  -H "Content-Type: application/json" \
+  -d '{"module": "math", "function": "sqrt", "args": [16]}'
+```
+
+### Implementation Details
+
+REST endpoints are implemented in `Python3RestEndpoints.java`:
+- All routes use `.accessControl(req -> RouteAccess.GRANTED)` for access control
+- All routes use `.type(RouteGroup.TYPE_JSON)` for JSON handling
+- Routes are mounted in `GatewayHook.mountRouteHandlers()`
+- Requires Perspective gateway dependencies for access control API
+
+### Adding New REST Endpoints
+
+1. Add handler method to `Python3RestEndpoints.java`:
+   ```java
+   private static JsonObject handleMyEndpoint(RequestContext req, HttpServletResponse res) {
+       try {
+           // Implementation
+           JsonObject response = new JsonObject();
+           response.addProperty("success", true);
+           return response;
+       } catch (Exception e) {
+           return createErrorResponse(e.getMessage());
+       }
+   }
+   ```
+
+2. Mount route in `mountRoutes()`:
+   ```java
+   routes.newRoute("/api/v1/my-endpoint")
+       .handler(Python3RestEndpoints::handleMyEndpoint)
+       .method(HttpMethod.GET)
+       .type(RouteGroup.TYPE_JSON)
+       .accessControl(req -> RouteAccess.GRANTED)
+       .mount();
+   ```
+
+3. Rebuild and reinstall module
+

@@ -188,3 +188,4 @@ docker-compose.override.yml
 !*template*
 !*.example.*
 !*.template.*
+/openapi.json

@@ -10,27 +10,28 @@ A production-ready Ignition module for Python 3 integration with comprehensive C
 ## Module Information
 
 - **Module ID**: `com.gaskony.python3integration`
-- **Current Version**: 1.4.0
+- **Current Version**: 1.6.0
 - **Vendor**: Gaskony
 - **Required Ignition**: 8.3.0+
 - **Required Framework**: 8+
 
 ## Project Status: ⚙️ Active Development
 
-**Latest Release:** v1.4.0 - Gateway-only with RPC infrastructure
-**Next Release:** v1.5.0 - Designer scope support (in progress)
+**Latest Release:** v1.6.0 - REST API with Ignition 8.3 OpenAPI integration
+**Next Release:** v1.7.0 - Designer scope support (planned)
 
 This is a **fully independent** module project with enterprise-grade CI/CD, security scanning, and comprehensive documentation.
 
 ## Features
 
 - **Python 3 Integration**: Enables Python 3 scripting in Ignition via subprocess process pool
-- **Gateway Scope**: Server-side Python 3 execution with JSON-based communication (✅ Working in v1.4.0)
+- **Gateway Scope**: Server-side Python 3 execution with JSON-based communication (✅ Working)
 - **Process Pool**: 3 concurrent Python executors with health monitoring
-- **RPC Infrastructure**: Ready for Designer/Client support (⏸️ Pending v1.5.0)
+- **REST API**: Full REST API following Ignition 8.3 OpenAPI standards (✅ v1.6.0)
+- **RPC Infrastructure**: Ready for Designer/Client support (⏸️ Pending v1.7.0)
 - **Free Module**: No licensing restrictions
 
-## What Works in v1.4.0
+## What Works in v1.6.0
 
 ✅ **Gateway-Side Functions:**
 - `system.python3.exec(code, variables)` - Execute Python code blocks
@@ -41,6 +42,16 @@ This is a **fully independent** module project with enterprise-grade CI/CD, secu
 - `system.python3.getPoolStats()` - Get process pool statistics
 - `system.python3.example()` - Run test example
 
+✅ **REST API Endpoints (v1.6.0+):**
+- `POST /data/python3integration/api/v1/exec` - Execute Python code via REST
+- `POST /data/python3integration/api/v1/eval` - Evaluate expressions via REST
+- `POST /data/python3integration/api/v1/call-module` - Call Python modules via REST
+- `GET /data/python3integration/api/v1/health` - Health check
+- `GET /data/python3integration/api/v1/version` - Python version info
+- `GET /data/python3integration/api/v1/pool-stats` - Pool statistics
+- `GET /data/python3integration/api/v1/diagnostics` - Performance diagnostics
+- `GET /data/python3integration/api/v1/example` - Example test
+
 ✅ **Use Cases:**
 - Gateway Timer Scripts
 - Gateway Event Scripts
@@ -48,11 +59,9 @@ This is a **fully independent** module project with enterprise-grade CI/CD, secu
 - WebDev scripting endpoints
 
 ❌ **Not Yet Working:**
-- Designer Script Console (v1.5.0)
+- Designer Script Console (v1.7.0 planned)
 - Vision Client scripts (future)
 - Perspective session scripts (future)
-
-**See:** [STATUS_v1.4.0.md](STATUS_v1.4.0.md) for complete status and next steps.
 
 ## Repository Contents
 
@@ -77,9 +86,9 @@ Define your Python 3 integration goals here:
 
 ## Installation
 
-### From Built Module (v1.4.0)
+### From Built Module (v1.6.0)
 
-**Module File:** `python3-integration/build/Python3Integration-1.4.0.modl`
+**Module File:** `python3-integration/build/Python3Integration-1.6.0.modl`
 
 1. Navigate to your Ignition Gateway: http://localhost:9088
 2. Log in with admin credentials
@@ -259,7 +268,9 @@ version.patch=0
 ```
 
 **Version History:**
-- v1.4.0 (Current) - Gateway-only with RPC infrastructure
+- v1.6.0 (Current) - REST API with Ignition 8.3 OpenAPI integration
+- v1.5.0 - Added REST API endpoints (had route mounting issues)
+- v1.4.0 - Gateway-only with RPC infrastructure
 - v1.3.0 - Simplified Gateway-only architecture
 - v1.2.x - Multi-scope with RPC (had Designer lockup issues)
 - v1.1.x - Initial releases
@@ -419,13 +430,13 @@ This is a **completely standalone repository** with everything needed for Igniti
 
 ---
 
-## Quick Reference for v1.4.0
+## Quick Reference for v1.6.0
 
 ### Important Files
-- **Status Document:** [STATUS_v1.4.0.md](STATUS_v1.4.0.md) - Complete status and next steps
+- **AI Guidance:** [CLAUDE.md](CLAUDE.md) - Complete development guide with REST API docs
 - **Testing Guide:** [MANUAL_TESTING_GUIDE.md](MANUAL_TESTING_GUIDE.md) - Step-by-step testing
-- **Test Results:** [TEST_RESULTS_v1.3.0.md](TEST_RESULTS_v1.3.0.md) - v1.3.0 validation
-- **Module File:** `python3-integration/build/Python3Integration-1.4.0.modl`
+- **Test Results:** [TEST_RESULTS.md](TEST_RESULTS.md) - Latest test validation
+- **Module File:** `python3-integration/build/Python3Integration-1.6.0.modl`
 
 ### Quick Commands
 ```bash
@@ -438,25 +449,23 @@ docker ps --filter "name=ignition"
 # View Gateway logs
 docker logs claude-ignition-test 2>&1 | grep -i python | tail -20
 
-# Copy module out
-docker cp claude-ignition-test:/usr/local/bin/ignition/user-lib/modules/Python3Integration-1.4.0.modl ./
+# Test REST API
+curl http://localhost:9088/data/python3integration/api/v1/health
 ```
 
-### Next Steps for v1.5.0
-1. ✅ v1.4.0 built and ready to install
-2. ⏸️ Manual installation via Gateway web UI required
-3. ⏸️ Test Gateway functionality
-4. ⏸️ Research Designer RPC API
-5. ⏸️ Enable Designer scope
-6. ⏸️ Build and test v1.5.0
+### Next Steps for v1.7.0
+1. ✅ v1.6.0 - REST API integrated with Ignition 8.3 OpenAPI
+2. ⏸️ Research Designer RPC API patterns
+3. ⏸️ Enable Designer scope support
+4. ⏸️ Build and test v1.7.0
 
 ### Getting Help
-- Read: [STATUS_v1.4.0.md](STATUS_v1.4.0.md) for complete documentation
+- Read: [CLAUDE.md](CLAUDE.md) for complete documentation and REST API usage
 - Check: Gateway logs for module initialization
-- Test: Via Gateway Timer Scripts (not Designer yet)
+- Test: Via Gateway scripts or REST API endpoints
 
 ---
 
-**Ready to continue development!** 🚀
+**Ready for production use!** 🚀
 
-See [STATUS_v1.4.0.md](STATUS_v1.4.0.md) for complete status and next steps.
+See [CLAUDE.md](CLAUDE.md) for complete documentation including REST API usage.
