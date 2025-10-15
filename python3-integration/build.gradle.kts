@@ -40,7 +40,10 @@ ignitionModule {
 
     projectScopes.putAll(
         mapOf(
+            ":common" to "G",
             ":gateway" to "G"
+            // Designer scope temporarily disabled until RPC API is verified
+            // ":designer" to "D"
         )
     )
 
@@ -51,6 +54,8 @@ ignitionModule {
     hooks.putAll(
         mapOf(
             "com.inductiveautomation.ignition.examples.python3.gateway.GatewayHook" to "G"
+            // Designer hook temporarily disabled
+            // "com.inductiveautomation.ignition.examples.python3.designer.DesignerHook" to "D"
         )
     )
 

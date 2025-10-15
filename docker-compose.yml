@@ -2,7 +2,9 @@ version: '3.8'
 
 services:
   ignition:
-    image: inductiveautomation/ignition:8.3.0
+    build:
+      context: .
+      dockerfile: Dockerfile.test
     container_name: ignition-python3-test
     ports:
       - "9088:8088"  # Gateway web interface
@@ -15,13 +17,14 @@ services:
       - GATEWAY_ADMIN_USERNAME=admin
       - GATEWAY_ADMIN_PASSWORD=password
       - IGNITION_EDITION=standard
-      # Allow unsigned modules for testing
-      - JAVA_OPTS=-Dignition.allowunsignedmodules=true
+      # Allow unsigned modules and enable Python 3 auto-download
+      - JAVA_OPTS=-Dignition.allowunsignedmodules=true -Dignition.python3.autodownload=false -Dignition.python3.poolsize=3
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8088/StatusPing"]
       interval: 10s
       timeout: 5s
       retries: 30
+    restart: unless-stopped
 
 volumes:
   ignition-data:

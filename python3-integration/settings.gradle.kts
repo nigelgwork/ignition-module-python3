@@ -25,4 +25,7 @@ enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 rootProject.name = "python3-integration"
 
+include(":common")
 include(":gateway")
+// Designer scope temporarily disabled until RPC API is verified
+// include(":designer")

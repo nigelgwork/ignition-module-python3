@@ -1,5 +1,6 @@
 package com.inductiveautomation.ignition.examples.python3.gateway;
 
+import com.inductiveautomation.ignition.examples.python3.Python3RpcFunctions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,9 +12,9 @@ import java.util.Map;
 /**
  * Gateway implementation of Python 3 scripting functions.
  * Executes Python code directly via the process pool.
- * Public methods are automatically exposed as scripting functions.
+ * Also implements RPC interface so Designer/Client can call these functions remotely.
  */
-public class Python3ScriptModule {
+public class Python3ScriptModule implements Python3RpcFunctions {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Python3ScriptModule.class);
     private final GatewayHook gatewayHook;
@@ -44,7 +45,7 @@ public class Python3ScriptModule {
      * @param code Python code to execute
      * @return Result of execution
      */
-    public Object exec(String code) {
+    public Object exec(String code) throws Exception {
         return exec(code, Collections.emptyMap());
     }
 
@@ -55,7 +56,8 @@ public class Python3ScriptModule {
      * @param variables Dictionary of variables to pass to Python
      * @return Result of execution
      */
-    public Object exec(String code, Map<String, Object> variables) {
+    @Override
+    public Object exec(String code, Map<String, Object> variables) throws Exception {
         LOGGER.debug("exec() called with code length: {}", code != null ? code.length() : 0);
 
         try {
@@ -93,7 +95,7 @@ public class Python3ScriptModule {
      * @param expression Python expression to evaluate
      * @return Result of expression
      */
-    public Object eval(String expression) {
+    public Object eval(String expression) throws Exception {
         return eval(expression, Collections.emptyMap());
     }
 
@@ -104,7 +106,8 @@ public class Python3ScriptModule {
      * @param variables  Dictionary of variables to pass to Python
      * @return Result of expression
      */
-    public Object eval(String expression, Map<String, Object> variables) {
+    @Override
+    public Object eval(String expression, Map<String, Object> variables) throws Exception {
         LOGGER.debug("eval() called with expression: {}", expression);
 
         try {
@@ -144,7 +147,8 @@ public class Python3ScriptModule {
      * @param args         List of positional arguments
      * @return Result of function call
      */
-    public Object callModule(String moduleName, String functionName, List<Object> args) {
+    @Override
+    public Object callModule(String moduleName, String functionName, List<Object> args) throws Exception {
         return callModule(moduleName, functionName, args, Collections.emptyMap());
     }
 
@@ -199,6 +203,7 @@ public class Python3ScriptModule {
      *
      * @return true if Python 3 is available
      */
+    @Override
     public boolean isAvailable() {
         Python3ProcessPool pool = getProcessPool();
         boolean available = pool != null && !pool.isShutdown();
@@ -211,6 +216,7 @@ public class Python3ScriptModule {
      *
      * @return Dictionary with version information
      */
+    @Override
     public Map<String, Object> getVersion() {
         LOGGER.debug("getVersion() called");
 
@@ -254,6 +260,7 @@ public class Python3ScriptModule {
      *
      * @return Dictionary with pool statistics
      */
+    @Override
     public Map<String, Object> getPoolStats() {
         LOGGER.debug("getPoolStats() called");
 
@@ -284,7 +291,8 @@ public class Python3ScriptModule {
      *
      * @return Example result
      */
-    public String example() {
+    @Override
+    public String example() throws Exception {
         LOGGER.info("example() called - running test");
 
         try {
@@ -306,6 +314,7 @@ public class Python3ScriptModule {
      *
      * @return Dictionary with distribution information
      */
+    @Override
     public Map<String, Object> getDistributionInfo() {
         LOGGER.debug("getDistributionInfo() called");
 

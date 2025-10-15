@@ -104,6 +104,19 @@ public class GatewayHook extends AbstractGatewayModuleHook {
                 new PropertiesFileDocProvider()
         );
 
+        // TODO: Re-enable RPC registration once Designer scope is added
+        // Register RPC implementation for Designer/Client access
+        // try {
+        //     gatewayContext.getRPCManager().registerHandler(
+        //             Constants.MODULE_ID,
+        //             Python3RpcFunctions.class,
+        //             scriptModule
+        //     );
+        //     LOGGER.info("RPC handler registered for Designer/Client access");
+        // } catch (Exception e) {
+        //     LOGGER.error("Failed to register RPC handler", e);
+        // }
+
         LOGGER.info("Python 3 scripting functions registered (pool will initialize during startup)");
     }
 

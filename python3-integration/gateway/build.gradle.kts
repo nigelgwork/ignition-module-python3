@@ -9,6 +9,9 @@ java {
 }
 
 dependencies {
+    // Common scope dependency
+    api(projects.common)
+
     // SDK dependencies (provided by Ignition)
     compileOnly(libs.ignition.common)
     compileOnly(libs.ignition.gateway.api)
