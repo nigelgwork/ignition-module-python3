@@ -15,6 +15,8 @@ dependencies {
     // SDK dependencies (provided by Ignition)
     compileOnly(libs.ignition.common)
     compileOnly(libs.ignition.gateway.api)
+    compileOnly(libs.ignition.perspective.gateway)
+    compileOnly(libs.ignition.perspective.common)
     compileOnly("com.google.code.gson:gson:2.10.1")
     compileOnly("javax.servlet:javax.servlet-api:4.0.1")
 

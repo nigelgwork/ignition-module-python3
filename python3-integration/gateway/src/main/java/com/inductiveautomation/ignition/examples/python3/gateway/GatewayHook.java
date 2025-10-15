@@ -3,12 +3,14 @@ package com.inductiveautomation.ignition.examples.python3.gateway;
 import com.inductiveautomation.ignition.common.licensing.LicenseState;
 import com.inductiveautomation.ignition.common.script.ScriptManager;
 import com.inductiveautomation.ignition.common.script.hints.PropertiesFileDocProvider;
+import com.inductiveautomation.ignition.gateway.dataroutes.RouteGroup;
 import com.inductiveautomation.ignition.gateway.model.AbstractGatewayModuleHook;
 import com.inductiveautomation.ignition.gateway.model.GatewayContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.Optional;
 
 /**
  * Gateway hook for Python 3 Integration module.
@@ -104,6 +106,10 @@ public class GatewayHook extends AbstractGatewayModuleHook {
                 new PropertiesFileDocProvider()
         );
 
+        // Initialize REST API endpoints with script module
+        Python3RestEndpoints.initialize(scriptModule);
+        LOGGER.info("REST API endpoints initialized");
+
         // TODO: Re-enable RPC registration once Designer scope is added
         // Register RPC implementation for Designer/Client access
         // try {
@@ -118,6 +124,19 @@ public class GatewayHook extends AbstractGatewayModuleHook {
         // }
 
         LOGGER.info("Python 3 scripting functions registered (pool will initialize during startup)");
+    }
+
+    @Override
+    public void mountRouteHandlers(RouteGroup routes) {
+        // Mount REST API endpoints at /data/python3integration/api/v1/* (Ignition 8.3 OpenAPI compliant)
+        Python3RestEndpoints.mountRoutes(routes);
+        LOGGER.info("Python3 REST API routes mounted at /data/python3integration/api/v1/");
+    }
+
+    @Override
+    public Optional<String> getMountPathAlias() {
+        // Use shorter alias for resources: /res/python3integration/ instead of full module ID
+        return Optional.of("python3integration");
     }
 
     /**
