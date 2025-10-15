@@ -39,9 +39,9 @@ Before testing, ensure:
 
 **Expected Details:**
 - **Name**: Python 3 Integration
-- **Module ID**: com.gaskony.python3integration
+- **Module ID**: com.inductiveautomation.ignition.examples.python3
 - **Vendor**: Gaskony
-- **Version**: 1.0.0
+- **Version**: 1.6.1
 - **Status**: Running
 
 ### Check Gateway Logs

@@ -182,4 +182,15 @@ public class GatewayHook extends AbstractGatewayModuleHook {
     public boolean isPython3Available() {
         return processPool != null && !processPool.isShutdown();
     }
+
+    /**
+     * This module is free - no license required.
+     * Overrides the default behavior to ensure the module shows as "Free" not "Trial".
+     *
+     * @return true indicating this is a free module
+     */
+    @Override
+    public boolean isFreeModule() {
+        return true;
+    }
 }

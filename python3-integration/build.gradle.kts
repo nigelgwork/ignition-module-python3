@@ -26,7 +26,9 @@ ignitionModule {
     fileName.set("Python3Integration-${project.version}")
 
     name.set("Python 3 Integration")
-    id.set("com.gaskony.python3integration")
+    // IMPORTANT: Module ID must remain consistent for upgrade compatibility
+    // Changed from com.gaskony.python3integration back to original to allow upgrades
+    id.set("com.inductiveautomation.ignition.examples.python3")
     moduleVersion.set(project.version.toString())
 
     // Include vendor name in description
