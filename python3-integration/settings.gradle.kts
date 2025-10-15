@@ -25,5 +25,4 @@ enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 rootProject.name = "python3-integration"
 
-include(":common")
 include(":gateway")

@@ -21,6 +21,7 @@ public class GatewayHook extends AbstractGatewayModuleHook {
     private GatewayContext gatewayContext;
     private Python3ProcessPool processPool;
     private PythonDistributionManager distributionManager;
+    private Python3ScriptModule scriptModule;
 
     // Configuration
     private int poolSize = 3; // Default pool size
@@ -39,6 +40,9 @@ public class GatewayHook extends AbstractGatewayModuleHook {
                 context.getSystemManager().getDataDir().toPath().resolve("python3-integration"),
                 autoDownload
         );
+
+        // TODO: Add test servlet registration once servlet API is figured out
+        LOGGER.info("Test servlet not yet implemented - will test via Designer Script Console");
     }
 
     @Override
@@ -55,6 +59,7 @@ public class GatewayHook extends AbstractGatewayModuleHook {
             processPool = new Python3ProcessPool(pythonPath, poolSize);
 
             LOGGER.info("Python 3 Integration module started successfully");
+            LOGGER.info("Script module will now have access to initialized process pool");
 
         } catch (IOException e) {
             LOGGER.error("Failed to initialize Python 3 process pool", e);
@@ -88,16 +93,9 @@ public class GatewayHook extends AbstractGatewayModuleHook {
 
         LOGGER.info("Registering Python 3 scripting functions");
 
-        // Create script module
-        Python3ScriptModule scriptModule;
-
-        if (processPool != null) {
-            scriptModule = new Python3ScriptModule(processPool, distributionManager);
-        } else {
-            // Create dummy module that will report Python 3 as unavailable
-            LOGGER.warn("Process pool not initialized, Python 3 functions will be unavailable");
-            scriptModule = new Python3ScriptModule(null, distributionManager);
-        }
+        // Create script module with lazy access to process pool
+        // The module will become available once startup() initializes the pool
+        scriptModule = new Python3ScriptModule(this);
 
         // Register under system.python3
         manager.addScriptModule(
@@ -106,7 +104,7 @@ public class GatewayHook extends AbstractGatewayModuleHook {
                 new PropertiesFileDocProvider()
         );
 
-        LOGGER.info("Python 3 scripting functions registered successfully");
+        LOGGER.info("Python 3 scripting functions registered (pool will initialize during startup)");
     }
 
     /**

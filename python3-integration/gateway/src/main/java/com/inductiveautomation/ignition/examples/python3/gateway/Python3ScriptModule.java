@@ -1,6 +1,5 @@
 package com.inductiveautomation.ignition.examples.python3.gateway;
 
-import com.inductiveautomation.ignition.common.script.hints.ScriptArg;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,31 +9,42 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Scripting functions for Python 3 integration.
- * These functions are exposed to Ignition scripts under system.python3.*
+ * Gateway implementation of Python 3 scripting functions.
+ * Executes Python code directly via the process pool.
+ * Public methods are automatically exposed as scripting functions.
  */
 public class Python3ScriptModule {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Python3ScriptModule.class);
-    private final Python3ProcessPool processPool;
-    private final PythonDistributionManager distributionManager;
+    private final GatewayHook gatewayHook;
 
-    public Python3ScriptModule(Python3ProcessPool processPool, PythonDistributionManager distributionManager) {
-        this.processPool = processPool;
-        this.distributionManager = distributionManager;
+    public Python3ScriptModule(GatewayHook gatewayHook) {
+        this.gatewayHook = gatewayHook;
+        LOGGER.info("Python3ScriptModule created");
+    }
+
+    /**
+     * Lazily get the process pool from the gateway hook.
+     * This allows the script module to be registered before the pool is initialized.
+     */
+    private Python3ProcessPool getProcessPool() {
+        return gatewayHook.getProcessPool();
+    }
+
+    /**
+     * Lazily get the distribution manager from the gateway hook.
+     */
+    private PythonDistributionManager getDistributionManager() {
+        return gatewayHook.getDistributionManager();
     }
 
     /**
      * Execute Python 3 code and return the result.
-     * Code should set a 'result' variable or return will be all local variables.
      *
      * @param code Python code to execute
      * @return Result of execution
      */
-    
-    public Object exec(
-            @ScriptArg("code") String code) {
-
+    public Object exec(String code) {
         return exec(code, Collections.emptyMap());
     }
 
@@ -45,19 +55,22 @@ public class Python3ScriptModule {
      * @param variables Dictionary of variables to pass to Python
      * @return Result of execution
      */
-    
-    public Object exec(
-            @ScriptArg("code") String code,
-            @ScriptArg("variables") Map<String, Object> variables) {
+    public Object exec(String code, Map<String, Object> variables) {
+        LOGGER.debug("exec() called with code length: {}", code != null ? code.length() : 0);
 
         try {
-            if (variables == null) {
-                variables = Collections.emptyMap();
+            Python3ProcessPool pool = getProcessPool();
+            if (pool == null) {
+                String errorMsg = "Python 3 process pool is not initialized. Check Gateway logs for initialization errors.";
+                LOGGER.error(errorMsg);
+                throw new RuntimeException(errorMsg);
             }
 
-            Python3Result result = processPool.execute(code, variables);
+            LOGGER.debug("Executing Python code via process pool");
+            Python3Result result = pool.execute(code, variables != null ? variables : Collections.emptyMap());
 
             if (result.isSuccess()) {
+                LOGGER.debug("Python code executed successfully");
                 return result.getResult();
             } else {
                 String errorMsg = "Python error: " + result.getError();
@@ -80,10 +93,7 @@ public class Python3ScriptModule {
      * @param expression Python expression to evaluate
      * @return Result of expression
      */
-    
-    public Object eval(
-            @ScriptArg("expression") String expression) {
-
+    public Object eval(String expression) {
         return eval(expression, Collections.emptyMap());
     }
 
@@ -94,19 +104,22 @@ public class Python3ScriptModule {
      * @param variables  Dictionary of variables to pass to Python
      * @return Result of expression
      */
-    
-    public Object eval(
-            @ScriptArg("expression") String expression,
-            @ScriptArg("variables") Map<String, Object> variables) {
+    public Object eval(String expression, Map<String, Object> variables) {
+        LOGGER.debug("eval() called with expression: {}", expression);
 
         try {
-            if (variables == null) {
-                variables = Collections.emptyMap();
+            Python3ProcessPool pool = getProcessPool();
+            if (pool == null) {
+                String errorMsg = "Python 3 process pool is not initialized. Check Gateway logs for initialization errors.";
+                LOGGER.error(errorMsg);
+                throw new RuntimeException(errorMsg);
             }
 
-            Python3Result result = processPool.evaluate(expression, variables);
+            LOGGER.debug("Evaluating Python expression via process pool");
+            Python3Result result = pool.evaluate(expression, variables != null ? variables : Collections.emptyMap());
 
             if (result.isSuccess()) {
+                LOGGER.debug("Python expression evaluated successfully");
                 return result.getResult();
             } else {
                 String errorMsg = "Python error: " + result.getError();
@@ -131,12 +144,7 @@ public class Python3ScriptModule {
      * @param args         List of positional arguments
      * @return Result of function call
      */
-    
-    public Object callModule(
-            @ScriptArg("moduleName") String moduleName,
-            @ScriptArg("functionName") String functionName,
-            @ScriptArg("args") List<Object> args) {
-
+    public Object callModule(String moduleName, String functionName, List<Object> args) {
         return callModule(moduleName, functionName, args, Collections.emptyMap());
     }
 
@@ -149,24 +157,27 @@ public class Python3ScriptModule {
      * @param kwargs       Dictionary of keyword arguments
      * @return Result of function call
      */
-    
-    public Object callModule(
-            @ScriptArg("moduleName") String moduleName,
-            @ScriptArg("functionName") String functionName,
-            @ScriptArg("args") List<Object> args,
-            @ScriptArg("kwargs") Map<String, Object> kwargs) {
+    public Object callModule(String moduleName, String functionName, List<Object> args, Map<String, Object> kwargs) {
+        LOGGER.debug("callModule() called: {}.{}()", moduleName, functionName);
 
         try {
-            if (args == null) {
-                args = Collections.emptyList();
-            }
-            if (kwargs == null) {
-                kwargs = Collections.emptyMap();
+            Python3ProcessPool pool = getProcessPool();
+            if (pool == null) {
+                String errorMsg = "Python 3 process pool is not initialized. Check Gateway logs for initialization errors.";
+                LOGGER.error(errorMsg);
+                throw new RuntimeException(errorMsg);
             }
 
-            Python3Result result = processPool.callModule(moduleName, functionName, args, kwargs);
+            LOGGER.debug("Calling Python module function via process pool");
+            Python3Result result = pool.callModule(
+                moduleName,
+                functionName,
+                args != null ? args : Collections.emptyList(),
+                kwargs != null ? kwargs : Collections.emptyMap()
+            );
 
             if (result.isSuccess()) {
+                LOGGER.debug("Python module function called successfully");
                 return result.getResult();
             } else {
                 String errorMsg = "Python error: " + result.getError();
@@ -188,9 +199,11 @@ public class Python3ScriptModule {
      *
      * @return true if Python 3 is available
      */
-    
     public boolean isAvailable() {
-        return processPool != null && !processPool.isShutdown();
+        Python3ProcessPool pool = getProcessPool();
+        boolean available = pool != null && !pool.isShutdown();
+        LOGGER.debug("isAvailable() = {}", available);
+        return available;
     }
 
     /**
@@ -198,20 +211,32 @@ public class Python3ScriptModule {
      *
      * @return Dictionary with version information
      */
-    
     public Map<String, Object> getVersion() {
+        LOGGER.debug("getVersion() called");
+
         try {
-            Python3Result result = processPool.execute("import sys; result = sys.version", Collections.emptyMap());
+            Python3ProcessPool pool = getProcessPool();
+            if (pool == null) {
+                Map<String, Object> versionInfo = new HashMap<>();
+                versionInfo.put("available", false);
+                versionInfo.put("error", "Python 3 process pool is not initialized");
+                LOGGER.warn("getVersion() - pool not initialized");
+                return versionInfo;
+            }
+
+            Python3Result result = pool.execute("import sys; result = sys.version", Collections.emptyMap());
 
             if (result.isSuccess()) {
                 Map<String, Object> versionInfo = new HashMap<>();
                 versionInfo.put("version", result.getResult());
                 versionInfo.put("available", true);
+                LOGGER.debug("getVersion() successful: {}", result.getResult());
                 return versionInfo;
             } else {
                 Map<String, Object> versionInfo = new HashMap<>();
                 versionInfo.put("available", false);
                 versionInfo.put("error", result.getError());
+                LOGGER.error("getVersion() failed: {}", result.getError());
                 return versionInfo;
             }
 
@@ -229,15 +254,27 @@ public class Python3ScriptModule {
      *
      * @return Dictionary with pool statistics
      */
-    
     public Map<String, Object> getPoolStats() {
-        Python3ProcessPool.PoolStats stats = processPool.getStats();
+        LOGGER.debug("getPoolStats() called");
+
+        Python3ProcessPool pool = getProcessPool();
+        if (pool == null) {
+            Map<String, Object> statsMap = new HashMap<>();
+            statsMap.put("error", "Python 3 process pool is not initialized");
+            LOGGER.warn("getPoolStats() - pool not initialized");
+            return statsMap;
+        }
+
+        Python3ProcessPool.PoolStats stats = pool.getStats();
 
         Map<String, Object> statsMap = new HashMap<>();
         statsMap.put("totalSize", stats.totalSize);
         statsMap.put("available", stats.available);
         statsMap.put("inUse", stats.inUse);
         statsMap.put("healthy", stats.healthy);
+
+        LOGGER.debug("getPoolStats() - total: {}, available: {}, inUse: {}, healthy: {}",
+            stats.totalSize, stats.available, stats.inUse, stats.healthy);
 
         return statsMap;
     }
@@ -247,15 +284,20 @@ public class Python3ScriptModule {
      *
      * @return Example result
      */
-    
     public String example() {
+        LOGGER.info("example() called - running test");
+
         try {
             // Test basic math
             Object result = eval("2 ** 100");
-            return "Python 3 is working! 2^100 = " + result;
+            String successMsg = "Python 3 is working! 2^100 = " + result;
+            LOGGER.info("example() successful");
+            return successMsg;
 
         } catch (Exception e) {
-            return "Python 3 error: " + e.getMessage();
+            String errorMsg = "Python 3 error: " + e.getMessage();
+            LOGGER.error("example() failed: {}", errorMsg);
+            return errorMsg;
         }
     }
 
@@ -264,14 +306,19 @@ public class Python3ScriptModule {
      *
      * @return Dictionary with distribution information
      */
-    
     public Map<String, Object> getDistributionInfo() {
-        if (distributionManager != null) {
-            return distributionManager.getStatus();
+        LOGGER.debug("getDistributionInfo() called");
+
+        PythonDistributionManager manager = getDistributionManager();
+        if (manager != null) {
+            Map<String, Object> info = manager.getStatus();
+            LOGGER.debug("getDistributionInfo() returned status");
+            return info;
         } else {
             Map<String, Object> info = new HashMap<>();
             info.put("available", false);
             info.put("error", "Distribution manager not initialized");
+            LOGGER.warn("getDistributionInfo() - manager not initialized");
             return info;
         }
     }
