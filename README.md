@@ -10,21 +10,49 @@ A production-ready Ignition module for Python 3 integration with comprehensive C
 ## Module Information
 
 - **Module ID**: `com.gaskony.python3integration`
-- **Current Version**: 1.0.0
+- **Current Version**: 1.4.0
 - **Vendor**: Gaskony
 - **Required Ignition**: 8.3.0+
 - **Required Framework**: 8+
 
-## Project Status: 🚀 Production Ready
+## Project Status: ⚙️ Active Development
+
+**Latest Release:** v1.4.0 - Gateway-only with RPC infrastructure
+**Next Release:** v1.5.0 - Designer scope support (in progress)
 
 This is a **fully independent** module project with enterprise-grade CI/CD, security scanning, and comprehensive documentation.
 
 ## Features
 
 - **Python 3 Integration**: Enables Python 3 scripting in Ignition via subprocess process pool
-- **Gateway Scope**: Server-side Python 3 execution with JSON-based communication
-- **Production Ready**: Comprehensive CI/CD, security scanning, and automated releases
+- **Gateway Scope**: Server-side Python 3 execution with JSON-based communication (✅ Working in v1.4.0)
+- **Process Pool**: 3 concurrent Python executors with health monitoring
+- **RPC Infrastructure**: Ready for Designer/Client support (⏸️ Pending v1.5.0)
 - **Free Module**: No licensing restrictions
+
+## What Works in v1.4.0
+
+✅ **Gateway-Side Functions:**
+- `system.python3.exec(code, variables)` - Execute Python code blocks
+- `system.python3.eval(expression, variables)` - Evaluate Python expressions
+- `system.python3.callModule(module, function, args)` - Call Python module functions
+- `system.python3.isAvailable()` - Check Python availability
+- `system.python3.getVersion()` - Get Python version info
+- `system.python3.getPoolStats()` - Get process pool statistics
+- `system.python3.example()` - Run test example
+
+✅ **Use Cases:**
+- Gateway Timer Scripts
+- Gateway Event Scripts
+- Tag Event Scripts
+- WebDev scripting endpoints
+
+❌ **Not Yet Working:**
+- Designer Script Console (v1.5.0)
+- Vision Client scripts (future)
+- Perspective session scripts (future)
+
+**See:** [STATUS_v1.4.0.md](STATUS_v1.4.0.md) for complete status and next steps.
 
 ## Repository Contents
 
@@ -49,13 +77,41 @@ Define your Python 3 integration goals here:
 
 ## Installation
 
-### From GitHub Releases
+### From Built Module (v1.4.0)
 
-1. Download the latest `.modl` file from [Releases](https://github.com/nigelgwork/ignition-module-python3/releases)
-2. Navigate to your Ignition Gateway: `Config → System → Modules`
-3. Click "Install or Upgrade a Module"
-4. Upload the `Python3Integration-X.X.X.unsigned.modl` file
-5. Restart the Gateway when prompted
+**Module File:** `python3-integration/build/Python3Integration-1.4.0.modl`
+
+1. Navigate to your Ignition Gateway: http://localhost:9088
+2. Log in with admin credentials
+3. Go to: **Config → System → Modules**
+4. Click **"Install or Upgrade a Module"**
+5. Select file: `Python3Integration-1.4.0.modl`
+6. Click **Install**
+7. Wait for Gateway to restart (~20 seconds)
+
+### Verification
+
+Test in Gateway Timer Script:
+```python
+# Check availability
+available = system.python3.isAvailable()
+print("Python 3 Available:", available)
+
+# Run example
+result = system.python3.example()
+print(result)
+
+# Get pool stats
+stats = system.python3.getPoolStats()
+print("Pool Stats:", stats)
+```
+
+Expected output:
+```
+Python 3 Available: True
+Python 3 is working! 2^100 = 1.26765060023e+30
+Pool Stats: {totalSize: 3, healthy: 3, available: 3, inUse: 0}
+```
 
 ### From Source
 
@@ -198,9 +254,16 @@ Version is controlled in `python3-integration/version.properties`:
 
 ```properties
 version.major=1
-version.minor=0
+version.minor=4
 version.patch=0
 ```
+
+**Version History:**
+- v1.4.0 (Current) - Gateway-only with RPC infrastructure
+- v1.3.0 - Simplified Gateway-only architecture
+- v1.2.x - Multi-scope with RPC (had Designer lockup issues)
+- v1.1.x - Initial releases
+- v1.0.0 - First version
 
 Update these values to change the module version. The build automatically includes the version in the filename.
 
@@ -356,6 +419,44 @@ This is a **completely standalone repository** with everything needed for Igniti
 
 ---
 
-**Ready to start building!** 🚀
+## Quick Reference for v1.4.0
 
-Define your goals and begin with the SDK guides in `../docs/knowledge-base/`.
+### Important Files
+- **Status Document:** [STATUS_v1.4.0.md](STATUS_v1.4.0.md) - Complete status and next steps
+- **Testing Guide:** [MANUAL_TESTING_GUIDE.md](MANUAL_TESTING_GUIDE.md) - Step-by-step testing
+- **Test Results:** [TEST_RESULTS_v1.3.0.md](TEST_RESULTS_v1.3.0.md) - v1.3.0 validation
+- **Module File:** `python3-integration/build/Python3Integration-1.4.0.modl`
+
+### Quick Commands
+```bash
+# Build module
+cd python3-integration && ./gradlew clean build
+
+# Check Docker Gateway
+docker ps --filter "name=ignition"
+
+# View Gateway logs
+docker logs claude-ignition-test 2>&1 | grep -i python | tail -20
+
+# Copy module out
+docker cp claude-ignition-test:/usr/local/bin/ignition/user-lib/modules/Python3Integration-1.4.0.modl ./
+```
+
+### Next Steps for v1.5.0
+1. ✅ v1.4.0 built and ready to install
+2. ⏸️ Manual installation via Gateway web UI required
+3. ⏸️ Test Gateway functionality
+4. ⏸️ Research Designer RPC API
+5. ⏸️ Enable Designer scope
+6. ⏸️ Build and test v1.5.0
+
+### Getting Help
+- Read: [STATUS_v1.4.0.md](STATUS_v1.4.0.md) for complete documentation
+- Check: Gateway logs for module initialization
+- Test: Via Gateway Timer Scripts (not Designer yet)
+
+---
+
+**Ready to continue development!** 🚀
+
+See [STATUS_v1.4.0.md](STATUS_v1.4.0.md) for complete status and next steps.
