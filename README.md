@@ -453,11 +453,25 @@ docker logs claude-ignition-test 2>&1 | grep -i python | tail -20
 curl http://localhost:9088/data/python3integration/api/v1/health
 ```
 
-### Next Steps for v1.7.0
-1. ✅ v1.6.0 - REST API integrated with Ignition 8.3 OpenAPI
-2. ⏸️ Research Designer RPC API patterns
-3. ⏸️ Enable Designer scope support
-4. ⏸️ Build and test v1.7.0
+### Python 3 IDE Plan (v1.7.0+)
+
+**NEW**: Comprehensive plan for a Python 3 IDE feature in Designer!
+
+See: **[PYTHON_IDE_PLAN.md](python3-integration/docs/PYTHON_IDE_PLAN.md)**
+
+**Vision**: IDE-type function in Designer where developers can:
+- Write Python 3 code with syntax highlighting
+- Execute code on Gateway (not Designer-side)
+- See real-time performance diagnostics
+- Save and organize Python scripts
+
+**Implementation Phases**:
+1. **v1.7.0** (MVP) - Basic Designer UI with code editor, run button, output panel
+2. **v1.7.1** - Enhanced diagnostics with real-time metrics
+3. **v1.7.2** - Script management (save, load, organize)
+4. **v1.8.0** - Advanced features (auto-completion, profiling, history)
+
+**Timeline**: 4-6 weeks total (2-3 weeks for MVP)
 
 ### Getting Help
 - Read: [CLAUDE.md](CLAUDE.md) for complete documentation and REST API usage

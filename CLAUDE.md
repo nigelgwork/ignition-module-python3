@@ -427,8 +427,58 @@ InputStream is = getClass().getResourceAsStream("/python_bridge.py");
 
 - **Active module code**: `python3-integration/`
 - **Architecture deep-dive**: `python3-integration/ARCHITECTURE.md`
+- **Python IDE Plan**: `python3-integration/docs/PYTHON_IDE_PLAN.md` ⭐ NEW
 - **SDK documentation**: `docs/knowledge-base/` (read 01, 02, 07 for this module type)
 - **SDK examples**: `examples/scripting-function/` (most similar pattern)
+
+## Python 3 IDE Plan (v1.7.0+ Roadmap)
+
+**IMPORTANT**: There is a comprehensive plan for a Python 3 IDE feature in Designer.
+
+### Vision
+
+Create an **IDE-type function in Ignition Designer** where developers can:
+- Write Python 3 code with syntax highlighting
+- Execute code on Gateway (not Designer-side)
+- See real-time performance diagnostics
+- Save and organize Python scripts
+- Get immediate feedback with results and errors
+
+### Plan Document Location
+
+**Full Plan**: `python3-integration/docs/PYTHON_IDE_PLAN.md`
+
+This document contains:
+- **Executive Summary**: IDE vision and use cases
+- **Technical Architecture**: UI components, communication layers
+- **Implementation Phases**: v1.7.0 through v1.8.0
+- **Timeline Estimates**: 4-6 weeks total (2-3 weeks for MVP)
+- **Success Criteria**: Clear metrics for each phase
+- **Risk Mitigation**: Strategies for known issues (Designer lockups, RPC stability)
+
+### Implementation Phases
+
+1. **Phase 1 (v1.7.0)**: Basic Designer UI with code editor, run button, output panel
+2. **Phase 2 (v1.7.1)**: Enhanced diagnostics with real-time metrics
+3. **Phase 3 (v1.7.2)**: Script management (save, load, organize)
+4. **Phase 4 (v1.8.0)**: Advanced features (auto-completion, profiling, history)
+
+### Key Features
+
+- **Code Editor**: ExtensionFunctionPanel with Python syntax highlighting
+- **Gateway Execution**: All code runs on Gateway via RPC/REST API
+- **Diagnostics Panel**: Execution time, pool status, Python version, memory usage
+- **Script Library**: Save, load, and organize Python scripts in folders
+- **Error Feedback**: Clear tracebacks with line number highlighting
+
+### When to Reference This Plan
+
+- Before starting v1.7.0 development
+- When user asks about "Designer IDE" or "Python editor"
+- When planning Designer scope features
+- When discussing roadmap or future features
+
+**DO NOT start implementation without user approval of the plan.**
 
 ## REST API Endpoints (v1.6.0+)
 
