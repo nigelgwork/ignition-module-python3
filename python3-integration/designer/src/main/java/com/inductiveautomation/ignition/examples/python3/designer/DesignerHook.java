@@ -31,17 +31,6 @@ public class DesignerHook extends AbstractDesignerModuleHook {
     private JFrame ideFrame;
 
     /**
-     * Called during Designer module setup phase.
-     *
-     * @param context the Designer context
-     * @param activationState the license state
-     */
-    public void setup(DesignerContext context, LicenseState activationState) {
-        this.context = context;
-        LOGGER.info("Python 3 Integration Designer module setup (v1.7.0 - REST API)");
-    }
-
-    /**
      * Called when the Designer module is starting up.
      *
      * @param context the Designer context
@@ -50,6 +39,9 @@ public class DesignerHook extends AbstractDesignerModuleHook {
     @Override
     public void startup(DesignerContext context, LicenseState activationState) throws Exception {
         super.startup(context, activationState);
+
+        // CRITICAL: Store context immediately at startup
+        this.context = context;
 
         LOGGER.info("Python 3 Integration Designer module starting up");
 
