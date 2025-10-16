@@ -192,7 +192,7 @@ public class Python3IDE_v1_9 extends JPanel {
         scriptTree.setShowsRootHandles(true);
         scriptTree.setCellRenderer(new ScriptTreeCellRenderer());
         scriptTree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
-        scriptTree.setRowHeight(22);  // Increase row height for better readability
+        scriptTree.setRowHeight(26);  // Increase row height for better readability with 14pt font
         scriptTree.setDragEnabled(true);
         scriptTree.setDropMode(DropMode.ON_OR_INSERT);
         scriptTree.setTransferHandler(new ScriptTreeTransferHandler());
@@ -726,6 +726,41 @@ public class Python3IDE_v1_9 extends JPanel {
     // Script Management Methods
 
     /**
+     * Validates a name for illegal characters.
+     * Script and folder names cannot contain: / \ : * ? " < > |
+     *
+     * @param name the name to validate
+     * @return true if valid, false if contains illegal characters
+     */
+    private boolean isValidName(String name) {
+        if (name == null || name.trim().isEmpty()) {
+            return false;
+        }
+        // Check for illegal characters
+        String illegalChars = "/\\:*?\"<>|";
+        for (char c : illegalChars.toCharArray()) {
+            if (name.indexOf(c) >= 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Shows an error dialog for invalid name.
+     */
+    private void showInvalidNameError(String name) {
+        JOptionPane.showMessageDialog(
+                this,
+                "Invalid name: '" + name + "'\n\n" +
+                "Names cannot contain the following characters:\n" +
+                "/ \\ : * ? \" < > |",
+                "Invalid Name",
+                JOptionPane.ERROR_MESSAGE
+        );
+    }
+
+    /**
      * Refreshes the script tree from the Gateway.
      */
     private void refreshScriptTree() {
@@ -1041,6 +1076,12 @@ public class Python3IDE_v1_9 extends JPanel {
             return;
         }
 
+        // Validate script name
+        if (!isValidName(name)) {
+            showInvalidNameError(name);
+            return;
+        }
+
         saveScript(name, codeEditor.getText(), description, author, folder, version);
     }
 
@@ -1100,13 +1141,23 @@ public class Python3IDE_v1_9 extends JPanel {
                 JOptionPane.PLAIN_MESSAGE
         );
 
-        if (folderName != null && !folderName.trim().isEmpty()) {
-            // Create folder in tree
-            ScriptTreeNode newFolder = new ScriptTreeNode(folderName.trim());
-            rootNode.add(newFolder);
-            treeModel.reload();
-            scriptTree.expandPath(new TreePath(rootNode.getPath()));
+        if (folderName == null || folderName.trim().isEmpty()) {
+            return;
         }
+
+        String trimmedName = folderName.trim();
+
+        // Validate folder name
+        if (!isValidName(trimmedName)) {
+            showInvalidNameError(trimmedName);
+            return;
+        }
+
+        // Create folder in tree
+        ScriptTreeNode newFolder = new ScriptTreeNode(trimmedName);
+        rootNode.add(newFolder);
+        treeModel.reload();
+        scriptTree.expandPath(new TreePath(rootNode.getPath()));
     }
 
     /**
@@ -1180,6 +1231,15 @@ public class Python3IDE_v1_9 extends JPanel {
             JMenuItem newFolderItem = new JMenuItem("New Subfolder");
             newFolderItem.addActionListener(ev -> createNewFolder());
             menu.add(newFolderItem);
+
+            // Only allow renaming non-root folders
+            if (scriptNode != rootNode) {
+                menu.addSeparator();
+
+                JMenuItem renameFolderItem = new JMenuItem("Rename...");
+                renameFolderItem.addActionListener(ev -> renameFolder(scriptNode));
+                menu.add(renameFolderItem);
+            }
         }
 
         menu.show(scriptTree, e.getX(), e.getY());
@@ -1250,6 +1310,12 @@ public class Python3IDE_v1_9 extends JPanel {
 
         final String finalNewName = newName.trim();
 
+        // Validate new name
+        if (!isValidName(finalNewName)) {
+            showInvalidNameError(finalNewName);
+            return;
+        }
+
         if (finalNewName.equals(oldName)) {
             return;  // No change
         }
@@ -1304,6 +1370,120 @@ public class Python3IDE_v1_9 extends JPanel {
         };
 
         worker.execute();
+    }
+
+    /**
+     * Renames a folder.
+     */
+    private void renameFolder(ScriptTreeNode folderNode) {
+        String oldName = folderNode.toString();
+        String oldPath = getFolderPathForNode(folderNode);
+
+        String newName = JOptionPane.showInputDialog(
+                this,
+                "Enter new name for folder:",
+                oldName
+        );
+
+        if (newName == null || newName.trim().isEmpty()) {
+            return;  // User cancelled or entered empty name
+        }
+
+        final String finalNewName = newName.trim();
+
+        // Validate new name
+        if (!isValidName(finalNewName)) {
+            showInvalidNameError(finalNewName);
+            return;
+        }
+
+        if (finalNewName.equals(oldName)) {
+            return;  // No change
+        }
+
+        // Calculate new path
+        String parentPath = "";
+        if (folderNode.getParent() != rootNode && folderNode.getParent() != null) {
+            parentPath = getFolderPathForNode((ScriptTreeNode) folderNode.getParent());
+        }
+        final String newPath = parentPath.isEmpty() ? finalNewName : parentPath + "/" + finalNewName;
+
+        // Rename by updating all scripts in this folder (and subfolders)
+        SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
+            @Override
+            protected Void doInBackground() throws Exception {
+                // Get all scripts
+                List<ScriptMetadata> allScripts = restClient.listScripts();
+
+                // Find scripts that need to be moved
+                for (ScriptMetadata script : allScripts) {
+                    String scriptFolder = script.getFolderPath();
+                    if (scriptFolder != null) {
+                        // Check if script is in this folder or subfolder
+                        if (scriptFolder.equals(oldPath) || scriptFolder.startsWith(oldPath + "/")) {
+                            // Update the folder path
+                            String updatedPath = scriptFolder.equals(oldPath) ?
+                                    newPath :
+                                    newPath + scriptFolder.substring(oldPath.length());
+
+                            // Load full script and save with new path
+                            SavedScript fullScript = restClient.loadScript(script.getName());
+                            restClient.saveScript(
+                                    fullScript.getName(),
+                                    fullScript.getCode(),
+                                    fullScript.getDescription(),
+                                    fullScript.getAuthor(),
+                                    updatedPath,
+                                    fullScript.getVersion()
+                            );
+                        }
+                    }
+                }
+
+                return null;
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    get();
+                    setStatus("Renamed folder '" + oldName + "' to '" + finalNewName + "'", new Color(0, 128, 0));
+                    refreshScriptTree();
+                } catch (Exception e) {
+                    LOGGER.error("Failed to rename folder", e);
+                    JOptionPane.showMessageDialog(
+                            Python3IDE_v1_9.this,
+                            "Failed to rename folder: " + e.getMessage(),
+                            "Error",
+                            JOptionPane.ERROR_MESSAGE
+                    );
+                }
+            }
+        };
+
+        worker.execute();
+    }
+
+    /**
+     * Gets the full folder path for a folder node.
+     */
+    private String getFolderPathForNode(ScriptTreeNode folderNode) {
+        if (folderNode == rootNode) {
+            return "";
+        }
+
+        StringBuilder path = new StringBuilder();
+        Object[] pathArray = folderNode.getPath();
+
+        // Skip root node (index 0)
+        for (int i = 1; i < pathArray.length; i++) {
+            if (path.length() > 0) {
+                path.append("/");
+            }
+            path.append(pathArray[i].toString());
+        }
+
+        return path.toString();
     }
 
     /**
@@ -1732,9 +1912,11 @@ public class Python3IDE_v1_9 extends JPanel {
                     Object node = path.getLastPathComponent();
                     if (node instanceof ScriptTreeNode) {
                         ScriptTreeNode scriptNode = (ScriptTreeNode) node;
-                        // Only allow dragging scripts, not folders or root
+                        // Allow dragging scripts and folders (but not root)
                         if (scriptNode.isScript()) {
-                            return new StringSelection(scriptNode.getScriptMetadata().getName());
+                            return new StringSelection("SCRIPT:" + scriptNode.getScriptMetadata().getName());
+                        } else if (scriptNode.isFolder() && scriptNode != rootNode) {
+                            return new StringSelection("FOLDER:" + getFolderPathForNode(scriptNode));
                         }
                     }
                 }
@@ -1773,8 +1955,8 @@ public class Python3IDE_v1_9 extends JPanel {
             }
 
             try {
-                // Get the script name being dragged
-                String scriptName = (String) support.getTransferable().getTransferData(DataFlavor.stringFlavor);
+                // Get the data being dragged
+                String data = (String) support.getTransferable().getTransferData(DataFlavor.stringFlavor);
 
                 // Get the target folder
                 JTree.DropLocation dropLocation = (JTree.DropLocation) support.getDropLocation();
@@ -1789,14 +1971,30 @@ public class Python3IDE_v1_9 extends JPanel {
                     newFolderPath = getFolderPath(targetFolder);
                 }
 
-                // Move the script by reloading with new folder path
-                moveScript(scriptName, newFolderPath);
+                // Determine if we're moving a script or folder
+                if (data.startsWith("SCRIPT:")) {
+                    String scriptName = data.substring(7);  // Remove "SCRIPT:" prefix
+                    moveScript(scriptName, newFolderPath);
+                } else if (data.startsWith("FOLDER:")) {
+                    String folderPath = data.substring(7);  // Remove "FOLDER:" prefix
+
+                    // Prevent moving folder into itself or its own subfolder
+                    if (newFolderPath.equals(folderPath) || newFolderPath.startsWith(folderPath + "/")) {
+                        setStatus("Cannot move folder into itself", Color.ORANGE);
+                        return false;
+                    }
+
+                    moveFolder(folderPath, newFolderPath);
+                } else {
+                    // Backward compatibility - assume it's a script name without prefix
+                    moveScript(data, newFolderPath);
+                }
 
                 return true;
 
             } catch (Exception e) {
-                LOGGER.error("Failed to import script", e);
-                setStatus("Failed to move script: " + e.getMessage(), Color.RED);
+                LOGGER.error("Failed to import", e);
+                setStatus("Failed to move: " + e.getMessage(), Color.RED);
                 return false;
             }
         }
@@ -1864,6 +2062,83 @@ public class Python3IDE_v1_9 extends JPanel {
                         JOptionPane.showMessageDialog(
                                 Python3IDE_v1_9.this,
                                 "Failed to move script: " + e.getMessage(),
+                                "Error",
+                                JOptionPane.ERROR_MESSAGE
+                        );
+                    }
+                }
+            };
+
+            worker.execute();
+        }
+
+        /**
+         * Moves a folder to a new parent folder.
+         */
+        private void moveFolder(String oldFolderPath, String newParentPath) {
+            if (restClient == null) {
+                return;
+            }
+
+            // Calculate the new folder path
+            // Extract the folder name from the old path
+            String folderName;
+            int lastSlash = oldFolderPath.lastIndexOf('/');
+            if (lastSlash >= 0) {
+                folderName = oldFolderPath.substring(lastSlash + 1);
+            } else {
+                folderName = oldFolderPath;
+            }
+
+            // Combine with new parent path
+            final String newFolderPath = newParentPath.isEmpty() ? folderName : newParentPath + "/" + folderName;
+
+            SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
+                @Override
+                protected Void doInBackground() throws Exception {
+                    // Get all scripts
+                    List<ScriptMetadata> allScripts = restClient.listScripts();
+
+                    // Find scripts that need to be moved
+                    for (ScriptMetadata script : allScripts) {
+                        String scriptFolder = script.getFolderPath();
+                        if (scriptFolder != null) {
+                            // Check if script is in this folder or subfolder
+                            if (scriptFolder.equals(oldFolderPath) || scriptFolder.startsWith(oldFolderPath + "/")) {
+                                // Update the folder path
+                                String updatedPath = scriptFolder.equals(oldFolderPath) ?
+                                        newFolderPath :
+                                        newFolderPath + scriptFolder.substring(oldFolderPath.length());
+
+                                // Load full script and save with new path
+                                SavedScript fullScript = restClient.loadScript(script.getName());
+                                restClient.saveScript(
+                                        fullScript.getName(),
+                                        fullScript.getCode(),
+                                        fullScript.getDescription(),
+                                        fullScript.getAuthor(),
+                                        updatedPath,
+                                        fullScript.getVersion()
+                                );
+                            }
+                        }
+                    }
+
+                    return null;
+                }
+
+                @Override
+                protected void done() {
+                    try {
+                        get();
+                        setStatus("Moved folder '" + folderName + "' to " +
+                                (newParentPath.isEmpty() ? "root" : newParentPath), new Color(0, 128, 0));
+                        refreshScriptTree();
+                    } catch (Exception e) {
+                        LOGGER.error("Failed to move folder", e);
+                        JOptionPane.showMessageDialog(
+                                Python3IDE_v1_9.this,
+                                "Failed to move folder: " + e.getMessage(),
                                 "Error",
                                 JOptionPane.ERROR_MESSAGE
                         );
