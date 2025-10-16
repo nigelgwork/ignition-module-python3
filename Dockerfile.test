@@ -1,4 +1,4 @@
-FROM inductiveautomation/ignition:8.3.0
+FROM inductiveautomation/ignition:8.3.1-rc1
 
 # Switch to root to install Python
 USER root
