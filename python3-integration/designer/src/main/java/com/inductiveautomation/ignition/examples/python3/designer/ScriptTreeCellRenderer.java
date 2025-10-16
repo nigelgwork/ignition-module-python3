@@ -26,21 +26,33 @@ public class ScriptTreeCellRenderer extends DefaultTreeCellRenderer {
 
         super.getTreeCellRendererComponent(tree, value, selected, expanded, leaf, row, hasFocus);
 
-        // Set larger, more readable font size and spacing
-        setFont(new Font("SansSerif", Font.PLAIN, 14));
-        setIconTextGap(8);  // Add more spacing between icon and text
+        // Apply modern theme colors
+        if (selected) {
+            setBackground(ModernTheme.ACCENT_PRIMARY);
+            setForeground(Color.WHITE);
+        } else {
+            setBackground(ModernTheme.TREE_BACKGROUND);
+            setForeground(ModernTheme.FOREGROUND_PRIMARY);
+        }
+
+        // Set larger, more readable font size (16pt) and spacing
+        setFont(ModernTheme.withSize(ModernTheme.FONT_REGULAR, 16));
+        setIconTextGap(12);  // Increased spacing between icon and text
 
         if (value instanceof ScriptTreeNode) {
             ScriptTreeNode node = (ScriptTreeNode) value;
 
             if (node.isFolder()) {
                 setIcon(expanded ? FOLDER_OPEN_ICON : FOLDER_ICON);
-                setFont(new Font("SansSerif", Font.BOLD, 14));
+                setFont(ModernTheme.withSize(ModernTheme.FONT_BOLD, 16));
             } else if (node.isScript()) {
                 setIcon(SCRIPT_ICON);
-                setFont(new Font("SansSerif", Font.PLAIN, 14));
+                setFont(ModernTheme.withSize(ModernTheme.FONT_REGULAR, 16));
             }
         }
+
+        // Set proper height
+        setPreferredSize(new Dimension(getPreferredSize().width, 28));
 
         return this;
     }

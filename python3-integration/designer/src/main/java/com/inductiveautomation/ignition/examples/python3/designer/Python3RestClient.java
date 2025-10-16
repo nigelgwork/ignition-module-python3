@@ -9,9 +9,11 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -444,7 +446,9 @@ public class Python3RestClient {
     public SavedScript loadScript(String name) throws IOException {
         LOGGER.debug("Loading script: {}", name);
 
-        String response = get("/scripts/load/" + name);
+        // URL encode the name to handle spaces and special characters
+        String encodedName = URLEncoder.encode(name, StandardCharsets.UTF_8);
+        String response = get("/scripts/load/" + encodedName);
         JsonObject json = JsonParser.parseString(response).getAsJsonObject();
 
         if (json.has("script") && json.get("script").isJsonObject()) {
@@ -519,7 +523,9 @@ public class Python3RestClient {
     public void deleteScript(String name) throws IOException {
         LOGGER.debug("Deleting script: {}", name);
 
-        String url = gatewayUrl + API_BASE_PATH + "/scripts/delete/" + name;
+        // URL encode the name to handle spaces and special characters
+        String encodedName = URLEncoder.encode(name, StandardCharsets.UTF_8);
+        String url = gatewayUrl + API_BASE_PATH + "/scripts/delete/" + encodedName;
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))

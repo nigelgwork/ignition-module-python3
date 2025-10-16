@@ -518,6 +518,13 @@ Built using the Ignition SDK:
 
 ## Changelog
 
+### 1.12.1 (Bug Fixes)
+- **FIXED**: URL encoding for script names with spaces in REST API calls
+- **IMPROVED**: Script tree font size increased from 14pt to 16pt for better readability
+- **IMPROVED**: Script tree row height increased to 32px for proper spacing
+- **IMPROVED**: Script tree icon-text gap increased to 12px
+- **IMPROVED**: ModernTheme colors applied to script tree for consistent UI
+
 ### 1.12.0 (Modern UI Design)
 - **NEW**: Modern UI with VS Code-inspired dark theme
 - **NEW**: ModernStatusBar with connection status, pool stats, and cursor position

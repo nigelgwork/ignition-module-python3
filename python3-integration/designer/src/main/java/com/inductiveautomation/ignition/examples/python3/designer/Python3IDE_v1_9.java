@@ -181,7 +181,7 @@ public class Python3IDE_v1_9 extends JPanel {
         scriptTree.setShowsRootHandles(true);
         scriptTree.setCellRenderer(new ScriptTreeCellRenderer());
         scriptTree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
-        scriptTree.setRowHeight(26);  // Increase row height for better readability
+        scriptTree.setRowHeight(32);  // Larger row height for 16pt font and better readability
         scriptTree.setDragEnabled(true);
         scriptTree.setDropMode(DropMode.ON_OR_INSERT);
         scriptTree.setTransferHandler(new ScriptTreeTransferHandler());
