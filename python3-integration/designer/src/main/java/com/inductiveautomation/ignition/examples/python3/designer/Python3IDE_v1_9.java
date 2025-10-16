@@ -1,0 +1,1209 @@
+package com.inductiveautomation.ignition.examples.python3.designer;
+
+import com.inductiveautomation.ignition.designer.model.DesignerContext;
+import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
+import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
+import org.fife.ui.rsyntaxtextarea.Theme;
+import org.fife.ui.rtextarea.RTextScrollPane;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.TitledBorder;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreePath;
+import javax.swing.tree.TreeSelectionModel;
+import java.awt.*;
+import java.awt.event.*;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.prefs.Preferences;
+
+/**
+ * Python 3 IDE panel for the Ignition Designer - Version 1.9.0.
+ *
+ * <p>Enhanced professional IDE with:</p>
+ * <ul>
+ *   <li>RSyntaxTextArea with Python syntax highlighting</li>
+ *   <li>Left sidebar with folder tree for script organization</li>
+ *   <li>Metadata panel showing script information</li>
+ *   <li>Theme system (light and dark themes)</li>
+ *   <li>Enhanced keyboard shortcuts</li>
+ *   <li>Unsaved changes detection</li>
+ *   <li>Export/import functionality</li>
+ * </ul>
+ */
+public class Python3IDE_v1_9 extends JPanel {
+    private static final Logger LOGGER = LoggerFactory.getLogger(Python3IDE_v1_9.class);
+    private static final String PREF_THEME = "python3ide.theme";
+    private static final String PREF_FONT_SIZE = "python3ide.fontsize";
+
+    private final DesignerContext context;
+    private Python3RestClient restClient;
+
+    // UI Components
+    private JTextField gatewayUrlField;
+    private JButton connectButton;
+    private RSyntaxTextArea codeEditor;
+    private JTextArea outputArea;
+    private JTextArea errorArea;
+    private JLabel statusLabel;
+    private JLabel poolStatsLabel;
+    private JButton executeButton;
+    private JButton clearButton;
+    private JButton saveButton;
+    private JProgressBar progressBar;
+
+    // Script Browser Components
+    private JTree scriptTree;
+    private DefaultTreeModel treeModel;
+    private ScriptTreeNode rootNode;
+    private ScriptMetadataPanel metadataPanel;
+
+    // Theme and Settings
+    private String currentTheme;
+    private int fontSize;
+
+    // Unsaved Changes Tracking
+    private UnsavedChangesTracker changesTracker;
+    private ScriptMetadata currentScript;
+
+    private Python3ExecutionWorker currentWorker;
+
+    /**
+     * Creates a new Python 3 IDE panel.
+     *
+     * @param context the Designer context
+     */
+    public Python3IDE_v1_9(DesignerContext context) {
+        this.context = context;
+        this.restClient = null;
+
+        // Load preferences
+        Preferences prefs = Preferences.userNodeForPackage(Python3IDE_v1_9.class);
+        this.currentTheme = prefs.get(PREF_THEME, "dark");
+        this.fontSize = prefs.getInt(PREF_FONT_SIZE, 12);
+
+        initComponents();
+        layoutComponents();
+        attachListeners();
+        applyTheme(currentTheme);
+
+        // Auto-connect to default Gateway on startup
+        connectToGateway();
+    }
+
+    /**
+     * Initializes all UI components.
+     */
+    private void initComponents() {
+        // Gateway URL input
+        gatewayUrlField = new JTextField("http://localhost:9088", 25);
+        gatewayUrlField.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
+
+        connectButton = new JButton("Connect");
+        connectButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 11));
+
+        // Code editor with RSyntaxTextArea
+        codeEditor = new RSyntaxTextArea(20, 80);
+        codeEditor.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_PYTHON);
+        codeEditor.setCodeFoldingEnabled(true);
+        codeEditor.setAutoIndentEnabled(true);
+        codeEditor.setMarkOccurrences(true);
+        codeEditor.setPaintTabLines(true);
+        codeEditor.setTabSize(4);
+        codeEditor.setFont(new Font("Monospaced", Font.PLAIN, fontSize));
+        codeEditor.setText("# Python 3.11 Code Editor\n# Enhanced with syntax highlighting\n\nresult = 2 + 2\nprint(f\"Result: {result}\")");
+
+        // Unsaved changes tracker
+        changesTracker = new UnsavedChangesTracker(codeEditor);
+        changesTracker.addChangeListener(this::onDirtyStateChanged);
+
+        // Output area
+        outputArea = new JTextArea(8, 80);
+        outputArea.setFont(new Font("Monospaced", Font.PLAIN, 11));
+        outputArea.setEditable(false);
+        outputArea.setBackground(new Color(245, 245, 245));
+
+        // Error area
+        errorArea = new JTextArea(8, 80);
+        errorArea.setFont(new Font("Monospaced", Font.PLAIN, 11));
+        errorArea.setEditable(false);
+        errorArea.setBackground(new Color(255, 245, 245));
+        errorArea.setForeground(Color.RED);
+
+        // Status labels
+        statusLabel = new JLabel("Ready");
+        statusLabel.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 11));
+
+        poolStatsLabel = new JLabel("Pool: Not Connected");
+        poolStatsLabel.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 11));
+        poolStatsLabel.setForeground(Color.GRAY);
+
+        // Buttons
+        executeButton = new JButton("Execute (Ctrl+Enter)");
+        executeButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
+
+        clearButton = new JButton("Clear");
+        clearButton.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
+
+        saveButton = new JButton("Save (Ctrl+S)");
+        saveButton.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
+
+        progressBar = new JProgressBar();
+        progressBar.setIndeterminate(false);
+        progressBar.setVisible(false);
+
+        // Script Browser Tree
+        rootNode = new ScriptTreeNode("Scripts");
+        treeModel = new DefaultTreeModel(rootNode);
+        scriptTree = new JTree(treeModel);
+        scriptTree.setRootVisible(true);
+        scriptTree.setShowsRootHandles(true);
+        scriptTree.setCellRenderer(new ScriptTreeCellRenderer());
+        scriptTree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
+
+        // Metadata Panel
+        metadataPanel = new ScriptMetadataPanel();
+    }
+
+    /**
+     * Lays out all components in the panel.
+     */
+    private void layoutComponents() {
+        setLayout(new BorderLayout(5, 5));
+        setBorder(new EmptyBorder(10, 10, 10, 10));
+
+        // Top panel: Gateway Connection
+        JPanel gatewayPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
+        gatewayPanel.setBorder(new TitledBorder("Gateway Connection"));
+        gatewayPanel.add(new JLabel("URL:"));
+        gatewayPanel.add(gatewayUrlField);
+        gatewayPanel.add(connectButton);
+
+        add(gatewayPanel, BorderLayout.NORTH);
+
+        // Create main split pane (sidebar | editor)
+        JSplitPane mainSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
+        mainSplit.setDividerLocation(250);
+
+        // Left sidebar: Script browser + metadata
+        JPanel sidebar = createSidebar();
+        mainSplit.setLeftComponent(sidebar);
+
+        // Right side: Editor + output
+        JPanel editorPanel = createEditorPanel();
+        mainSplit.setRightComponent(editorPanel);
+
+        add(mainSplit, BorderLayout.CENTER);
+    }
+
+    /**
+     * Creates the left sidebar with script tree and metadata.
+     */
+    private JPanel createSidebar() {
+        JPanel sidebar = new JPanel(new BorderLayout(5, 5));
+        sidebar.setPreferredSize(new Dimension(250, 600));
+
+        // Script tree
+        JScrollPane treeScroll = new JScrollPane(scriptTree);
+        treeScroll.setBorder(new TitledBorder("Script Browser"));
+
+        // Toolbar above tree
+        JPanel treeToolbar = new JPanel(new FlowLayout(FlowLayout.LEFT, 3, 2));
+        JButton newFolderBtn = new JButton("📁");
+        newFolderBtn.setToolTipText("New Folder");
+        newFolderBtn.addActionListener(e -> createNewFolder());
+
+        JButton newScriptBtn = new JButton("➕");
+        newScriptBtn.setToolTipText("New Script");
+        newScriptBtn.addActionListener(e -> createNewScript());
+
+        JButton refreshBtn = new JButton("🔄");
+        refreshBtn.setToolTipText("Refresh Scripts");
+        refreshBtn.addActionListener(e -> refreshScriptTree());
+
+        treeToolbar.add(newFolderBtn);
+        treeToolbar.add(newScriptBtn);
+        treeToolbar.add(refreshBtn);
+
+        JPanel treePanel = new JPanel(new BorderLayout());
+        treePanel.add(treeToolbar, BorderLayout.NORTH);
+        treePanel.add(treeScroll, BorderLayout.CENTER);
+
+        // Split tree and metadata
+        JSplitPane sidebarSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
+        sidebarSplit.setTopComponent(treePanel);
+        sidebarSplit.setBottomComponent(metadataPanel);
+        sidebarSplit.setDividerLocation(400);
+
+        sidebar.add(sidebarSplit, BorderLayout.CENTER);
+
+        return sidebar;
+    }
+
+    /**
+     * Creates the editor panel.
+     */
+    private JPanel createEditorPanel() {
+        JPanel panel = new JPanel(new BorderLayout(5, 5));
+
+        // Editor with line numbers
+        RTextScrollPane editorScroll = new RTextScrollPane(codeEditor);
+        editorScroll.setLineNumbersEnabled(true);
+
+        JPanel editorContainer = new JPanel(new BorderLayout());
+        editorContainer.setBorder(new TitledBorder("Python 3 Code Editor"));
+        editorContainer.add(editorScroll, BorderLayout.CENTER);
+
+        panel.add(editorContainer, BorderLayout.CENTER);
+
+        // Toolbar
+        JPanel toolbar = new JPanel(new BorderLayout(10, 0));
+        toolbar.setBorder(new EmptyBorder(5, 0, 5, 0));
+
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        buttonPanel.add(executeButton);
+        buttonPanel.add(clearButton);
+        buttonPanel.add(saveButton);
+        buttonPanel.add(progressBar);
+
+        JPanel infoPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        infoPanel.add(poolStatsLabel);
+        infoPanel.add(statusLabel);
+
+        toolbar.add(buttonPanel, BorderLayout.WEST);
+        toolbar.add(infoPanel, BorderLayout.EAST);
+
+        panel.add(toolbar, BorderLayout.NORTH);
+
+        // Output tabs
+        JTabbedPane outputTabs = new JTabbedPane();
+
+        JScrollPane outputScroll = new JScrollPane(outputArea);
+        outputTabs.addTab("Output", outputScroll);
+
+        JScrollPane errorScroll = new JScrollPane(errorArea);
+        outputTabs.addTab("Errors", errorScroll);
+
+        JPanel bottomPanel = new JPanel(new BorderLayout());
+        bottomPanel.setBorder(new TitledBorder("Execution Results"));
+        bottomPanel.add(outputTabs, BorderLayout.CENTER);
+        bottomPanel.setPreferredSize(new Dimension(600, 200));
+
+        panel.add(bottomPanel, BorderLayout.SOUTH);
+
+        return panel;
+    }
+
+    /**
+     * Attaches event listeners to UI components.
+     */
+    private void attachListeners() {
+        // Connect button
+        connectButton.addActionListener(e -> connectToGateway());
+
+        // Execute button
+        executeButton.addActionListener(e -> executeCode());
+
+        // Clear button
+        clearButton.addActionListener(e -> clearOutput());
+
+        // Save button
+        saveButton.addActionListener(e -> saveCurrentScript());
+
+        // Keyboard shortcuts
+        setupKeyboardShortcuts();
+
+        // Tree selection
+        scriptTree.addTreeSelectionListener(e -> onTreeSelectionChanged());
+
+        // Tree double-click
+        scriptTree.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2) {
+                    loadSelectedScript();
+                }
+            }
+        });
+
+        // Tree right-click
+        scriptTree.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                if (SwingUtilities.isRightMouseButton(e)) {
+                    showContextMenu(e);
+                }
+            }
+        });
+
+        // Gateway URL enter key
+        gatewayUrlField.addActionListener(e -> connectToGateway());
+    }
+
+    /**
+     * Sets up keyboard shortcuts.
+     */
+    private void setupKeyboardShortcuts() {
+        InputMap inputMap = codeEditor.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
+        ActionMap actionMap = codeEditor.getActionMap();
+
+        // Ctrl+Enter: Execute
+        KeyStroke ctrlEnter = KeyStroke.getKeyStroke("control ENTER");
+        inputMap.put(ctrlEnter, "execute");
+        actionMap.put("execute", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                executeCode();
+            }
+        });
+
+        // Ctrl+S: Save
+        KeyStroke ctrlS = KeyStroke.getKeyStroke("control S");
+        inputMap.put(ctrlS, "save");
+        actionMap.put("save", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                saveCurrentScript();
+            }
+        });
+
+        // Ctrl+N: New Script
+        KeyStroke ctrlN = KeyStroke.getKeyStroke("control N");
+        inputMap.put(ctrlN, "newScript");
+        actionMap.put("newScript", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                createNewScript();
+            }
+        });
+
+        // Ctrl++: Increase font
+        KeyStroke ctrlPlus = KeyStroke.getKeyStroke("control PLUS");
+        inputMap.put(ctrlPlus, "increaseFontSize");
+        actionMap.put("increaseFontSize", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                changeFontSize(1);
+            }
+        });
+
+        // Ctrl+-: Decrease font
+        KeyStroke ctrlMinus = KeyStroke.getKeyStroke("control MINUS");
+        inputMap.put(ctrlMinus, "decreaseFontSize");
+        actionMap.put("decreaseFontSize", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                changeFontSize(-1);
+            }
+        });
+
+        // Ctrl+0: Reset font
+        KeyStroke ctrl0 = KeyStroke.getKeyStroke("control 0");
+        inputMap.put(ctrl0, "resetFontSize");
+        actionMap.put("resetFontSize", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                setFontSize(12);
+            }
+        });
+    }
+
+    /**
+     * Connects to the Gateway.
+     */
+    private void connectToGateway() {
+        String url = gatewayUrlField.getText().trim();
+
+        if (url.isEmpty()) {
+            setStatus("Please enter a Gateway URL", Color.RED);
+            return;
+        }
+
+        if (!url.startsWith("http://") && !url.startsWith("https://")) {
+            url = "http://" + url;
+            gatewayUrlField.setText(url);
+        }
+
+        try {
+            restClient = new Python3RestClient(url);
+            setStatus("Connected to " + url, new Color(0, 128, 0));
+            poolStatsLabel.setText("Pool: Checking...");
+            poolStatsLabel.setForeground(Color.BLUE);
+
+            LOGGER.info("Connected to Gateway: {}", url);
+
+            refreshDiagnostics();
+            refreshScriptTree();
+
+        } catch (Exception e) {
+            setStatus("Connection failed: " + e.getMessage(), Color.RED);
+            poolStatsLabel.setText("Pool: Not Connected");
+            poolStatsLabel.setForeground(Color.RED);
+            LOGGER.error("Failed to connect to Gateway: {}", url, e);
+        }
+    }
+
+    /**
+     * Executes the Python code in the editor.
+     */
+    private void executeCode() {
+        if (restClient == null) {
+            setStatus("Not connected to Gateway", Color.RED);
+            return;
+        }
+
+        String code = codeEditor.getText().trim();
+
+        if (code.isEmpty()) {
+            setStatus("No code to execute", Color.ORANGE);
+            return;
+        }
+
+        if (currentWorker != null && !currentWorker.isDone()) {
+            currentWorker.cancel(true);
+        }
+
+        clearOutput();
+
+        executeButton.setEnabled(false);
+        progressBar.setVisible(true);
+        progressBar.setIndeterminate(true);
+        setStatus("Executing...", Color.BLUE);
+
+        currentWorker = new Python3ExecutionWorker(
+                restClient,
+                code,
+                new HashMap<>(),
+                this::handleSuccess,
+                this::handleError
+        );
+
+        currentWorker.execute();
+    }
+
+    /**
+     * Handles successful execution.
+     */
+    private void handleSuccess(ExecutionResult result) {
+        executeButton.setEnabled(true);
+        progressBar.setVisible(false);
+
+        if (result.isSuccess()) {
+            String output = result.getResult() != null ? result.getResult() : "(no output)";
+            outputArea.setText(output);
+
+            long time = result.getExecutionTimeMs() != null ? result.getExecutionTimeMs() : 0;
+            setStatus(String.format("Execution completed in %d ms", time), new Color(0, 128, 0));
+
+        } else {
+            String error = result.getError() != null ? result.getError() : "Unknown error";
+            errorArea.setText(error);
+            setStatus("Execution failed", Color.RED);
+        }
+
+        refreshDiagnostics();
+    }
+
+    /**
+     * Handles execution errors.
+     */
+    private void handleError(Exception error) {
+        executeButton.setEnabled(true);
+        progressBar.setVisible(false);
+
+        errorArea.setText("Connection error: " + error.getMessage());
+        setStatus("Execution failed", Color.RED);
+
+        LOGGER.error("Execution error", error);
+    }
+
+    /**
+     * Clears output areas.
+     */
+    private void clearOutput() {
+        outputArea.setText("");
+        errorArea.setText("");
+    }
+
+    /**
+     * Refreshes diagnostics.
+     */
+    private void refreshDiagnostics() {
+        if (restClient == null) {
+            return;
+        }
+
+        SwingWorker<PoolStats, Void> worker = new SwingWorker<PoolStats, Void>() {
+            @Override
+            protected PoolStats doInBackground() throws Exception {
+                return restClient.getPoolStats();
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    PoolStats stats = get();
+                    updatePoolStatsDisplay(stats);
+                } catch (Exception e) {
+                    poolStatsLabel.setText("Pool: Unavailable");
+                    poolStatsLabel.setForeground(Color.RED);
+                }
+            }
+        };
+
+        worker.execute();
+    }
+
+    /**
+     * Updates pool stats display.
+     */
+    private void updatePoolStatsDisplay(PoolStats stats) {
+        String text = String.format("Pool: %d/%d healthy, %d available",
+                stats.getHealthy(), stats.getTotalSize(), stats.getAvailable());
+
+        poolStatsLabel.setText(text);
+
+        if (stats.isHealthy()) {
+            poolStatsLabel.setForeground(new Color(0, 128, 0));
+        } else {
+            poolStatsLabel.setForeground(Color.ORANGE);
+        }
+    }
+
+    /**
+     * Sets status message.
+     */
+    private void setStatus(String message, Color color) {
+        statusLabel.setText(message);
+        statusLabel.setForeground(color);
+    }
+
+    // Script Management Methods
+
+    /**
+     * Refreshes the script tree from the Gateway.
+     */
+    private void refreshScriptTree() {
+        if (restClient == null) {
+            return;
+        }
+
+        SwingWorker<List<ScriptMetadata>, Void> worker = new SwingWorker<List<ScriptMetadata>, Void>() {
+            @Override
+            protected List<ScriptMetadata> doInBackground() throws Exception {
+                return restClient.listScripts();
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    List<ScriptMetadata> scripts = get();
+                    buildScriptTree(scripts);
+                    LOGGER.info("Loaded {} scripts", scripts.size());
+                } catch (Exception e) {
+                    LOGGER.error("Failed to load scripts", e);
+                }
+            }
+        };
+
+        worker.execute();
+    }
+
+    /**
+     * Builds the script tree from a list of scripts.
+     */
+    private void buildScriptTree(List<ScriptMetadata> scripts) {
+        rootNode.removeAllChildren();
+
+        // Build folder structure
+        Map<String, ScriptTreeNode> folders = new HashMap<>();
+
+        for (ScriptMetadata script : scripts) {
+            String folderPath = script.getFolderPath();
+
+            if (folderPath == null || folderPath.isEmpty()) {
+                // Script at root level
+                rootNode.add(new ScriptTreeNode(script));
+            } else {
+                // Create folder hierarchy
+                ScriptTreeNode parent = getOrCreateFolder(folderPath, folders);
+                parent.add(new ScriptTreeNode(script));
+            }
+        }
+
+        treeModel.reload();
+        scriptTree.expandRow(0);  // Expand root
+    }
+
+    /**
+     * Gets or creates a folder node at the specified path.
+     */
+    private ScriptTreeNode getOrCreateFolder(String folderPath, Map<String, ScriptTreeNode> folders) {
+        if (folders.containsKey(folderPath)) {
+            return folders.get(folderPath);
+        }
+
+        String[] parts = folderPath.split("/");
+        ScriptTreeNode currentParent = rootNode;
+        StringBuilder currentPath = new StringBuilder();
+
+        for (String part : parts) {
+            if (part.isEmpty()) {
+                continue;
+            }
+
+            if (currentPath.length() > 0) {
+                currentPath.append("/");
+            }
+            currentPath.append(part);
+
+            String pathStr = currentPath.toString();
+
+            if (folders.containsKey(pathStr)) {
+                currentParent = folders.get(pathStr);
+            } else {
+                ScriptTreeNode folderNode = new ScriptTreeNode(part);
+                currentParent.add(folderNode);
+                folders.put(pathStr, folderNode);
+                currentParent = folderNode;
+            }
+        }
+
+        return currentParent;
+    }
+
+    /**
+     * Called when tree selection changes.
+     */
+    private void onTreeSelectionChanged() {
+        TreePath path = scriptTree.getSelectionPath();
+
+        if (path == null) {
+            metadataPanel.clear();
+            return;
+        }
+
+        Object node = path.getLastPathComponent();
+
+        if (node instanceof ScriptTreeNode) {
+            ScriptTreeNode scriptNode = (ScriptTreeNode) node;
+
+            if (scriptNode.isScript()) {
+                metadataPanel.displayMetadata(scriptNode.getScriptMetadata());
+            } else {
+                metadataPanel.clear();
+            }
+        }
+    }
+
+    /**
+     * Loads the selected script into the editor.
+     */
+    private void loadSelectedScript() {
+        TreePath path = scriptTree.getSelectionPath();
+
+        if (path == null) {
+            return;
+        }
+
+        Object node = path.getLastPathComponent();
+
+        if (!(node instanceof ScriptTreeNode)) {
+            return;
+        }
+
+        ScriptTreeNode scriptNode = (ScriptTreeNode) node;
+
+        if (!scriptNode.isScript()) {
+            return;  // Can't load a folder
+        }
+
+        // Check for unsaved changes
+        if (changesTracker.isDirty()) {
+            int choice = showUnsavedChangesDialog();
+
+            if (choice == JOptionPane.YES_OPTION) {
+                // Save current script
+                saveCurrentScript();
+            } else if (choice == JOptionPane.CANCEL_OPTION) {
+                // Cancel loading
+                return;
+            }
+            // NO_OPTION falls through to discard changes
+        }
+
+        // Load the script
+        ScriptMetadata metadata = scriptNode.getScriptMetadata();
+        loadScript(metadata.getName());
+    }
+
+    /**
+     * Loads a script by name.
+     */
+    private void loadScript(String name) {
+        if (restClient == null) {
+            return;
+        }
+
+        SwingWorker<SavedScript, Void> worker = new SwingWorker<SavedScript, Void>() {
+            @Override
+            protected SavedScript doInBackground() throws Exception {
+                return restClient.loadScript(name);
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    SavedScript script = get();
+                    changesTracker.loadContent(script.getCode());
+                    currentScript = convertToMetadata(script);
+                    setStatus("Loaded: " + script.getName(), new Color(0, 128, 0));
+                } catch (Exception e) {
+                    LOGGER.error("Failed to load script", e);
+                    JOptionPane.showMessageDialog(
+                            Python3IDE_v1_9.this,
+                            "Failed to load script: " + e.getMessage(),
+                            "Error",
+                            JOptionPane.ERROR_MESSAGE
+                    );
+                }
+            }
+        };
+
+        worker.execute();
+    }
+
+    /**
+     * Saves the current script.
+     */
+    private void saveCurrentScript() {
+        if (restClient == null) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Please connect to a Gateway first",
+                    "Not Connected",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+        String code = codeEditor.getText().trim();
+
+        if (code.isEmpty()) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Cannot save empty script",
+                    "Empty Script",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+        // Show save dialog
+        showSaveDialog();
+    }
+
+    /**
+     * Shows the save script dialog.
+     */
+    private void showSaveDialog() {
+        JTextField nameField = new JTextField(currentScript != null ? currentScript.getName() : "", 20);
+        JTextField authorField = new JTextField(currentScript != null ? currentScript.getAuthor() : "Unknown", 20);
+        JTextField versionField = new JTextField(currentScript != null ? currentScript.getVersion() : "1.0", 10);
+        JTextField folderField = new JTextField(currentScript != null ? currentScript.getFolderPath() : "", 20);
+        JTextField descField = new JTextField(currentScript != null ? currentScript.getDescription() : "", 30);
+
+        JPanel panel = new JPanel(new GridLayout(5, 2, 5, 5));
+        panel.add(new JLabel("Script Name:"));
+        panel.add(nameField);
+        panel.add(new JLabel("Author:"));
+        panel.add(authorField);
+        panel.add(new JLabel("Version:"));
+        panel.add(versionField);
+        panel.add(new JLabel("Folder Path:"));
+        panel.add(folderField);
+        panel.add(new JLabel("Description:"));
+        panel.add(descField);
+
+        int result = JOptionPane.showConfirmDialog(
+                this,
+                panel,
+                "Save Script",
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.PLAIN_MESSAGE
+        );
+
+        if (result != JOptionPane.OK_OPTION) {
+            return;
+        }
+
+        String name = nameField.getText().trim();
+        String author = authorField.getText().trim();
+        String version = versionField.getText().trim();
+        String folder = folderField.getText().trim();
+        String description = descField.getText().trim();
+
+        if (name.isEmpty()) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Script name cannot be empty",
+                    "Invalid Name",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+        saveScript(name, codeEditor.getText(), description, author, folder, version);
+    }
+
+    /**
+     * Saves a script to the Gateway.
+     */
+    private void saveScript(String name, String code, String description,
+                           String author, String folderPath, String version) {
+        SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
+            @Override
+            protected Void doInBackground() throws Exception {
+                restClient.saveScript(name, code, description, author, folderPath, version);
+                return null;
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    get();
+                    changesTracker.markSaved();
+                    setStatus("Script saved: " + name, new Color(0, 128, 0));
+                    refreshScriptTree();
+                } catch (Exception e) {
+                    LOGGER.error("Failed to save script", e);
+                    JOptionPane.showMessageDialog(
+                            Python3IDE_v1_9.this,
+                            "Failed to save script: " + e.getMessage(),
+                            "Error",
+                            JOptionPane.ERROR_MESSAGE
+                    );
+                }
+            }
+        };
+
+        worker.execute();
+    }
+
+    /**
+     * Creates a new folder.
+     */
+    private void createNewFolder() {
+        String folderName = JOptionPane.showInputDialog(
+                this,
+                "Enter folder name:",
+                "New Folder",
+                JOptionPane.PLAIN_MESSAGE
+        );
+
+        if (folderName != null && !folderName.trim().isEmpty()) {
+            // Create folder in tree
+            ScriptTreeNode newFolder = new ScriptTreeNode(folderName.trim());
+            rootNode.add(newFolder);
+            treeModel.reload();
+            scriptTree.expandPath(new TreePath(rootNode.getPath()));
+        }
+    }
+
+    /**
+     * Creates a new script.
+     */
+    private void createNewScript() {
+        // Check for unsaved changes
+        if (changesTracker.isDirty()) {
+            int choice = showUnsavedChangesDialog();
+
+            if (choice == JOptionPane.YES_OPTION) {
+                saveCurrentScript();
+            } else if (choice == JOptionPane.CANCEL_OPTION) {
+                return;
+            }
+        }
+
+        // Clear editor for new script
+        changesTracker.loadContent("# New Python Script\n\n");
+        currentScript = null;
+        metadataPanel.clear();
+        setStatus("New script", Color.BLUE);
+    }
+
+    /**
+     * Shows context menu for tree items.
+     */
+    private void showContextMenu(MouseEvent e) {
+        TreePath path = scriptTree.getPathForLocation(e.getX(), e.getY());
+
+        if (path == null) {
+            return;
+        }
+
+        scriptTree.setSelectionPath(path);
+        Object node = path.getLastPathComponent();
+
+        if (!(node instanceof ScriptTreeNode)) {
+            return;
+        }
+
+        ScriptTreeNode scriptNode = (ScriptTreeNode) node;
+        JPopupMenu menu = new JPopupMenu();
+
+        if (scriptNode.isScript()) {
+            // Script context menu
+            JMenuItem loadItem = new JMenuItem("Load");
+            loadItem.addActionListener(ev -> loadSelectedScript());
+            menu.add(loadItem);
+
+            JMenuItem exportItem = new JMenuItem("Export...");
+            exportItem.addActionListener(ev -> exportScript(scriptNode));
+            menu.add(exportItem);
+
+            menu.addSeparator();
+
+            JMenuItem deleteItem = new JMenuItem("Delete");
+            deleteItem.addActionListener(ev -> deleteScript(scriptNode));
+            menu.add(deleteItem);
+
+        } else {
+            // Folder context menu
+            JMenuItem newScriptItem = new JMenuItem("New Script Here");
+            newScriptItem.addActionListener(ev -> createNewScript());
+            menu.add(newScriptItem);
+
+            JMenuItem newFolderItem = new JMenuItem("New Subfolder");
+            newFolderItem.addActionListener(ev -> createNewFolder());
+            menu.add(newFolderItem);
+        }
+
+        menu.show(scriptTree, e.getX(), e.getY());
+    }
+
+    /**
+     * Exports a script to a .py file.
+     */
+    private void exportScript(ScriptTreeNode scriptNode) {
+        ScriptMetadata metadata = scriptNode.getScriptMetadata();
+
+        SwingWorker<SavedScript, Void> worker = new SwingWorker<SavedScript, Void>() {
+            @Override
+            protected SavedScript doInBackground() throws Exception {
+                return restClient.loadScript(metadata.getName());
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    SavedScript script = get();
+
+                    JFileChooser fileChooser = new JFileChooser();
+                    fileChooser.setSelectedFile(new File(script.getName() + ".py"));
+
+                    int result = fileChooser.showSaveDialog(Python3IDE_v1_9.this);
+
+                    if (result == JFileChooser.APPROVE_OPTION) {
+                        File file = fileChooser.getSelectedFile();
+
+                        try (FileWriter writer = new FileWriter(file)) {
+                            writer.write(script.getCode());
+                            setStatus("Exported: " + file.getName(), new Color(0, 128, 0));
+                        }
+                    }
+
+                } catch (Exception e) {
+                    LOGGER.error("Failed to export script", e);
+                    JOptionPane.showMessageDialog(
+                            Python3IDE_v1_9.this,
+                            "Failed to export script: " + e.getMessage(),
+                            "Error",
+                            JOptionPane.ERROR_MESSAGE
+                    );
+                }
+            }
+        };
+
+        worker.execute();
+    }
+
+    /**
+     * Deletes a script.
+     */
+    private void deleteScript(ScriptTreeNode scriptNode) {
+        ScriptMetadata metadata = scriptNode.getScriptMetadata();
+
+        int confirm = JOptionPane.showConfirmDialog(
+                this,
+                "Are you sure you want to delete '" + metadata.getName() + "'?",
+                "Confirm Delete",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE
+        );
+
+        if (confirm != JOptionPane.YES_OPTION) {
+            return;
+        }
+
+        SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
+            @Override
+            protected Void doInBackground() throws Exception {
+                restClient.deleteScript(metadata.getName());
+                return null;
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    get();
+                    setStatus("Deleted: " + metadata.getName(), new Color(0, 128, 0));
+                    refreshScriptTree();
+                } catch (Exception e) {
+                    LOGGER.error("Failed to delete script", e);
+                    JOptionPane.showMessageDialog(
+                            Python3IDE_v1_9.this,
+                            "Failed to delete script: " + e.getMessage(),
+                            "Error",
+                            JOptionPane.ERROR_MESSAGE
+                    );
+                }
+            }
+        };
+
+        worker.execute();
+    }
+
+    /**
+     * Shows unsaved changes dialog.
+     */
+    private int showUnsavedChangesDialog() {
+        return JOptionPane.showConfirmDialog(
+                this,
+                "You have unsaved changes. Do you want to save them?",
+                "Unsaved Changes",
+                JOptionPane.YES_NO_CANCEL_OPTION,
+                JOptionPane.WARNING_MESSAGE
+        );
+    }
+
+    /**
+     * Called when dirty state changes.
+     */
+    private void onDirtyStateChanged(boolean isDirty) {
+        String title = "Python 3 IDE";
+
+        if (isDirty) {
+            title += " *";  // Indicate unsaved changes
+        }
+
+        // Could update window title or status here
+        setStatus(isDirty ? "Unsaved changes" : "All changes saved",
+                  isDirty ? Color.ORANGE : new Color(0, 128, 0));
+    }
+
+    // Theme Management
+
+    /**
+     * Applies a theme to the editor.
+     */
+    private void applyTheme(String themeName) {
+        try {
+            Theme theme;
+
+            switch (themeName.toLowerCase()) {
+                case "dark":
+                    theme = Theme.load(getClass().getResourceAsStream(
+                            "/org/fife/ui/rsyntaxtextarea/themes/dark.xml"));
+                    break;
+                case "monokai":
+                    theme = Theme.load(getClass().getResourceAsStream(
+                            "/org/fife/ui/rsyntaxtextarea/themes/monokai.xml"));
+                    break;
+                case "eclipse":
+                    theme = Theme.load(getClass().getResourceAsStream(
+                            "/org/fife/ui/rsyntaxtextarea/themes/eclipse.xml"));
+                    break;
+                default:  // "default" or "light"
+                    theme = Theme.load(getClass().getResourceAsStream(
+                            "/org/fife/ui/rsyntaxtextarea/themes/default.xml"));
+                    break;
+            }
+
+            theme.apply(codeEditor);
+            currentTheme = themeName;
+
+            // Save preference
+            Preferences prefs = Preferences.userNodeForPackage(Python3IDE_v1_9.class);
+            prefs.put(PREF_THEME, themeName);
+
+            LOGGER.info("Applied theme: {}", themeName);
+
+        } catch (IOException e) {
+            LOGGER.error("Failed to apply theme: {}", themeName, e);
+        }
+    }
+
+    /**
+     * Changes font size.
+     */
+    private void changeFontSize(int delta) {
+        setFontSize(fontSize + delta);
+    }
+
+    /**
+     * Sets font size.
+     */
+    private void setFontSize(int newSize) {
+        if (newSize < 8 || newSize > 24) {
+            return;  // Reasonable bounds
+        }
+
+        fontSize = newSize;
+        codeEditor.setFont(new Font("Monospaced", Font.PLAIN, fontSize));
+
+        // Save preference
+        Preferences prefs = Preferences.userNodeForPackage(Python3IDE_v1_9.class);
+        prefs.putInt(PREF_FONT_SIZE, fontSize);
+
+        LOGGER.info("Font size: {}", fontSize);
+    }
+
+    /**
+     * Converts SavedScript to ScriptMetadata.
+     */
+    private ScriptMetadata convertToMetadata(SavedScript script) {
+        ScriptMetadata metadata = new ScriptMetadata();
+        metadata.setId(script.getId());
+        metadata.setName(script.getName());
+        metadata.setDescription(script.getDescription());
+        metadata.setAuthor(script.getAuthor());
+        metadata.setCreatedDate(script.getCreatedDate());
+        metadata.setLastModified(script.getLastModified());
+        metadata.setFolderPath(script.getFolderPath());
+        metadata.setVersion(script.getVersion());
+        return metadata;
+    }
+
+    // Public accessor methods (for external access if needed)
+
+    public RSyntaxTextArea getCodeEditor() {
+        return codeEditor;
+    }
+
+    public JTextArea getOutputArea() {
+        return outputArea;
+    }
+
+    public JTextArea getErrorArea() {
+        return errorArea;
+    }
+}

@@ -404,7 +404,7 @@ public final class Python3RestEndpoints {
     /**
      * Handle POST /scripts/save - Save a Python script
      *
-     * Request body: {"name": "...", "code": "...", "description": "..."}
+     * Request body: {"name": "...", "code": "...", "description": "...", "author": "...", "folderPath": "...", "version": "..."}
      * Response: {"success": true/false, "script": {...}}
      */
     private static JsonObject handleSaveScript(RequestContext req, HttpServletResponse res) {
@@ -419,12 +419,17 @@ public final class Python3RestEndpoints {
             String name = requestBody.has("name") ? requestBody.get("name").getAsString() : null;
             String code = requestBody.has("code") ? requestBody.get("code").getAsString() : "";
             String description = requestBody.has("description") ? requestBody.get("description").getAsString() : null;
+            String author = requestBody.has("author") ? requestBody.get("author").getAsString() : "Unknown";
+            String folderPath = requestBody.has("folderPath") ? requestBody.get("folderPath").getAsString() : "";
+            String version = requestBody.has("version") ? requestBody.get("version").getAsString() : "1.0";
 
             if (name == null || name.trim().isEmpty()) {
                 return createErrorResponse("Script name is required");
             }
 
-            Python3ScriptRepository.SavedScript script = scriptRepository.saveScript(name, code, description);
+            Python3ScriptRepository.SavedScript script = scriptRepository.saveScript(
+                name, code, description, author, folderPath, version
+            );
 
             JsonObject response = new JsonObject();
             response.addProperty("success", true);
@@ -433,10 +438,14 @@ public final class Python3RestEndpoints {
             scriptJson.addProperty("id", script.getId());
             scriptJson.addProperty("name", script.getName());
             scriptJson.addProperty("description", script.getDescription());
+            scriptJson.addProperty("author", script.getAuthor());
+            scriptJson.addProperty("createdDate", script.getCreatedDate());
             scriptJson.addProperty("lastModified", script.getLastModified());
+            scriptJson.addProperty("folderPath", script.getFolderPath());
+            scriptJson.addProperty("version", script.getVersion());
             response.add("script", scriptJson);
 
-            LOGGER.info("REST API: Script saved: {}", name);
+            LOGGER.info("REST API: Script saved: {} in folder: {}", name, folderPath);
             return response;
 
         } catch (Exception e) {
@@ -480,7 +489,11 @@ public final class Python3RestEndpoints {
             scriptJson.addProperty("name", script.getName());
             scriptJson.addProperty("code", script.getCode());
             scriptJson.addProperty("description", script.getDescription());
+            scriptJson.addProperty("author", script.getAuthor());
+            scriptJson.addProperty("createdDate", script.getCreatedDate());
             scriptJson.addProperty("lastModified", script.getLastModified());
+            scriptJson.addProperty("folderPath", script.getFolderPath());
+            scriptJson.addProperty("version", script.getVersion());
             response.add("script", scriptJson);
 
             LOGGER.debug("REST API: Script loaded: {}", name);
@@ -516,7 +529,11 @@ public final class Python3RestEndpoints {
                 scriptJson.addProperty("id", script.getId());
                 scriptJson.addProperty("name", script.getName());
                 scriptJson.addProperty("description", script.getDescription());
+                scriptJson.addProperty("author", script.getAuthor());
+                scriptJson.addProperty("createdDate", script.getCreatedDate());
                 scriptJson.addProperty("lastModified", script.getLastModified());
+                scriptJson.addProperty("folderPath", script.getFolderPath());
+                scriptJson.addProperty("version", script.getVersion());
                 scriptsArray.add(scriptJson);
             }
             response.add("scripts", scriptsArray);

@@ -30,4 +30,9 @@ dependencies {
 
     // Logging
     compileOnly("org.slf4j:slf4j-api:1.7.36")
+
+    // RSyntaxTextArea - Advanced code editor with syntax highlighting
+    implementation("com.fifesoft:rsyntaxtextarea:3.3.4")
+    implementation("com.fifesoft:autocomplete:3.3.1")      // Code completion (for v2.0.0)
+    implementation("com.fifesoft:rstaui:3.3.1")            // Find/Replace dialogs (for v2.0.0)
 }

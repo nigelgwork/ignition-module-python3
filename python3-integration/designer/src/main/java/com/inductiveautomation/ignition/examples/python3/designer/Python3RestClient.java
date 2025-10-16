@@ -359,7 +359,11 @@ public class Python3RestClient {
                 metadata.setId(scriptJson.has("id") ? scriptJson.get("id").getAsString() : null);
                 metadata.setName(scriptJson.has("name") ? scriptJson.get("name").getAsString() : null);
                 metadata.setDescription(scriptJson.has("description") ? scriptJson.get("description").getAsString() : null);
+                metadata.setAuthor(scriptJson.has("author") ? scriptJson.get("author").getAsString() : null);
+                metadata.setCreatedDate(scriptJson.has("createdDate") ? scriptJson.get("createdDate").getAsString() : null);
                 metadata.setLastModified(scriptJson.has("lastModified") ? scriptJson.get("lastModified").getAsString() : null);
+                metadata.setFolderPath(scriptJson.has("folderPath") ? scriptJson.get("folderPath").getAsString() : null);
+                metadata.setVersion(scriptJson.has("version") ? scriptJson.get("version").getAsString() : null);
                 scripts.add(metadata);
             }
         }
@@ -388,7 +392,11 @@ public class Python3RestClient {
             script.setName(scriptJson.has("name") ? scriptJson.get("name").getAsString() : null);
             script.setCode(scriptJson.has("code") ? scriptJson.get("code").getAsString() : null);
             script.setDescription(scriptJson.has("description") ? scriptJson.get("description").getAsString() : null);
+            script.setAuthor(scriptJson.has("author") ? scriptJson.get("author").getAsString() : null);
+            script.setCreatedDate(scriptJson.has("createdDate") ? scriptJson.get("createdDate").getAsString() : null);
             script.setLastModified(scriptJson.has("lastModified") ? scriptJson.get("lastModified").getAsString() : null);
+            script.setFolderPath(scriptJson.has("folderPath") ? scriptJson.get("folderPath").getAsString() : null);
+            script.setVersion(scriptJson.has("version") ? scriptJson.get("version").getAsString() : null);
             return script;
         }
 
@@ -401,15 +409,22 @@ public class Python3RestClient {
      * @param name the script name
      * @param code the Python code
      * @param description optional description
+     * @param author the script author
+     * @param folderPath the folder path (e.g., "My Scripts/Utils")
+     * @param version the script version (e.g., "1.0")
      * @throws IOException if the HTTP request fails
      */
-    public void saveScript(String name, String code, String description) throws IOException {
-        LOGGER.debug("Saving script: {}", name);
+    public void saveScript(String name, String code, String description,
+                          String author, String folderPath, String version) throws IOException {
+        LOGGER.debug("Saving script: {} in folder: {}", name, folderPath);
 
         JsonObject requestBody = new JsonObject();
         requestBody.addProperty("name", name);
         requestBody.addProperty("code", code);
         requestBody.addProperty("description", description);
+        requestBody.addProperty("author", author);
+        requestBody.addProperty("folderPath", folderPath);
+        requestBody.addProperty("version", version);
 
         String response = post("/scripts/save", requestBody.toString());
         JsonObject json = JsonParser.parseString(response).getAsJsonObject();
@@ -418,7 +433,19 @@ public class Python3RestClient {
             throw new IOException("Failed to save script: " + name);
         }
 
-        LOGGER.info("Script saved successfully: {}", name);
+        LOGGER.info("Script saved successfully: {} in folder: {}", name, folderPath);
+    }
+
+    /**
+     * Saves a script to the Gateway (simplified overload for backward compatibility).
+     *
+     * @param name the script name
+     * @param code the Python code
+     * @param description optional description
+     * @throws IOException if the HTTP request fails
+     */
+    public void saveScript(String name, String code, String description) throws IOException {
+        saveScript(name, code, description, "Unknown", "", "1.0");
     }
 
     /**

@@ -10,7 +10,7 @@ import javax.swing.*;
 import java.awt.*;
 
 /**
- * Designer hook for the Python 3 Integration module (v1.7.0+).
+ * Designer hook for the Python 3 Integration module (v1.9.0).
  *
  * <p>This hook integrates the Python 3 IDE into the Ignition Designer by adding
  * a menu item to the Tools menu. The IDE communicates with the Gateway via REST API.</p>
@@ -21,8 +21,16 @@ import java.awt.*;
  *   <li>shutdown() - Closes IDE window if open</li>
  * </ul>
  *
- * <p><strong>Architecture Change (v1.7.0):</strong> This version uses REST API instead of RPC
- * for Designer-Gateway communication, providing better performance and reliability.</p>
+ * <p><strong>v1.9.0 Features:</strong></p>
+ * <ul>
+ *   <li>RSyntaxTextArea with Python syntax highlighting</li>
+ *   <li>Left sidebar with folder tree for script organization</li>
+ *   <li>Metadata panel showing script information</li>
+ *   <li>Theme system (light and dark themes)</li>
+ *   <li>Enhanced keyboard shortcuts</li>
+ *   <li>Unsaved changes detection</li>
+ *   <li>Export/import functionality</li>
+ * </ul>
  */
 public class DesignerHook extends AbstractDesignerModuleHook {
     private static final Logger LOGGER = LoggerFactory.getLogger(DesignerHook.class);
@@ -168,22 +176,22 @@ public class DesignerHook extends AbstractDesignerModuleHook {
         // Create new IDE window
         SwingUtilities.invokeLater(() -> {
             try {
-                // Create IDE panel
-                Python3IDE idePanel = new Python3IDE(context);
+                // Create IDE panel (v1.9.0 with enhanced features)
+                Python3IDE_v1_9 idePanel = new Python3IDE_v1_9(context);
 
                 // Create frame
-                ideFrame = new JFrame("Python 3 IDE - Ignition Designer");
+                ideFrame = new JFrame("Python 3 IDE v1.9.0 - Enhanced");
                 ideFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
                 ideFrame.setContentPane(idePanel);
 
-                // Set size and location
-                ideFrame.setSize(1000, 700);
+                // Set size and location (larger for sidebar layout)
+                ideFrame.setSize(1400, 800);
                 ideFrame.setLocationRelativeTo(context.getFrame());
 
                 // Show window
                 ideFrame.setVisible(true);
 
-                LOGGER.info("Python 3 IDE window opened");
+                LOGGER.info("Python 3 IDE v1.9.0 window opened");
 
             } catch (Exception e) {
                 LOGGER.error("Failed to open Python 3 IDE", e);

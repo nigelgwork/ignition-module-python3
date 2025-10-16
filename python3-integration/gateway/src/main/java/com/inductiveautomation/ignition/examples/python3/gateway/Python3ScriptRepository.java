@@ -56,16 +56,24 @@ public class Python3ScriptRepository {
      * @param name the script name (unique identifier)
      * @param code the Python code
      * @param description optional description
+     * @param author the script author
+     * @param folderPath the folder path (e.g., "My Scripts/Utils")
+     * @param version optional version string
      * @return the saved script
      * @throws IOException if save fails
      */
-    public SavedScript saveScript(String name, String code, String description) throws IOException {
+    public SavedScript saveScript(String name, String code, String description, String author, String folderPath, String version) throws IOException {
         if (name == null || name.trim().isEmpty()) {
             throw new IllegalArgumentException("Script name cannot be empty");
         }
 
         // Sanitize name for filesystem
         String sanitizedName = sanitizeName(name);
+        String now = Instant.now().toString();
+
+        // Check if updating existing script
+        SavedScript existing = scriptIndex.get(sanitizedName);
+        String createdDate = existing != null ? existing.getCreatedDate() : now;
 
         // Create script object
         SavedScript script = new SavedScript(
@@ -73,7 +81,11 @@ public class Python3ScriptRepository {
                 name,
                 code,
                 description,
-                Instant.now().toString()
+                author != null ? author : "Unknown",
+                createdDate,
+                now,
+                folderPath != null ? folderPath : "",
+                version != null ? version : "1.0"
         );
 
         // Save to index
@@ -82,8 +94,15 @@ public class Python3ScriptRepository {
         // Persist index
         saveIndex();
 
-        LOGGER.info("Script saved: {}", name);
+        LOGGER.info("Script saved: {} in folder: {}", name, folderPath);
         return script;
+    }
+
+    /**
+     * Saves a Python script (simplified overload for backward compatibility).
+     */
+    public SavedScript saveScript(String name, String code, String description) throws IOException {
+        return saveScript(name, code, description, "Unknown", "", "1.0");
     }
 
     /**
@@ -114,7 +133,11 @@ public class Python3ScriptRepository {
                         script.getId(),
                         script.getName(),
                         script.getDescription(),
-                        script.getLastModified()
+                        script.getAuthor(),
+                        script.getCreatedDate(),
+                        script.getLastModified(),
+                        script.getFolderPath(),
+                        script.getVersion()
                 ))
                 .collect(Collectors.toList());
     }
@@ -223,14 +246,24 @@ public class Python3ScriptRepository {
         private final String name;
         private final String code;
         private final String description;
+        private final String author;
+        private final String createdDate;
         private final String lastModified;
+        private final String folderPath;
+        private final String version;
 
-        public SavedScript(String id, String name, String code, String description, String lastModified) {
+        public SavedScript(String id, String name, String code, String description,
+                          String author, String createdDate, String lastModified,
+                          String folderPath, String version) {
             this.id = id;
             this.name = name;
             this.code = code;
             this.description = description;
+            this.author = author;
+            this.createdDate = createdDate;
             this.lastModified = lastModified;
+            this.folderPath = folderPath;
+            this.version = version;
         }
 
         public String getId() {
@@ -249,8 +282,24 @@ public class Python3ScriptRepository {
             return description;
         }
 
+        public String getAuthor() {
+            return author;
+        }
+
+        public String getCreatedDate() {
+            return createdDate;
+        }
+
         public String getLastModified() {
             return lastModified;
+        }
+
+        public String getFolderPath() {
+            return folderPath;
+        }
+
+        public String getVersion() {
+            return version;
         }
     }
 
@@ -261,13 +310,23 @@ public class Python3ScriptRepository {
         private final String id;
         private final String name;
         private final String description;
+        private final String author;
+        private final String createdDate;
         private final String lastModified;
+        private final String folderPath;
+        private final String version;
 
-        public ScriptMetadata(String id, String name, String description, String lastModified) {
+        public ScriptMetadata(String id, String name, String description,
+                            String author, String createdDate, String lastModified,
+                            String folderPath, String version) {
             this.id = id;
             this.name = name;
             this.description = description;
+            this.author = author;
+            this.createdDate = createdDate;
             this.lastModified = lastModified;
+            this.folderPath = folderPath;
+            this.version = version;
         }
 
         public String getId() {
@@ -282,8 +341,24 @@ public class Python3ScriptRepository {
             return description;
         }
 
+        public String getAuthor() {
+            return author;
+        }
+
+        public String getCreatedDate() {
+            return createdDate;
+        }
+
         public String getLastModified() {
             return lastModified;
+        }
+
+        public String getFolderPath() {
+            return folderPath;
+        }
+
+        public String getVersion() {
+            return version;
         }
     }
 }
