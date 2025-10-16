@@ -8,6 +8,12 @@ java {
     }
 }
 
+// Configure jar name to be version-independent for module upgrade compatibility
+tasks.jar {
+    archiveBaseName.set("gateway")
+    archiveVersion.set("")
+}
+
 dependencies {
     // Common scope dependency
     api(projects.common)
