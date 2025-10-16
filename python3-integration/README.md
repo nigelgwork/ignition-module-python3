@@ -142,6 +142,7 @@ The Designer IDE provides an interactive development environment for testing Pyt
 
 **Features:**
 - **Code Editor**: Write and edit Python 3 code with monospaced font
+- **Real-time Syntax Checking** *(v1.11.0+)*: Red squiggles for errors, yellow for warnings
 - **Execute Button**: Run code on the Gateway (Ctrl+Enter shortcut)
 - **Output Panel**: View execution results
 - **Error Panel**: View detailed error messages and tracebacks
@@ -496,12 +497,13 @@ Future enhancements:
 - [ ] Virtual environment support
 - [ ] Package manager UI in Gateway
 - [x] Designer integration (Python 3 script editor) - **Added in v1.7.0**
+- [x] Real-time syntax checking - **Added in v1.11.0**
 - [ ] Async/callback support
 - [ ] Binary data handling (bytes, numpy arrays)
 - [ ] Streaming results for large datasets
 - [ ] Python process resource limits (CPU, memory)
 - [ ] Multiple Python versions support
-- [ ] Designer IDE: Syntax highlighting and code completion
+- [ ] Designer IDE: Code completion (autocomplete)
 - [ ] Designer IDE: Variable input panel
 
 ## Examples
@@ -515,6 +517,16 @@ Built using the Ignition SDK:
 - https://www.sdk-docs.inductiveautomation.com/
 
 ## Changelog
+
+### 1.11.0 (Real-time Syntax Checking)
+- **NEW**: Real-time Python syntax checking in Designer IDE
+- **NEW**: Red squiggly underlines for syntax errors
+- **NEW**: Yellow squiggly underlines for code quality warnings
+- **NEW**: REST API `/check-syntax` endpoint for syntax validation
+- **NEW**: Pyflakes integration for enhanced code quality checks
+- **NEW**: Debounced syntax checking (500ms delay after typing stops)
+- **IMPROVED**: Designer IDE with integrated syntax parser
+- **IMPROVED**: Better developer experience with immediate feedback
 
 ### 1.7.0 (Designer IDE Release)
 - **NEW**: Designer scope with interactive Python 3 IDE

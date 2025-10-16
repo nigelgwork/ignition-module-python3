@@ -182,6 +182,54 @@ public class Python3RestClient {
     }
 
     /**
+     * Checks Python code for syntax errors using AST parser and pyflakes.
+     *
+     * @param code the Python code to check
+     * @return Map containing "errors" list with syntax error details
+     * @throws IOException if the HTTP request fails
+     */
+    public Map<String, Object> checkSyntax(String code) throws IOException {
+        LOGGER.debug("Checking syntax via REST API");
+
+        // Build JSON request body
+        JsonObject requestBody = new JsonObject();
+        requestBody.addProperty("code", code);
+
+        // Make POST request to /check-syntax endpoint
+        String response = post("/check-syntax", requestBody.toString());
+
+        // Parse response
+        JsonObject json = JsonParser.parseString(response).getAsJsonObject();
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("success", json.has("success") && json.get("success").getAsBoolean());
+
+        // Parse errors array
+        if (json.has("errors") && json.get("errors").isJsonArray()) {
+            JsonArray errorsArray = json.getAsJsonArray("errors");
+            List<Map<String, Object>> errorsList = new ArrayList<>();
+
+            for (int i = 0; i < errorsArray.size(); i++) {
+                JsonObject errorJson = errorsArray.get(i).getAsJsonObject();
+
+                Map<String, Object> error = new HashMap<>();
+                error.put("line", errorJson.has("line") ? errorJson.get("line").getAsInt() : 1);
+                error.put("column", errorJson.has("column") ? errorJson.get("column").getAsInt() : 0);
+                error.put("message", errorJson.has("message") ? errorJson.get("message").getAsString() : "Syntax error");
+                error.put("severity", errorJson.has("severity") ? errorJson.get("severity").getAsString() : "error");
+
+                errorsList.add(error);
+            }
+
+            result.put("errors", errorsList);
+        } else {
+            result.put("errors", new ArrayList<>());
+        }
+
+        return result;
+    }
+
+    /**
      * Makes a GET request to the specified endpoint.
      *
      * @param endpoint the API endpoint (e.g., "/health", "/pool-stats")

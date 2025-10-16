@@ -211,6 +211,27 @@ public class Python3ProcessPool {
     }
 
     /**
+     * Check Python code syntax using a pooled executor
+     *
+     * @param code Python code to check
+     * @return Result containing list of syntax errors
+     * @throws Python3Exception if syntax check fails
+     */
+    public Python3Result checkSyntax(String code) throws Python3Exception {
+        Python3Executor executor = null;
+        try {
+            executor = borrowExecutor(30, TimeUnit.SECONDS);
+            return executor.checkSyntax(code);
+        } catch (InterruptedException | TimeoutException e) {
+            throw new Python3Exception("Failed to acquire executor: " + e.getMessage(), e);
+        } finally {
+            if (executor != null) {
+                returnExecutor(executor);
+            }
+        }
+    }
+
+    /**
      * Replace an unhealthy executor with a new one
      */
     private synchronized void replaceExecutor(Python3Executor oldExecutor) throws IOException {

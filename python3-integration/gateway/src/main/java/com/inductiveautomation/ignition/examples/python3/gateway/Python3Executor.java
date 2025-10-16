@@ -188,6 +188,21 @@ public class Python3Executor {
     }
 
     /**
+     * Check Python code syntax
+     *
+     * @param code Python code to check
+     * @return Result object with list of errors
+     * @throws Python3Exception if request fails
+     */
+    public Python3Result checkSyntax(String code) throws Python3Exception {
+        Map<String, Object> request = new HashMap<>();
+        request.put("command", "check_syntax");
+        request.put("code", code);
+
+        return sendRequest(request, DEFAULT_TIMEOUT_MS);
+    }
+
+    /**
      * Get Python version information
      *
      * @return Result object with version info

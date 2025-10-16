@@ -152,6 +152,77 @@ class PythonBridge:
             'result': 'Globals cleared'
         }
 
+    def check_syntax(self, code: str) -> Dict[str, Any]:
+        """Check Python code for syntax errors using AST and pyflakes"""
+        try:
+            import ast
+            errors = []
+
+            # First, check for syntax errors using AST
+            try:
+                ast.parse(code)
+            except SyntaxError as e:
+                errors.append({
+                    'line': e.lineno if e.lineno else 1,
+                    'column': e.offset if e.offset else 0,
+                    'message': str(e.msg) if e.msg else str(e),
+                    'severity': 'error'
+                })
+
+            # If no syntax errors, try pyflakes for additional checks
+            if not errors:
+                try:
+                    import pyflakes.api
+                    import pyflakes.reporter
+
+                    # Capture pyflakes warnings
+                    warning_stream = io.StringIO()
+                    error_stream = io.StringIO()
+
+                    # Custom reporter to capture warnings
+                    reporter = pyflakes.reporter.Reporter(warning_stream, error_stream)
+                    pyflakes.api.check(code, '<string>', reporter=reporter)
+
+                    # Parse pyflakes output
+                    warnings = warning_stream.getvalue()
+                    if warnings:
+                        for line in warnings.strip().split('\n'):
+                            if line:
+                                # Format: <string>:line:col: message
+                                parts = line.split(':', 3)
+                                if len(parts) >= 4:
+                                    try:
+                                        line_num = int(parts[1])
+                                        col_num = int(parts[2]) if parts[2].strip().isdigit() else 0
+                                        message = parts[3].strip()
+                                        errors.append({
+                                            'line': line_num,
+                                            'column': col_num,
+                                            'message': message,
+                                            'severity': 'warning'
+                                        })
+                                    except (ValueError, IndexError):
+                                        pass
+
+                except ImportError:
+                    # pyflakes not installed, skip additional checks
+                    pass
+                except Exception:
+                    # Don't fail if pyflakes check fails
+                    pass
+
+            return {
+                'success': True,
+                'result': {'errors': errors}
+            }
+
+        except Exception as e:
+            return {
+                'success': False,
+                'error': str(e),
+                'traceback': traceback.format_exc()
+            }
+
     def _serialize(self, obj: Any) -> Any:
         """Convert Python objects to JSON-serializable format"""
         if obj is None:
@@ -202,6 +273,9 @@ class PythonBridge:
 
         elif command == 'clear_globals':
             return self.clear_globals()
+
+        elif command == 'check_syntax':
+            return self.check_syntax(request.get('code', ''))
 
         elif command == 'ping':
             return {'success': True, 'result': 'pong'}

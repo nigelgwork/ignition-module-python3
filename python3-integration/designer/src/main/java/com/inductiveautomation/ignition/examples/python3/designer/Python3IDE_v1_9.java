@@ -53,6 +53,7 @@ public class Python3IDE_v1_9 extends JPanel {
 
     private final DesignerContext context;
     private Python3RestClient restClient;
+    private PythonSyntaxChecker syntaxChecker;
 
     // UI Components
     private JMenuBar menuBar;
@@ -135,6 +136,9 @@ public class Python3IDE_v1_9 extends JPanel {
         codeEditor.setTabSize(4);
         codeEditor.setFont(new Font("Monospaced", Font.PLAIN, fontSize));
         codeEditor.setText("# Python 3.11 Code Editor\n# Enhanced with syntax highlighting\n\nresult = 2 + 2\nprint(f\"Result: {result}\")");
+
+        // Enable parser notifications for real-time error checking
+        codeEditor.setMarkOccurrences(true);
 
         // Unsaved changes tracker
         changesTracker = new UnsavedChangesTracker(codeEditor);
@@ -576,6 +580,15 @@ public class Python3IDE_v1_9 extends JPanel {
             poolStatsLabel.setForeground(Color.BLUE);
 
             LOGGER.info("Connected to Gateway: {}", url);
+
+            // Initialize syntax checker for real-time error checking
+            if (syntaxChecker != null) {
+                syntaxChecker.dispose();
+                codeEditor.removeParser(syntaxChecker);
+            }
+            syntaxChecker = new PythonSyntaxChecker(codeEditor, restClient);
+            codeEditor.addParser(syntaxChecker);
+            LOGGER.info("Real-time syntax checking enabled");
 
             refreshDiagnostics();
             refreshScriptTree();

@@ -426,4 +426,65 @@ public class Python3ScriptModule implements Python3RpcFunctions {
     public Object callScript(String scriptPath) throws Exception {
         return callScript(scriptPath, Collections.emptyList(), Collections.emptyMap());
     }
+
+    /**
+     * Check Python code for syntax errors.
+     * Uses AST parser and pyflakes for validation.
+     *
+     * @param code Python code to check
+     * @return Dictionary with "errors" list containing error details
+     */
+    public Map<String, Object> checkSyntax(String code) {
+        LOGGER.debug("checkSyntax() called with code length: {}", code != null ? code.length() : 0);
+
+        try {
+            Python3ProcessPool pool = getProcessPool();
+            if (pool == null) {
+                String errorMsg = "Python 3 process pool is not initialized";
+                LOGGER.error(errorMsg);
+                Map<String, Object> result = new HashMap<>();
+                result.put("errors", Collections.emptyList());
+                result.put("error", errorMsg);
+                return result;
+            }
+
+            // Execute syntax check via pool
+            Python3Result result = pool.checkSyntax(code != null ? code : "");
+
+            if (result.isSuccess()) {
+                Object resultObj = result.getResult();
+
+                // Result should be a Map with "errors" list
+                if (resultObj instanceof Map) {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> resultMap = (Map<String, Object>) resultObj;
+                    LOGGER.debug("Syntax check completed, found {} errors",
+                            resultMap.containsKey("errors") && resultMap.get("errors") instanceof List
+                                    ? ((List<?>) resultMap.get("errors")).size() : 0);
+                    return resultMap;
+                } else {
+                    // Unexpected result format
+                    Map<String, Object> fallback = new HashMap<>();
+                    fallback.put("errors", Collections.emptyList());
+                    LOGGER.warn("Syntax check returned unexpected format: {}", resultObj);
+                    return fallback;
+                }
+            } else {
+                // Syntax check itself failed
+                String errorMsg = "Syntax check failed: " + result.getError();
+                LOGGER.error(errorMsg);
+                Map<String, Object> errorResult = new HashMap<>();
+                errorResult.put("errors", Collections.emptyList());
+                errorResult.put("error", errorMsg);
+                return errorResult;
+            }
+
+        } catch (Exception e) {
+            LOGGER.error("Failed to check syntax", e);
+            Map<String, Object> errorResult = new HashMap<>();
+            errorResult.put("errors", Collections.emptyList());
+            errorResult.put("error", e.getMessage());
+            return errorResult;
+        }
+    }
 }

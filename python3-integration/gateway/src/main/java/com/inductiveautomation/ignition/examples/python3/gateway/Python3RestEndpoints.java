@@ -137,6 +137,14 @@ public final class Python3RestEndpoints {
             .accessControl(req -> RouteAccess.GRANTED)
             .mount();
 
+        // POST /data/python3integration/api/v1/check-syntax - Check Python syntax
+        routes.newRoute("/api/v1/check-syntax")
+            .handler(Python3RestEndpoints::handleCheckSyntax)
+            .method(HttpMethod.POST)
+            .type(RouteGroup.TYPE_JSON)
+            .accessControl(req -> RouteAccess.GRANTED)
+            .mount();
+
         // Script Management Endpoints
 
         // POST /data/python3integration/api/v1/scripts/save - Save a script
@@ -448,6 +456,55 @@ public final class Python3RestEndpoints {
 
         } catch (Exception e) {
             LOGGER.error("REST API: /example failed", e);
+            return createErrorResponse(e.getMessage());
+        }
+    }
+
+    /**
+     * Handle POST /check-syntax - Check Python code syntax
+     *
+     * Request body: {"code": "..."}
+     * Response: {"success": true, "errors": [{line, column, message, severity}, ...]}
+     */
+    private static JsonObject handleCheckSyntax(RequestContext req, HttpServletResponse res) {
+        LOGGER.debug("REST API: /check-syntax called");
+
+        try {
+            JsonObject requestBody = parseJsonBody(req);
+            String code = requestBody.has("code") ? requestBody.get("code").getAsString() : "";
+
+            if (code.isEmpty()) {
+                JsonObject response = new JsonObject();
+                response.addProperty("success", true);
+                response.add("errors", new JsonArray());
+                return response;
+            }
+
+            // Call Python syntax checker through script module
+            Map<String, Object> result = scriptModule.checkSyntax(code);
+
+            JsonObject response = new JsonObject();
+            response.addProperty("success", true);
+
+            // Convert errors list to JSON array
+            JsonArray errorsArray = new JsonArray();
+            if (result.containsKey("errors") && result.get("errors") instanceof List) {
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> errors = (List<Map<String, Object>>) result.get("errors");
+
+                for (Map<String, Object> error : errors) {
+                    JsonObject errorJson = mapToJson(error);
+                    errorsArray.add(errorJson);
+                }
+            }
+            response.add("errors", errorsArray);
+
+            LOGGER.debug("REST API: /check-syntax completed successfully, found {} errors",
+                        errorsArray.size());
+            return response;
+
+        } catch (Exception e) {
+            LOGGER.error("REST API: /check-syntax failed", e);
             return createErrorResponse(e.getMessage());
         }
     }
