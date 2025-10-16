@@ -31,6 +31,7 @@ public final class Python3RestEndpoints {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Python3RestEndpoints.class);
     private static Python3ScriptModule scriptModule;
+    private static Python3ScriptRepository scriptRepository;
 
     private Python3RestEndpoints() {
         // Private constructor for utility class
@@ -43,6 +44,15 @@ public final class Python3RestEndpoints {
     public static void initialize(Python3ScriptModule module) {
         scriptModule = module;
         LOGGER.info("Python3RestEndpoints initialized");
+    }
+
+    /**
+     * Set the script repository for script management endpoints.
+     * Called from GatewayHook during startup.
+     */
+    public static void setScriptRepository(Python3ScriptRepository repository) {
+        scriptRepository = repository;
+        LOGGER.info("Script repository configured");
     }
 
     /**
@@ -115,6 +125,40 @@ public final class Python3RestEndpoints {
         routes.newRoute("/api/v1/example")
             .handler(Python3RestEndpoints::handleExample)
             .method(HttpMethod.GET)
+            .type(RouteGroup.TYPE_JSON)
+            .accessControl(req -> RouteAccess.GRANTED)
+            .mount();
+
+        // Script Management Endpoints
+
+        // POST /data/python3integration/api/v1/scripts/save - Save a script
+        routes.newRoute("/api/v1/scripts/save")
+            .handler(Python3RestEndpoints::handleSaveScript)
+            .method(HttpMethod.POST)
+            .type(RouteGroup.TYPE_JSON)
+            .accessControl(req -> RouteAccess.GRANTED)
+            .mount();
+
+        // GET /data/python3integration/api/v1/scripts/load/{name} - Load a script
+        routes.newRoute("/api/v1/scripts/load/:name")
+            .handler(Python3RestEndpoints::handleLoadScript)
+            .method(HttpMethod.GET)
+            .type(RouteGroup.TYPE_JSON)
+            .accessControl(req -> RouteAccess.GRANTED)
+            .mount();
+
+        // GET /data/python3integration/api/v1/scripts/list - List all scripts
+        routes.newRoute("/api/v1/scripts/list")
+            .handler(Python3RestEndpoints::handleListScripts)
+            .method(HttpMethod.GET)
+            .type(RouteGroup.TYPE_JSON)
+            .accessControl(req -> RouteAccess.GRANTED)
+            .mount();
+
+        // DELETE /data/python3integration/api/v1/scripts/delete/{name} - Delete a script
+        routes.newRoute("/api/v1/scripts/delete/:name")
+            .handler(Python3RestEndpoints::handleDeleteScript)
+            .method(HttpMethod.DELETE)
             .type(RouteGroup.TYPE_JSON)
             .accessControl(req -> RouteAccess.GRANTED)
             .mount();
@@ -351,6 +395,178 @@ public final class Python3RestEndpoints {
 
         } catch (Exception e) {
             LOGGER.error("REST API: /example failed", e);
+            return createErrorResponse(e.getMessage());
+        }
+    }
+
+    // Script Management Handlers
+
+    /**
+     * Handle POST /scripts/save - Save a Python script
+     *
+     * Request body: {"name": "...", "code": "...", "description": "..."}
+     * Response: {"success": true/false, "script": {...}}
+     */
+    private static JsonObject handleSaveScript(RequestContext req, HttpServletResponse res) {
+        LOGGER.debug("REST API: /scripts/save called");
+
+        try {
+            if (scriptRepository == null) {
+                return createErrorResponse("Script repository not initialized");
+            }
+
+            JsonObject requestBody = parseJsonBody(req);
+            String name = requestBody.has("name") ? requestBody.get("name").getAsString() : null;
+            String code = requestBody.has("code") ? requestBody.get("code").getAsString() : "";
+            String description = requestBody.has("description") ? requestBody.get("description").getAsString() : null;
+
+            if (name == null || name.trim().isEmpty()) {
+                return createErrorResponse("Script name is required");
+            }
+
+            Python3ScriptRepository.SavedScript script = scriptRepository.saveScript(name, code, description);
+
+            JsonObject response = new JsonObject();
+            response.addProperty("success", true);
+
+            JsonObject scriptJson = new JsonObject();
+            scriptJson.addProperty("id", script.getId());
+            scriptJson.addProperty("name", script.getName());
+            scriptJson.addProperty("description", script.getDescription());
+            scriptJson.addProperty("lastModified", script.getLastModified());
+            response.add("script", scriptJson);
+
+            LOGGER.info("REST API: Script saved: {}", name);
+            return response;
+
+        } catch (Exception e) {
+            LOGGER.error("REST API: /scripts/save failed", e);
+            return createErrorResponse(e.getMessage());
+        }
+    }
+
+    /**
+     * Handle GET /scripts/load/:name - Load a saved script
+     *
+     * Response: {"success": true/false, "script": {...}}
+     */
+    private static JsonObject handleLoadScript(RequestContext req, HttpServletResponse res) {
+        LOGGER.debug("REST API: /scripts/load called");
+
+        try {
+            if (scriptRepository == null) {
+                return createErrorResponse("Script repository not initialized");
+            }
+
+            // Extract name from URL path
+            String requestPath = req.getRequest().getRequestURI();
+            String name = requestPath.substring(requestPath.lastIndexOf('/') + 1);
+
+            if (name == null || name.trim().isEmpty()) {
+                return createErrorResponse("Script name is required");
+            }
+
+            Python3ScriptRepository.SavedScript script = scriptRepository.loadScript(name);
+
+            if (script == null) {
+                return createErrorResponse("Script not found: " + name);
+            }
+
+            JsonObject response = new JsonObject();
+            response.addProperty("success", true);
+
+            JsonObject scriptJson = new JsonObject();
+            scriptJson.addProperty("id", script.getId());
+            scriptJson.addProperty("name", script.getName());
+            scriptJson.addProperty("code", script.getCode());
+            scriptJson.addProperty("description", script.getDescription());
+            scriptJson.addProperty("lastModified", script.getLastModified());
+            response.add("script", scriptJson);
+
+            LOGGER.debug("REST API: Script loaded: {}", name);
+            return response;
+
+        } catch (Exception e) {
+            LOGGER.error("REST API: /scripts/load failed", e);
+            return createErrorResponse(e.getMessage());
+        }
+    }
+
+    /**
+     * Handle GET /scripts/list - List all saved scripts
+     *
+     * Response: {"success": true, "scripts": [...]}
+     */
+    private static JsonObject handleListScripts(RequestContext req, HttpServletResponse res) {
+        LOGGER.debug("REST API: /scripts/list called");
+
+        try {
+            if (scriptRepository == null) {
+                return createErrorResponse("Script repository not initialized");
+            }
+
+            List<Python3ScriptRepository.ScriptMetadata> scripts = scriptRepository.listScripts();
+
+            JsonObject response = new JsonObject();
+            response.addProperty("success", true);
+
+            JsonArray scriptsArray = new JsonArray();
+            for (Python3ScriptRepository.ScriptMetadata script : scripts) {
+                JsonObject scriptJson = new JsonObject();
+                scriptJson.addProperty("id", script.getId());
+                scriptJson.addProperty("name", script.getName());
+                scriptJson.addProperty("description", script.getDescription());
+                scriptJson.addProperty("lastModified", script.getLastModified());
+                scriptsArray.add(scriptJson);
+            }
+            response.add("scripts", scriptsArray);
+
+            LOGGER.debug("REST API: Listed {} scripts", scripts.size());
+            return response;
+
+        } catch (Exception e) {
+            LOGGER.error("REST API: /scripts/list failed", e);
+            return createErrorResponse(e.getMessage());
+        }
+    }
+
+    /**
+     * Handle DELETE /scripts/delete/:name - Delete a saved script
+     *
+     * Response: {"success": true/false}
+     */
+    private static JsonObject handleDeleteScript(RequestContext req, HttpServletResponse res) {
+        LOGGER.debug("REST API: /scripts/delete called");
+
+        try {
+            if (scriptRepository == null) {
+                return createErrorResponse("Script repository not initialized");
+            }
+
+            // Extract name from URL path
+            String requestPath = req.getRequest().getRequestURI();
+            String name = requestPath.substring(requestPath.lastIndexOf('/') + 1);
+
+            if (name == null || name.trim().isEmpty()) {
+                return createErrorResponse("Script name is required");
+            }
+
+            boolean deleted = scriptRepository.deleteScript(name);
+
+            JsonObject response = new JsonObject();
+            response.addProperty("success", deleted);
+
+            if (!deleted) {
+                response.addProperty("message", "Script not found: " + name);
+            } else {
+                response.addProperty("message", "Script deleted successfully");
+            }
+
+            LOGGER.info("REST API: Script deletion: {} - {}", name, deleted ? "success" : "not found");
+            return response;
+
+        } catch (Exception e) {
+            LOGGER.error("REST API: /scripts/delete failed", e);
             return createErrorResponse(e.getMessage());
         }
     }

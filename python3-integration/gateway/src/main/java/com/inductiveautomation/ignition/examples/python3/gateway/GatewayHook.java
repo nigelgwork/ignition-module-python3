@@ -24,6 +24,7 @@ public class GatewayHook extends AbstractGatewayModuleHook {
     private Python3ProcessPool processPool;
     private PythonDistributionManager distributionManager;
     private Python3ScriptModule scriptModule;
+    private Python3ScriptRepository scriptRepository;
 
     // Configuration
     private int poolSize = 3; // Default pool size
@@ -42,6 +43,16 @@ public class GatewayHook extends AbstractGatewayModuleHook {
                 context.getSystemManager().getDataDir().toPath().resolve("python3-integration"),
                 autoDownload
         );
+
+        // Initialize script repository
+        try {
+            scriptRepository = new Python3ScriptRepository(
+                    context.getSystemManager().getDataDir().toPath().resolve("python3-integration")
+            );
+            LOGGER.info("Script repository initialized");
+        } catch (IOException e) {
+            LOGGER.error("Failed to initialize script repository", e);
+        }
 
         // TODO: Add test servlet registration once servlet API is figured out
         LOGGER.info("Test servlet not yet implemented - will test via Designer Script Console");
@@ -108,6 +119,9 @@ public class GatewayHook extends AbstractGatewayModuleHook {
 
         // Initialize REST API endpoints with script module
         Python3RestEndpoints.initialize(scriptModule);
+        if (scriptRepository != null) {
+            Python3RestEndpoints.setScriptRepository(scriptRepository);
+        }
         LOGGER.info("REST API endpoints initialized");
 
         // TODO: Re-enable RPC registration once Designer scope is added

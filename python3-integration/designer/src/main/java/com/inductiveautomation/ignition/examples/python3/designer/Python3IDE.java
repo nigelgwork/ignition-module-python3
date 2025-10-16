@@ -43,6 +43,13 @@ public class Python3IDE extends JPanel {
     private JButton clearButton;
     private JProgressBar progressBar;
 
+    // Saved Scripts UI Components
+    private JComboBox<String> savedScriptsCombo;
+    private JButton saveScriptButton;
+    private JButton loadScriptButton;
+    private JButton deleteScriptButton;
+    private JButton refreshScriptsButton;
+
     private Python3ExecutionWorker currentWorker;
 
     /**
@@ -114,6 +121,28 @@ public class Python3IDE extends JPanel {
         progressBar = new JProgressBar();
         progressBar.setIndeterminate(false);
         progressBar.setVisible(false);
+
+        // Saved Scripts Components
+        savedScriptsCombo = new JComboBox<>();
+        savedScriptsCombo.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
+        savedScriptsCombo.setPreferredSize(new Dimension(200, 25));
+        savedScriptsCombo.setToolTipText("Select a saved script to load");
+
+        saveScriptButton = new JButton("Save Script");
+        saveScriptButton.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 11));
+        saveScriptButton.setToolTipText("Save the current script");
+
+        loadScriptButton = new JButton("Load");
+        loadScriptButton.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 11));
+        loadScriptButton.setToolTipText("Load the selected script");
+
+        deleteScriptButton = new JButton("Delete");
+        deleteScriptButton.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 11));
+        deleteScriptButton.setToolTipText("Delete the selected script");
+
+        refreshScriptsButton = new JButton("Refresh");
+        refreshScriptsButton.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 11));
+        refreshScriptsButton.setToolTipText("Refresh the list of saved scripts");
     }
 
     /**
@@ -129,6 +158,16 @@ public class Python3IDE extends JPanel {
         gatewayPanel.add(new JLabel("Gateway URL:"));
         gatewayPanel.add(gatewayUrlField);
         gatewayPanel.add(connectButton);
+
+        // Saved Scripts panel
+        JPanel savedScriptsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
+        savedScriptsPanel.setBorder(new TitledBorder("Saved Scripts"));
+        savedScriptsPanel.add(new JLabel("Scripts:"));
+        savedScriptsPanel.add(savedScriptsCombo);
+        savedScriptsPanel.add(loadScriptButton);
+        savedScriptsPanel.add(saveScriptButton);
+        savedScriptsPanel.add(deleteScriptButton);
+        savedScriptsPanel.add(refreshScriptsButton);
 
         // Center panel: Code editor
         JPanel editorPanel = new JPanel(new BorderLayout());
@@ -156,7 +195,10 @@ public class Python3IDE extends JPanel {
 
         // Combine top panels
         JPanel topContainer = new JPanel(new BorderLayout());
-        topContainer.add(gatewayPanel, BorderLayout.NORTH);
+        JPanel connectionAndScripts = new JPanel(new BorderLayout());
+        connectionAndScripts.add(gatewayPanel, BorderLayout.NORTH);
+        connectionAndScripts.add(savedScriptsPanel, BorderLayout.CENTER);
+        topContainer.add(connectionAndScripts, BorderLayout.NORTH);
         topContainer.add(toolbarPanel, BorderLayout.CENTER);
 
         add(topContainer, BorderLayout.NORTH);
@@ -208,6 +250,12 @@ public class Python3IDE extends JPanel {
 
         // Enter key in Gateway URL field = connect
         gatewayUrlField.addActionListener(e -> connectToGateway());
+
+        // Saved Scripts listeners
+        saveScriptButton.addActionListener(e -> saveScript());
+        loadScriptButton.addActionListener(e -> loadScript());
+        deleteScriptButton.addActionListener(e -> deleteScript());
+        refreshScriptsButton.addActionListener(e -> refreshSavedScripts());
     }
 
     /**
@@ -239,6 +287,9 @@ public class Python3IDE extends JPanel {
 
             // Refresh diagnostics in background
             refreshDiagnostics();
+
+            // Load saved scripts list
+            refreshSavedScripts();
 
         } catch (Exception e) {
             setStatus("Connection failed: " + e.getMessage(), Color.RED);
@@ -426,5 +477,261 @@ public class Python3IDE extends JPanel {
      */
     public JTextArea getErrorArea() {
         return errorArea;
+    }
+
+    // Saved Scripts Management
+
+    /**
+     * Refreshes the list of saved scripts from the Gateway.
+     */
+    private void refreshSavedScripts() {
+        if (restClient == null) {
+            LOGGER.warn("Cannot refresh scripts: not connected to Gateway");
+            return;
+        }
+
+        SwingWorker<java.util.List<ScriptMetadata>, Void> worker = new SwingWorker<java.util.List<ScriptMetadata>, Void>() {
+            @Override
+            protected java.util.List<ScriptMetadata> doInBackground() throws Exception {
+                return restClient.listScripts();
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    java.util.List<ScriptMetadata> scripts = get();
+
+                    savedScriptsCombo.removeAllItems();
+                    for (ScriptMetadata script : scripts) {
+                        savedScriptsCombo.addItem(script.getName());
+                    }
+
+                    LOGGER.info("Loaded {} saved scripts", scripts.size());
+
+                } catch (Exception e) {
+                    LOGGER.error("Failed to load scripts list", e);
+                    JOptionPane.showMessageDialog(
+                            Python3IDE.this,
+                            "Failed to load scripts: " + e.getMessage(),
+                            "Error",
+                            JOptionPane.ERROR_MESSAGE
+                    );
+                }
+            }
+        };
+
+        worker.execute();
+    }
+
+    /**
+     * Saves the current script to the Gateway.
+     */
+    private void saveScript() {
+        if (restClient == null) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Please connect to a Gateway first",
+                    "Not Connected",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+        String code = codeEditor.getText().trim();
+        if (code.isEmpty()) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Cannot save empty script",
+                    "Empty Script",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+        // Prompt for script name and description
+        JTextField nameField = new JTextField(20);
+        JTextField descField = new JTextField(30);
+
+        JPanel panel = new JPanel(new GridLayout(2, 2, 5, 5));
+        panel.add(new JLabel("Script Name:"));
+        panel.add(nameField);
+        panel.add(new JLabel("Description:"));
+        panel.add(descField);
+
+        int result = JOptionPane.showConfirmDialog(
+                this,
+                panel,
+                "Save Script",
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.PLAIN_MESSAGE
+        );
+
+        if (result != JOptionPane.OK_OPTION) {
+            return;
+        }
+
+        String name = nameField.getText().trim();
+        String description = descField.getText().trim();
+
+        if (name.isEmpty()) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Script name cannot be empty",
+                    "Invalid Name",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+        // Save in background
+        SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
+            @Override
+            protected Void doInBackground() throws Exception {
+                restClient.saveScript(name, code, description);
+                return null;
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    get();
+                    setStatus("Script saved: " + name, new Color(0, 128, 0));
+                    refreshSavedScripts();
+
+                } catch (Exception e) {
+                    LOGGER.error("Failed to save script", e);
+                    JOptionPane.showMessageDialog(
+                            Python3IDE.this,
+                            "Failed to save script: " + e.getMessage(),
+                            "Error",
+                            JOptionPane.ERROR_MESSAGE
+                    );
+                }
+            }
+        };
+
+        worker.execute();
+    }
+
+    /**
+     * Loads the selected script from the Gateway.
+     */
+    private void loadScript() {
+        if (restClient == null) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Please connect to a Gateway first",
+                    "Not Connected",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+        String selectedName = (String) savedScriptsCombo.getSelectedItem();
+        if (selectedName == null || selectedName.isEmpty()) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Please select a script to load",
+                    "No Selection",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+        // Load in background
+        SwingWorker<SavedScript, Void> worker = new SwingWorker<SavedScript, Void>() {
+            @Override
+            protected SavedScript doInBackground() throws Exception {
+                return restClient.loadScript(selectedName);
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    SavedScript script = get();
+                    codeEditor.setText(script.getCode());
+                    setStatus("Script loaded: " + script.getName(), new Color(0, 128, 0));
+
+                } catch (Exception e) {
+                    LOGGER.error("Failed to load script", e);
+                    JOptionPane.showMessageDialog(
+                            Python3IDE.this,
+                            "Failed to load script: " + e.getMessage(),
+                            "Error",
+                            JOptionPane.ERROR_MESSAGE
+                    );
+                }
+            }
+        };
+
+        worker.execute();
+    }
+
+    /**
+     * Deletes the selected script from the Gateway.
+     */
+    private void deleteScript() {
+        if (restClient == null) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Please connect to a Gateway first",
+                    "Not Connected",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+        String selectedName = (String) savedScriptsCombo.getSelectedItem();
+        if (selectedName == null || selectedName.isEmpty()) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Please select a script to delete",
+                    "No Selection",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+        // Confirm deletion
+        int confirm = JOptionPane.showConfirmDialog(
+                this,
+                "Are you sure you want to delete '" + selectedName + "'?",
+                "Confirm Delete",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE
+        );
+
+        if (confirm != JOptionPane.YES_OPTION) {
+            return;
+        }
+
+        // Delete in background
+        SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
+            @Override
+            protected Void doInBackground() throws Exception {
+                restClient.deleteScript(selectedName);
+                return null;
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    get();
+                    setStatus("Script deleted: " + selectedName, new Color(0, 128, 0));
+                    refreshSavedScripts();
+
+                } catch (Exception e) {
+                    LOGGER.error("Failed to delete script", e);
+                    JOptionPane.showMessageDialog(
+                            Python3IDE.this,
+                            "Failed to delete script: " + e.getMessage(),
+                            "Error",
+                            JOptionPane.ERROR_MESSAGE
+                    );
+                }
+            }
+        };
+
+        worker.execute();
     }
 }

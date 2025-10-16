@@ -1,5 +1,6 @@
 package com.inductiveautomation.ignition.examples.python3.designer;
 
+import com.inductiveautomation.ignition.common.gson.JsonArray;
 import com.inductiveautomation.ignition.common.gson.JsonObject;
 import com.inductiveautomation.ignition.common.gson.JsonParser;
 import com.inductiveautomation.ignition.designer.model.DesignerContext;
@@ -12,7 +13,9 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -329,6 +332,130 @@ public class Python3RestClient {
         } else {
             // For other types, convert to string
             json.addProperty(key, value.toString());
+        }
+    }
+
+    // Script Management Methods
+
+    /**
+     * Lists all saved scripts from the Gateway.
+     *
+     * @return list of script metadata
+     * @throws IOException if the HTTP request fails
+     */
+    public List<ScriptMetadata> listScripts() throws IOException {
+        LOGGER.debug("Listing saved scripts via REST API");
+
+        String response = get("/scripts/list");
+        JsonObject json = JsonParser.parseString(response).getAsJsonObject();
+
+        List<ScriptMetadata> scripts = new ArrayList<>();
+
+        if (json.has("scripts") && json.get("scripts").isJsonArray()) {
+            JsonArray scriptsArray = json.getAsJsonArray("scripts");
+            for (int i = 0; i < scriptsArray.size(); i++) {
+                JsonObject scriptJson = scriptsArray.get(i).getAsJsonObject();
+                ScriptMetadata metadata = new ScriptMetadata();
+                metadata.setId(scriptJson.has("id") ? scriptJson.get("id").getAsString() : null);
+                metadata.setName(scriptJson.has("name") ? scriptJson.get("name").getAsString() : null);
+                metadata.setDescription(scriptJson.has("description") ? scriptJson.get("description").getAsString() : null);
+                metadata.setLastModified(scriptJson.has("lastModified") ? scriptJson.get("lastModified").getAsString() : null);
+                scripts.add(metadata);
+            }
+        }
+
+        LOGGER.debug("Loaded {} scripts", scripts.size());
+        return scripts;
+    }
+
+    /**
+     * Loads a saved script from the Gateway.
+     *
+     * @param name the script name
+     * @return the saved script with code
+     * @throws IOException if the HTTP request fails
+     */
+    public SavedScript loadScript(String name) throws IOException {
+        LOGGER.debug("Loading script: {}", name);
+
+        String response = get("/scripts/load/" + name);
+        JsonObject json = JsonParser.parseString(response).getAsJsonObject();
+
+        if (json.has("script") && json.get("script").isJsonObject()) {
+            JsonObject scriptJson = json.getAsJsonObject("script");
+            SavedScript script = new SavedScript();
+            script.setId(scriptJson.has("id") ? scriptJson.get("id").getAsString() : null);
+            script.setName(scriptJson.has("name") ? scriptJson.get("name").getAsString() : null);
+            script.setCode(scriptJson.has("code") ? scriptJson.get("code").getAsString() : null);
+            script.setDescription(scriptJson.has("description") ? scriptJson.get("description").getAsString() : null);
+            script.setLastModified(scriptJson.has("lastModified") ? scriptJson.get("lastModified").getAsString() : null);
+            return script;
+        }
+
+        throw new IOException("Failed to load script: " + name);
+    }
+
+    /**
+     * Saves a script to the Gateway.
+     *
+     * @param name the script name
+     * @param code the Python code
+     * @param description optional description
+     * @throws IOException if the HTTP request fails
+     */
+    public void saveScript(String name, String code, String description) throws IOException {
+        LOGGER.debug("Saving script: {}", name);
+
+        JsonObject requestBody = new JsonObject();
+        requestBody.addProperty("name", name);
+        requestBody.addProperty("code", code);
+        requestBody.addProperty("description", description);
+
+        String response = post("/scripts/save", requestBody.toString());
+        JsonObject json = JsonParser.parseString(response).getAsJsonObject();
+
+        if (!json.has("success") || !json.get("success").getAsBoolean()) {
+            throw new IOException("Failed to save script: " + name);
+        }
+
+        LOGGER.info("Script saved successfully: {}", name);
+    }
+
+    /**
+     * Deletes a saved script from the Gateway.
+     *
+     * @param name the script name
+     * @throws IOException if the HTTP request fails
+     */
+    public void deleteScript(String name) throws IOException {
+        LOGGER.debug("Deleting script: {}", name);
+
+        String url = gatewayUrl + API_BASE_PATH + "/scripts/delete/" + name;
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .timeout(REQUEST_TIMEOUT)
+                .DELETE()
+                .header("Accept", "application/json")
+                .build();
+
+        try {
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() != 200) {
+                throw new IOException("HTTP " + response.statusCode() + ": " + response.body());
+            }
+
+            JsonObject json = JsonParser.parseString(response.body()).getAsJsonObject();
+            if (!json.has("success") || !json.get("success").getAsBoolean()) {
+                throw new IOException("Failed to delete script: " + name);
+            }
+
+            LOGGER.info("Script deleted successfully: {}", name);
+
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException("Request interrupted", e);
         }
     }
 }
