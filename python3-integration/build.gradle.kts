@@ -1,6 +1,6 @@
 plugins {
     base
-    id("io.ia.sdk.modl") version "0.5.0"  // Updated from 0.1.1 to latest version
+    id("io.ia.sdk.modl") version "0.4.1"  // Latest stable version (0.5.0 has signing issues)
     id("org.owasp.dependencycheck") version "9.0.9"
     checkstyle
 }
