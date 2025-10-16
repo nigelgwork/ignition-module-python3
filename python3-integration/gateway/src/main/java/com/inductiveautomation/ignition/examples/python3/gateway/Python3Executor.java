@@ -203,6 +203,25 @@ public class Python3Executor {
     }
 
     /**
+     * Get code completions at cursor position
+     *
+     * @param code   Python code
+     * @param line   Line number (1-based)
+     * @param column Column number (0-based)
+     * @return Result object with list of completions
+     * @throws Python3Exception if request fails
+     */
+    public Python3Result getCompletions(String code, int line, int column) throws Python3Exception {
+        Map<String, Object> request = new HashMap<>();
+        request.put("command", "get_completions");
+        request.put("code", code);
+        request.put("line", line);
+        request.put("column", column);
+
+        return sendRequest(request, DEFAULT_TIMEOUT_MS);
+    }
+
+    /**
      * Get Python version information
      *
      * @return Result object with version info

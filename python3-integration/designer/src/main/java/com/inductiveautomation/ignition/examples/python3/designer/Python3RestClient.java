@@ -253,6 +253,55 @@ public class Python3RestClient {
     }
 
     /**
+     * Gets code completions at cursor position.
+     *
+     * @param code the Python code
+     * @param line the line number (1-based)
+     * @param column the column number (0-based)
+     * @return list of completion results
+     * @throws IOException if the HTTP request fails
+     */
+    public List<CompletionResult> getCompletions(String code, int line, int column) throws IOException {
+        LOGGER.debug("Getting completions at line {}, column {} via REST API", line, column);
+
+        // Build JSON request body
+        JsonObject requestBody = new JsonObject();
+        requestBody.addProperty("code", code);
+        requestBody.addProperty("line", line);
+        requestBody.addProperty("column", column);
+
+        // Make POST request to /completions endpoint
+        String response = post("/completions", requestBody.toString());
+
+        // Parse response
+        JsonObject json = JsonParser.parseString(response).getAsJsonObject();
+
+        List<CompletionResult> completions = new ArrayList<>();
+
+        // Parse completions array
+        if (json.has("completions") && json.get("completions").isJsonArray()) {
+            JsonArray completionsArray = json.getAsJsonArray("completions");
+
+            for (int i = 0; i < completionsArray.size(); i++) {
+                JsonObject compJson = completionsArray.get(i).getAsJsonObject();
+
+                CompletionResult completion = new CompletionResult();
+                completion.setText(getJsonString(compJson, "text"));
+                completion.setType(getJsonString(compJson, "type"));
+                completion.setComplete(getJsonString(compJson, "complete"));
+                completion.setDescription(getJsonString(compJson, "description"));
+                completion.setDocstring(getJsonString(compJson, "docstring"));
+                completion.setSignature(getJsonString(compJson, "signature"));
+
+                completions.add(completion);
+            }
+        }
+
+        LOGGER.debug("Retrieved {} completions", completions.size());
+        return completions;
+    }
+
+    /**
      * Makes a GET request to the specified endpoint.
      *
      * @param endpoint the API endpoint (e.g., "/health", "/pool-stats")

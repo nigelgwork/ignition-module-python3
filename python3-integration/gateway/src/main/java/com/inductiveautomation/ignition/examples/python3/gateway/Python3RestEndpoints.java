@@ -145,6 +145,14 @@ public final class Python3RestEndpoints {
             .accessControl(req -> RouteAccess.GRANTED)
             .mount();
 
+        // POST /data/python3integration/api/v1/completions - Get code completions
+        routes.newRoute("/api/v1/completions")
+            .handler(Python3RestEndpoints::handleGetCompletions)
+            .method(HttpMethod.POST)
+            .type(RouteGroup.TYPE_JSON)
+            .accessControl(req -> RouteAccess.GRANTED)
+            .mount();
+
         // Script Management Endpoints
 
         // POST /data/python3integration/api/v1/scripts/save - Save a script
@@ -505,6 +513,64 @@ public final class Python3RestEndpoints {
 
         } catch (Exception e) {
             LOGGER.error("REST API: /check-syntax failed", e);
+            return createErrorResponse(e.getMessage());
+        }
+    }
+
+    /**
+     * Handle POST /completions - Get code completions at cursor position
+     *
+     * Request body: {"code": "...", "line": 1, "column": 0}
+     * Response: {"success": true, "completions": [{text, type, description, signature}, ...]}
+     */
+    private static JsonObject handleGetCompletions(RequestContext req, HttpServletResponse res) {
+        LOGGER.debug("REST API: /completions called");
+
+        try {
+            JsonObject requestBody = parseJsonBody(req);
+            String code = requestBody.has("code") ? requestBody.get("code").getAsString() : "";
+            int line = requestBody.has("line") ? requestBody.get("line").getAsInt() : 1;
+            int column = requestBody.has("column") ? requestBody.get("column").getAsInt() : 0;
+
+            if (code.isEmpty()) {
+                JsonObject response = new JsonObject();
+                response.addProperty("success", true);
+                response.add("completions", new JsonArray());
+                response.addProperty("count", 0);
+                return response;
+            }
+
+            // Call Python completion engine through script module
+            Map<String, Object> result = scriptModule.getCompletions(code, line, column);
+
+            JsonObject response = new JsonObject();
+            response.addProperty("success", true);
+
+            // Convert completions list to JSON array
+            JsonArray completionsArray = new JsonArray();
+            if (result.containsKey("completions") && result.get("completions") instanceof List) {
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> completions = (List<Map<String, Object>>) result.get("completions");
+
+                for (Map<String, Object> completion : completions) {
+                    JsonObject completionJson = mapToJson(completion);
+                    completionsArray.add(completionJson);
+                }
+            }
+            response.add("completions", completionsArray);
+            response.addProperty("count", completionsArray.size());
+
+            // Add message if Jedi not installed
+            if (result.containsKey("message")) {
+                response.addProperty("message", result.get("message").toString());
+            }
+
+            LOGGER.debug("REST API: /completions completed successfully, found {} completions",
+                        completionsArray.size());
+            return response;
+
+        } catch (Exception e) {
+            LOGGER.error("REST API: /completions failed", e);
             return createErrorResponse(e.getMessage());
         }
     }

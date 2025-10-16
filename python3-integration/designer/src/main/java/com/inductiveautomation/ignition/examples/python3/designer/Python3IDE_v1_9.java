@@ -10,6 +10,8 @@ import org.fife.ui.rtextarea.SearchEngine;
 import org.fife.rsta.ui.search.FindDialog;
 import org.fife.rsta.ui.search.ReplaceDialog;
 import org.fife.rsta.ui.search.SearchListener;
+import org.fife.ui.autocomplete.AutoCompletion;
+import org.fife.ui.autocomplete.CompletionProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,6 +22,7 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
+import java.awt.event.KeyEvent;
 import java.awt.*;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.StringSelection;
@@ -54,6 +57,7 @@ public class Python3IDE_v1_9 extends JPanel {
     private final DesignerContext context;
     private Python3RestClient restClient;
     private PythonSyntaxChecker syntaxChecker;
+    private AutoCompletion autoCompletion;
 
     // UI Components
     private JTextField gatewayUrlField;
@@ -606,6 +610,20 @@ public class Python3IDE_v1_9 extends JPanel {
             syntaxChecker = new PythonSyntaxChecker(codeEditor, restClient);
             codeEditor.addParser(syntaxChecker);
             LOGGER.info("Real-time syntax checking enabled");
+
+            // Initialize auto-completion with Jedi-powered completions
+            if (autoCompletion != null) {
+                autoCompletion.uninstall();
+            }
+            CompletionProvider provider = new Python3CompletionProvider(restClient);
+            autoCompletion = new AutoCompletion(provider);
+            autoCompletion.setAutoActivationEnabled(true);
+            autoCompletion.setAutoCompleteSingleChoices(false);
+            autoCompletion.setAutoActivationDelay(500);  // 500ms delay after typing
+            autoCompletion.setShowDescWindow(true);
+            autoCompletion.setTriggerKey(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, KeyEvent.CTRL_DOWN_MASK));  // Ctrl+Space
+            autoCompletion.install(codeEditor);
+            LOGGER.info("Auto-completion enabled: Ctrl+Space to trigger, auto-activates on typing");
 
             refreshDiagnostics();
             refreshPythonVersion();

@@ -223,6 +223,89 @@ class PythonBridge:
                 'traceback': traceback.format_exc()
             }
 
+    def get_completions(self, code: str, line: int, column: int) -> Dict[str, Any]:
+        """Get code completions at cursor position using Jedi"""
+        try:
+            try:
+                import jedi
+            except ImportError:
+                # Jedi not installed, return fallback completions
+                return {
+                    'success': True,
+                    'result': {
+                        'completions': [],
+                        'message': 'Jedi library not installed. Install with: pip install jedi'
+                    }
+                }
+
+            # Create Jedi script for analysis
+            script = jedi.Script(code, path='<stdin>')
+
+            # Get completions at cursor position (Jedi uses 1-based line numbers)
+            completions = script.complete(line, column)
+
+            # Format completion results
+            completion_list = []
+            for completion in completions[:50]:  # Limit to 50 results
+                try:
+                    completion_item = {
+                        'text': completion.name,
+                        'type': completion.type,  # 'function', 'class', 'module', 'keyword', etc.
+                        'complete': completion.complete,  # Full completion text
+                    }
+
+                    # Add description if available
+                    try:
+                        if completion.docstring():
+                            # Extract first line of docstring for summary
+                            doc_lines = completion.docstring().split('\n')
+                            summary = doc_lines[0] if doc_lines else ''
+                            completion_item['description'] = summary[:100]  # Limit description
+                            completion_item['docstring'] = completion.docstring()[:500]  # Full docstring (limited)
+                    except Exception:
+                        pass
+
+                    # Add function signature if available
+                    try:
+                        if completion.type in ('function', 'class'):
+                            signatures = completion.get_signatures()
+                            if signatures:
+                                sig = signatures[0]
+                                params = []
+                                for param in sig.params:
+                                    param_str = param.name
+                                    if param.infer_default():
+                                        try:
+                                            default_val = str(param.infer_default()[0].name)
+                                            param_str += f'={default_val}'
+                                        except Exception:
+                                            pass
+                                    params.append(param_str)
+                                completion_item['signature'] = f"{completion.name}({', '.join(params)})"
+                    except Exception:
+                        pass
+
+                    completion_list.append(completion_item)
+
+                except Exception:
+                    # Skip this completion if there's an error
+                    continue
+
+            return {
+                'success': True,
+                'result': {
+                    'completions': completion_list,
+                    'count': len(completion_list)
+                }
+            }
+
+        except Exception as e:
+            return {
+                'success': False,
+                'error': str(e),
+                'traceback': traceback.format_exc()
+            }
+
     def _serialize(self, obj: Any) -> Any:
         """Convert Python objects to JSON-serializable format"""
         if obj is None:
@@ -276,6 +359,13 @@ class PythonBridge:
 
         elif command == 'check_syntax':
             return self.check_syntax(request.get('code', ''))
+
+        elif command == 'get_completions':
+            return self.get_completions(
+                request.get('code', ''),
+                request.get('line', 1),
+                request.get('column', 0)
+            )
 
         elif command == 'ping':
             return {'success': True, 'result': 'pong'}

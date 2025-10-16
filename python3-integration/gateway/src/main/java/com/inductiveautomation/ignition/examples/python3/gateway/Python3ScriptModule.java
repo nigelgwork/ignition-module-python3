@@ -487,4 +487,67 @@ public class Python3ScriptModule implements Python3RpcFunctions {
             return errorResult;
         }
     }
+
+    /**
+     * Get code completions at cursor position.
+     * Uses Jedi library for intelligent code completion.
+     *
+     * @param code   Python code
+     * @param line   Line number (1-based)
+     * @param column Column number (0-based)
+     * @return Dictionary with "completions" list containing completion details
+     */
+    public Map<String, Object> getCompletions(String code, int line, int column) {
+        LOGGER.debug("getCompletions() called at line {}, column {}", line, column);
+
+        try {
+            Python3ProcessPool pool = getProcessPool();
+            if (pool == null) {
+                String errorMsg = "Python 3 process pool is not initialized";
+                LOGGER.error(errorMsg);
+                Map<String, Object> result = new HashMap<>();
+                result.put("completions", Collections.emptyList());
+                result.put("error", errorMsg);
+                return result;
+            }
+
+            // Execute completions request via pool
+            Python3Result result = pool.getCompletions(code != null ? code : "", line, column);
+
+            if (result.isSuccess()) {
+                Object resultObj = result.getResult();
+
+                // Result should be a Map with "completions" list
+                if (resultObj instanceof Map) {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> resultMap = (Map<String, Object>) resultObj;
+                    LOGGER.debug("Completions request completed, found {} completions",
+                            resultMap.containsKey("completions") && resultMap.get("completions") instanceof List
+                                    ? ((List<?>) resultMap.get("completions")).size() : 0);
+                    return resultMap;
+                } else {
+                    // Unexpected result format
+                    Map<String, Object> fallback = new HashMap<>();
+                    fallback.put("completions", Collections.emptyList());
+                    LOGGER.warn("Completions request returned unexpected format: {}", resultObj);
+                    return fallback;
+                }
+            } else {
+                // Completions request itself failed
+                String errorMsg = "Completions request failed: " + result.getError();
+                LOGGER.error(errorMsg);
+                Map<String, Object> errorResult = new HashMap<>();
+                errorResult.put("completions", Collections.emptyList());
+                errorResult.put("error", errorMsg);
+                return errorResult;
+            }
+
+        } catch (Exception e) {
+            LOGGER.error("Failed to get completions", e);
+            Map<String, Object> errorResult = new HashMap<>();
+            errorResult.put("completions", Collections.emptyList());
+            errorResult.put("error", e.getMessage());
+            return errorResult;
+        }
+    }
 }

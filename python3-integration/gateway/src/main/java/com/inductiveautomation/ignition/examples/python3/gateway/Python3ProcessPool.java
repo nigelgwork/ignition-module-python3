@@ -232,6 +232,29 @@ public class Python3ProcessPool {
     }
 
     /**
+     * Get code completions using a pooled executor
+     *
+     * @param code   Python code
+     * @param line   Line number (1-based)
+     * @param column Column number (0-based)
+     * @return Result containing list of completions
+     * @throws Python3Exception if completions request fails
+     */
+    public Python3Result getCompletions(String code, int line, int column) throws Python3Exception {
+        Python3Executor executor = null;
+        try {
+            executor = borrowExecutor(30, TimeUnit.SECONDS);
+            return executor.getCompletions(code, line, column);
+        } catch (InterruptedException | TimeoutException e) {
+            throw new Python3Exception("Failed to acquire executor: " + e.getMessage(), e);
+        } finally {
+            if (executor != null) {
+                returnExecutor(executor);
+            }
+        }
+    }
+
+    /**
      * Replace an unhealthy executor with a new one
      */
     private synchronized void replaceExecutor(Python3Executor oldExecutor) throws IOException {
