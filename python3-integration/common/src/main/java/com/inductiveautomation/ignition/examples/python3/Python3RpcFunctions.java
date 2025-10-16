@@ -77,4 +77,16 @@ public interface Python3RpcFunctions {
      * @return Map with distribution information
      */
     Map<String, Object> getDistributionInfo();
+
+    /**
+     * Call a saved Python script by path with arguments.
+     * The script's 'result' variable will be returned.
+     *
+     * @param scriptPath Path to the script (e.g., "My Script" or "Folder/My Script")
+     * @param args       Positional arguments to pass to the script
+     * @param kwargs     Keyword arguments to pass to the script
+     * @return The value of the 'result' variable from the script
+     * @throws Exception if script not found or execution fails
+     */
+    Object callScript(String scriptPath, List<Object> args, Map<String, Object> kwargs) throws Exception;
 }

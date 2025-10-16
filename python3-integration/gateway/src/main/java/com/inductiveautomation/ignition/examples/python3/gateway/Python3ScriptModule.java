@@ -40,6 +40,13 @@ public class Python3ScriptModule implements Python3RpcFunctions {
     }
 
     /**
+     * Lazily get the script repository from the gateway hook.
+     */
+    private Python3ScriptRepository getScriptRepository() {
+        return gatewayHook.getScriptRepository();
+    }
+
+    /**
      * Execute Python 3 code and return the result.
      *
      * @param code Python code to execute
@@ -330,5 +337,93 @@ public class Python3ScriptModule implements Python3RpcFunctions {
             LOGGER.warn("getDistributionInfo() - manager not initialized");
             return info;
         }
+    }
+
+    /**
+     * Call a saved Python script by path with arguments.
+     * The script's 'result' variable will be returned.
+     *
+     * @param scriptPath Path to the script (e.g., "My Script" or "Folder/My Script")
+     * @param args       Positional arguments to pass to the script
+     * @param kwargs     Keyword arguments to pass to the script
+     * @return The value of the 'result' variable from the script
+     * @throws Exception if script not found or execution fails
+     */
+    @Override
+    public Object callScript(String scriptPath, List<Object> args, Map<String, Object> kwargs) throws Exception {
+        LOGGER.debug("callScript() called with path: {}", scriptPath);
+
+        try {
+            // Load the script from repository
+            Python3ScriptRepository repository = getScriptRepository();
+            if (repository == null) {
+                String errorMsg = "Script repository is not initialized";
+                LOGGER.error(errorMsg);
+                throw new RuntimeException(errorMsg);
+            }
+
+            Python3ScriptRepository.SavedScript script = repository.loadScriptByPath(scriptPath);
+            if (script == null) {
+                String errorMsg = "Script not found: " + scriptPath;
+                LOGGER.error(errorMsg);
+                throw new RuntimeException(errorMsg);
+            }
+
+            LOGGER.debug("Loaded script: {} with code length: {}", script.getName(), script.getCode().length());
+
+            // Prepare variables to inject into the script
+            Map<String, Object> variables = new HashMap<>();
+            if (args != null) {
+                variables.put("args", args);
+            } else {
+                variables.put("args", Collections.emptyList());
+            }
+            if (kwargs != null) {
+                variables.put("kwargs", kwargs);
+            } else {
+                variables.put("kwargs", Collections.emptyMap());
+            }
+
+            LOGGER.debug("Executing script with {} args and {} kwargs",
+                args != null ? args.size() : 0,
+                kwargs != null ? kwargs.size() : 0);
+
+            // Execute the script
+            Python3ProcessPool pool = getProcessPool();
+            if (pool == null) {
+                String errorMsg = "Python 3 process pool is not initialized. Check Gateway logs for initialization errors.";
+                LOGGER.error(errorMsg);
+                throw new RuntimeException(errorMsg);
+            }
+
+            Python3Result result = pool.execute(script.getCode(), variables);
+
+            if (result.isSuccess()) {
+                LOGGER.debug("Script executed successfully");
+                return result.getResult();
+            } else {
+                String errorMsg = "Python error in script '" + scriptPath + "': " + result.getError();
+                if (result.getTraceback() != null) {
+                    errorMsg += "\n" + result.getTraceback();
+                }
+                LOGGER.error(errorMsg);
+                throw new RuntimeException(errorMsg);
+            }
+
+        } catch (Python3Exception e) {
+            LOGGER.error("Failed to execute script: {}", scriptPath, e);
+            throw new RuntimeException("Failed to execute script '" + scriptPath + "': " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Call a saved Python script by path (without arguments).
+     *
+     * @param scriptPath Path to the script
+     * @return The value of the 'result' variable from the script
+     * @throws Exception if script not found or execution fails
+     */
+    public Object callScript(String scriptPath) throws Exception {
+        return callScript(scriptPath, Collections.emptyList(), Collections.emptyMap());
     }
 }

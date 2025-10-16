@@ -89,6 +89,14 @@ public final class Python3RestEndpoints {
             .accessControl(req -> RouteAccess.GRANTED)
             .mount();
 
+        // POST /data/python3integration/api/v1/call-script - Call saved Python script
+        routes.newRoute("/api/v1/call-script")
+            .handler(Python3RestEndpoints::handleCallScript)
+            .method(HttpMethod.POST)
+            .type(RouteGroup.TYPE_JSON)
+            .accessControl(req -> RouteAccess.GRANTED)
+            .mount();
+
         // GET /data/python3integration/api/v1/version - Get Python version
         routes.newRoute("/api/v1/version")
             .handler(Python3RestEndpoints::handleGetVersion)
@@ -265,6 +273,51 @@ public final class Python3RestEndpoints {
 
         } catch (Exception e) {
             LOGGER.error("REST API: /call-module failed", e);
+            return createErrorResponse(e.getMessage());
+        }
+    }
+
+    /**
+     * Handle POST /call-script - Call saved Python script by path
+     *
+     * Request body: {"scriptPath": "...", "args": [...], "kwargs": {...}}
+     * Response: {"success": true/false, "result": ..., "error": "..."}
+     */
+    private static JsonObject handleCallScript(RequestContext req, HttpServletResponse res) {
+        LOGGER.debug("REST API: /call-script called");
+
+        try {
+            JsonObject requestBody = parseJsonBody(req);
+            String scriptPath = requestBody.has("scriptPath") ? requestBody.get("scriptPath").getAsString() : "";
+
+            if (scriptPath.isEmpty()) {
+                return createErrorResponse("scriptPath is required");
+            }
+
+            List<Object> args = new ArrayList<>();
+            if (requestBody.has("args") && requestBody.get("args").isJsonArray()) {
+                JsonArray jsonArgs = requestBody.getAsJsonArray("args");
+                for (JsonElement element : jsonArgs) {
+                    args.add(jsonElementToObject(element));
+                }
+            }
+
+            Map<String, Object> kwargs = new HashMap<>();
+            if (requestBody.has("kwargs") && requestBody.get("kwargs").isJsonObject()) {
+                kwargs = jsonToMap(requestBody.getAsJsonObject("kwargs"));
+            }
+
+            Object result = scriptModule.callScript(scriptPath, args, kwargs);
+
+            JsonObject response = new JsonObject();
+            response.addProperty("success", true);
+            response.addProperty("result", result != null ? result.toString() : null);
+
+            LOGGER.debug("REST API: /call-script completed successfully for script: {}", scriptPath);
+            return response;
+
+        } catch (Exception e) {
+            LOGGER.error("REST API: /call-script failed", e);
             return createErrorResponse(e.getMessage());
         }
     }

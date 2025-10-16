@@ -191,6 +191,13 @@ public class GatewayHook extends AbstractGatewayModuleHook {
     }
 
     /**
+     * Get the script repository (for script management)
+     */
+    public Python3ScriptRepository getScriptRepository() {
+        return scriptRepository;
+    }
+
+    /**
      * Check if Python 3 is available
      */
     public boolean isPython3Available() {

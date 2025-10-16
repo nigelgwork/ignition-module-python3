@@ -123,6 +123,67 @@ public class Python3ScriptRepository {
     }
 
     /**
+     * Loads a saved script by path (supports folder hierarchy).
+     * Supports formats like:
+     * - "My Script" (root level)
+     * - "Folder/My Script" (in folder)
+     * - "Folder/Subfolder/My Script" (nested folders)
+     * - "/Folder/My Script" (leading slash optional)
+     *
+     * @param scriptPath the script path
+     * @return the saved script, or null if not found
+     */
+    public SavedScript loadScriptByPath(String scriptPath) {
+        if (scriptPath == null || scriptPath.trim().isEmpty()) {
+            LOGGER.warn("Script path is empty");
+            return null;
+        }
+
+        // Normalize path: remove leading/trailing slashes
+        String normalizedPath = scriptPath.replaceAll("^/+|/+$", "").trim();
+
+        // Split into folder path and script name
+        String folderPath;
+        String scriptName;
+
+        int lastSlash = normalizedPath.lastIndexOf('/');
+        if (lastSlash == -1) {
+            // No folder path, script is at root
+            folderPath = "";
+            scriptName = normalizedPath;
+        } else {
+            // Extract folder path and script name
+            folderPath = normalizedPath.substring(0, lastSlash);
+            scriptName = normalizedPath.substring(lastSlash + 1);
+        }
+
+        // Search for script with matching name and folder path
+        for (SavedScript script : scriptIndex.values()) {
+            String scriptFolderPath = script.getFolderPath() != null ? script.getFolderPath() : "";
+
+            // Match script name and folder path
+            if (script.getName().equals(scriptName) && scriptFolderPath.equals(folderPath)) {
+                LOGGER.debug("Found script by path: {} in folder: {}", scriptName, folderPath);
+                return script;
+            }
+        }
+
+        // Try case-insensitive match
+        for (SavedScript script : scriptIndex.values()) {
+            String scriptFolderPath = script.getFolderPath() != null ? script.getFolderPath() : "";
+
+            if (script.getName().equalsIgnoreCase(scriptName) &&
+                scriptFolderPath.equalsIgnoreCase(folderPath)) {
+                LOGGER.debug("Found script by path (case-insensitive): {} in folder: {}", scriptName, folderPath);
+                return script;
+            }
+        }
+
+        LOGGER.warn("Script not found by path: {}", scriptPath);
+        return null;
+    }
+
+    /**
      * Lists all saved scripts.
      *
      * @return list of saved scripts (metadata only, no code)
