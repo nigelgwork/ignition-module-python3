@@ -29,9 +29,11 @@ public class Python3IDE extends JPanel {
     private static final Logger LOGGER = LoggerFactory.getLogger(Python3IDE.class);
 
     private final DesignerContext context;
-    private final Python3RestClient restClient;
+    private Python3RestClient restClient;
 
     // UI Components
+    private JTextField gatewayUrlField;
+    private JButton connectButton;
     private JTextArea codeEditor;
     private JTextArea outputArea;
     private JTextArea errorArea;
@@ -50,18 +52,29 @@ public class Python3IDE extends JPanel {
      */
     public Python3IDE(DesignerContext context) {
         this.context = context;
-        this.restClient = new Python3RestClient(context);
+        this.restClient = null;  // Will be created when user connects
 
         initComponents();
         layoutComponents();
         attachListeners();
-        refreshDiagnostics();
+
+        // Auto-connect to default Gateway on startup
+        connectToGateway();
     }
 
     /**
      * Initializes all UI components.
      */
     private void initComponents() {
+        // Gateway URL input
+        gatewayUrlField = new JTextField("http://localhost:9088", 30);
+        gatewayUrlField.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
+        gatewayUrlField.setToolTipText("Gateway URL (e.g., http://localhost:9088)");
+
+        connectButton = new JButton("Connect");
+        connectButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 11));
+        connectButton.setToolTipText("Connect to the specified Gateway");
+
         // Code editor
         codeEditor = new JTextArea(15, 80);
         codeEditor.setFont(new Font("Monospaced", Font.PLAIN, 12));
@@ -86,8 +99,9 @@ public class Python3IDE extends JPanel {
         statusLabel.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 11));
 
         // Pool stats label
-        poolStatsLabel = new JLabel("Pool: Loading...");
+        poolStatsLabel = new JLabel("Pool: Not Connected");
         poolStatsLabel.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 11));
+        poolStatsLabel.setForeground(Color.GRAY);
 
         // Buttons
         executeButton = new JButton("Execute (Ctrl+Enter)");
@@ -109,15 +123,20 @@ public class Python3IDE extends JPanel {
         setLayout(new BorderLayout(5, 5));
         setBorder(new EmptyBorder(10, 10, 10, 10));
 
-        // Top panel: Code editor
+        // Top panel: Gateway URL selector
+        JPanel gatewayPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
+        gatewayPanel.setBorder(new TitledBorder("Gateway Connection"));
+        gatewayPanel.add(new JLabel("Gateway URL:"));
+        gatewayPanel.add(gatewayUrlField);
+        gatewayPanel.add(connectButton);
+
+        // Center panel: Code editor
         JPanel editorPanel = new JPanel(new BorderLayout());
         editorPanel.setBorder(new TitledBorder("Python 3 Code Editor"));
 
         JScrollPane editorScroll = new JScrollPane(codeEditor);
         editorScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
         editorPanel.add(editorScroll, BorderLayout.CENTER);
-
-        add(editorPanel, BorderLayout.CENTER);
 
         // Middle panel: Toolbar
         JPanel toolbarPanel = new JPanel(new BorderLayout(10, 0));
@@ -135,7 +154,13 @@ public class Python3IDE extends JPanel {
         toolbarPanel.add(buttonPanel, BorderLayout.WEST);
         toolbarPanel.add(infoPanel, BorderLayout.EAST);
 
-        add(toolbarPanel, BorderLayout.NORTH);
+        // Combine top panels
+        JPanel topContainer = new JPanel(new BorderLayout());
+        topContainer.add(gatewayPanel, BorderLayout.NORTH);
+        topContainer.add(toolbarPanel, BorderLayout.CENTER);
+
+        add(topContainer, BorderLayout.NORTH);
+        add(editorPanel, BorderLayout.CENTER);
 
         // Bottom panel: Output and Error tabs
         JTabbedPane outputTabs = new JTabbedPane();
@@ -159,6 +184,9 @@ public class Python3IDE extends JPanel {
      * Attaches event listeners to UI components.
      */
     private void attachListeners() {
+        // Connect button
+        connectButton.addActionListener(e -> connectToGateway());
+
         // Execute button
         executeButton.addActionListener(e -> executeCode());
 
@@ -177,12 +205,58 @@ public class Python3IDE extends JPanel {
                 executeCode();
             }
         });
+
+        // Enter key in Gateway URL field = connect
+        gatewayUrlField.addActionListener(e -> connectToGateway());
+    }
+
+    /**
+     * Connects to the Gateway at the specified URL.
+     */
+    private void connectToGateway() {
+        String url = gatewayUrlField.getText().trim();
+
+        if (url.isEmpty()) {
+            setStatus("Please enter a Gateway URL", Color.RED);
+            return;
+        }
+
+        // Add http:// if no protocol specified
+        if (!url.startsWith("http://") && !url.startsWith("https://")) {
+            url = "http://" + url;
+            gatewayUrlField.setText(url);
+        }
+
+        try {
+            // Create new REST client with the specified URL
+            restClient = new Python3RestClient(url);
+
+            setStatus("Connected to " + url, new Color(0, 128, 0));
+            poolStatsLabel.setText("Pool: Checking...");
+            poolStatsLabel.setForeground(Color.BLUE);
+
+            LOGGER.info("Connected to Gateway: {}", url);
+
+            // Refresh diagnostics in background
+            refreshDiagnostics();
+
+        } catch (Exception e) {
+            setStatus("Connection failed: " + e.getMessage(), Color.RED);
+            poolStatsLabel.setText("Pool: Not Connected");
+            poolStatsLabel.setForeground(Color.RED);
+            LOGGER.error("Failed to connect to Gateway: {}", url, e);
+        }
     }
 
     /**
      * Executes the Python code in the editor.
      */
     private void executeCode() {
+        if (restClient == null) {
+            setStatus("Not connected to Gateway. Please connect first.", Color.RED);
+            return;
+        }
+
         String code = codeEditor.getText().trim();
 
         if (code.isEmpty()) {
@@ -269,6 +343,12 @@ public class Python3IDE extends JPanel {
      * Refreshes the diagnostics (pool stats, health).
      */
     private void refreshDiagnostics() {
+        if (restClient == null) {
+            poolStatsLabel.setText("Pool: Not Connected");
+            poolStatsLabel.setForeground(Color.GRAY);
+            return;
+        }
+
         // Run diagnostics in background to avoid blocking UI
         SwingWorker<PoolStats, Void> diagnosticsWorker = new SwingWorker<PoolStats, Void>() {
             @Override

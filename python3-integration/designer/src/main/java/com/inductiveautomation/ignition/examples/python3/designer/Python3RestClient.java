@@ -41,18 +41,30 @@ public class Python3RestClient {
     /**
      * Creates a new REST client for the Python 3 Integration module.
      *
-     * @param context the Designer context to get the Gateway URL from
+     * @param gatewayUrl the Gateway URL (e.g., "http://localhost:9088")
      */
-    public Python3RestClient(DesignerContext context) {
+    public Python3RestClient(String gatewayUrl) {
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(10))
                 .build();
 
-        // Get Gateway URL from Designer context
-        // Format: http://hostname:port or https://hostname:port
-        this.gatewayUrl = buildGatewayUrl(context);
+        // Remove trailing slash if present
+        if (gatewayUrl != null && gatewayUrl.endsWith("/")) {
+            gatewayUrl = gatewayUrl.substring(0, gatewayUrl.length() - 1);
+        }
 
-        LOGGER.info("Python3RestClient initialized with Gateway URL: {}", gatewayUrl);
+        this.gatewayUrl = gatewayUrl != null ? gatewayUrl : "http://localhost:8088";
+
+        LOGGER.info("Python3RestClient initialized with Gateway URL: {}", this.gatewayUrl);
+    }
+
+    /**
+     * Creates a new REST client using the Designer context (auto-detect Gateway URL).
+     *
+     * @param context the Designer context
+     */
+    public Python3RestClient(DesignerContext context) {
+        this(buildGatewayUrl(context));
     }
 
     /**
@@ -261,12 +273,13 @@ public class Python3RestClient {
     /**
      * Builds the Gateway URL from system properties, environment variables, or defaults.
      *
-     * @param context the Designer context (not currently used)
+     * @param context the Designer context (currently unused, reserved for future auto-detection)
      * @return the Gateway base URL (e.g., "http://localhost:8088")
      */
-    private String buildGatewayUrl(DesignerContext context) {
+    private static String buildGatewayUrl(DesignerContext context) {
         try {
-            // Try system property first
+            // Try system property first (allows manual override)
+            // Set via: -Dignition.python3.gateway.url=http://localhost:9088
             String url = System.getProperty("ignition.python3.gateway.url");
 
             // Try environment variable
@@ -274,12 +287,14 @@ public class Python3RestClient {
                 url = System.getenv("IGNITION_GATEWAY_URL");
             }
 
-            // Default to localhost
+            // Default to localhost:8088
             if (url == null || url.trim().isEmpty()) {
                 url = "http://localhost:8088";
-                LOGGER.info("Using default Gateway URL: {}", url);
-            } else {
-                LOGGER.info("Using configured Gateway URL: {}", url);
+                LOGGER.info("Using default Gateway URL: {} (configure via IDE settings or set -Dignition.python3.gateway.url=http://host:port)", url);
+            } else if (!url.startsWith("http://") && !url.startsWith("https://")) {
+                // If URL doesn't have protocol, add http://
+                url = "http://" + url;
+                LOGGER.info("Added http:// protocol to Gateway URL: {}", url);
             }
 
             // Remove trailing slash if present
