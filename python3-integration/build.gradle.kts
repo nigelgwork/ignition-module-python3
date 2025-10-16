@@ -59,9 +59,9 @@ ignitionModule {
         )
     )
 
-    // Enable module signing with self-signed certificate
-    // Signing configured via sign.props file
-    skipModlSigning.set(false)
+    // TESTING: Disable module signing to test if this allows upgrades
+    // Hypothesis: Self-signed cert signatures changing between builds prevents upgrades
+    skipModlSigning.set(true)  // Changed from false to true for v1.7.5 testing
 }
 
 // OWASP Dependency Check Configuration
