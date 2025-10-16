@@ -56,9 +56,9 @@ public class Python3IDE_v1_9 extends JPanel {
     private PythonSyntaxChecker syntaxChecker;
 
     // UI Components
-    private JMenuBar menuBar;
     private JTextField gatewayUrlField;
     private JButton connectButton;
+    private JComboBox<String> themeSelector;
     private RSyntaxTextArea codeEditor;
     private JTextArea outputArea;
     private JTextArea errorArea;
@@ -124,6 +124,14 @@ public class Python3IDE_v1_9 extends JPanel {
 
         connectButton = ModernButton.createPrimary("Connect");
 
+        // Theme selector dropdown
+        String[] themes = {"Dark", "VS Code Dark+", "Monokai", "Dracula", "Default (Light)", "IntelliJ Light", "Eclipse"};
+        themeSelector = new JComboBox<>(themes);
+        themeSelector.setSelectedItem("Dark");  // Match default theme
+        themeSelector.setFont(ModernTheme.FONT_REGULAR);
+        themeSelector.setBackground(ModernTheme.PANEL_BACKGROUND);
+        themeSelector.setForeground(ModernTheme.FOREGROUND_PRIMARY);
+
         // Code editor with RSyntaxTextArea
         codeEditor = new RSyntaxTextArea(20, 80);
         codeEditor.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_PYTHON);
@@ -181,7 +189,7 @@ public class Python3IDE_v1_9 extends JPanel {
         scriptTree.setShowsRootHandles(true);
         scriptTree.setCellRenderer(new ScriptTreeCellRenderer());
         scriptTree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
-        scriptTree.setRowHeight(32);  // Larger row height for 16pt font and better readability
+        scriptTree.setRowHeight(22);  // Fixed row height for consistent alignment (16px icon + 6px padding)
         scriptTree.setDragEnabled(true);
         scriptTree.setDropMode(DropMode.ON_OR_INSERT);
         scriptTree.setTransferHandler(new ScriptTreeTransferHandler());
@@ -194,62 +202,9 @@ public class Python3IDE_v1_9 extends JPanel {
         // Metadata Panel
         metadataPanel = new ScriptMetadataPanel();
 
-        // Menu Bar
-        menuBar = createMenuBar();
-
         // Find/Replace Dialogs (lazy initialized when first used)
         findDialog = null;
         replaceDialog = null;
-    }
-
-    /**
-     * Creates the menu bar with themes.
-     */
-    private JMenuBar createMenuBar() {
-        JMenuBar bar = new JMenuBar();
-
-        // View Menu
-        JMenu viewMenu = new JMenu("View");
-
-        // Themes submenu
-        JMenu themesMenu = new JMenu("Themes");
-
-        // Light themes
-        JMenuItem defaultTheme = new JMenuItem("Default (Light)");
-        defaultTheme.addActionListener(e -> applyTheme("default"));
-        themesMenu.add(defaultTheme);
-
-        JMenuItem intellijTheme = new JMenuItem("IntelliJ Light");
-        intellijTheme.addActionListener(e -> applyTheme("idea"));
-        themesMenu.add(intellijTheme);
-
-        JMenuItem eclipseTheme = new JMenuItem("Eclipse");
-        eclipseTheme.addActionListener(e -> applyTheme("eclipse"));
-        themesMenu.add(eclipseTheme);
-
-        themesMenu.addSeparator();
-
-        // Dark themes
-        JMenuItem darkTheme = new JMenuItem("Dark");
-        darkTheme.addActionListener(e -> applyTheme("dark"));
-        themesMenu.add(darkTheme);
-
-        JMenuItem vsCodeTheme = new JMenuItem("VS Code Dark+");
-        vsCodeTheme.addActionListener(e -> applyTheme("vs"));
-        themesMenu.add(vsCodeTheme);
-
-        JMenuItem monokaiTheme = new JMenuItem("Monokai");
-        monokaiTheme.addActionListener(e -> applyTheme("monokai"));
-        themesMenu.add(monokaiTheme);
-
-        JMenuItem draculaTheme = new JMenuItem("Dracula");
-        draculaTheme.addActionListener(e -> applyTheme("druid"));
-        themesMenu.add(draculaTheme);
-
-        viewMenu.add(themesMenu);
-        bar.add(viewMenu);
-
-        return bar;
     }
 
     /**
@@ -260,15 +215,8 @@ public class Python3IDE_v1_9 extends JPanel {
         setBorder(new EmptyBorder(10, 10, 10, 10));
         setBackground(ModernTheme.BACKGROUND_DARK);
 
-        // Top area: Menu bar + Gateway Connection
-        JPanel topPanel = new JPanel(new BorderLayout());
-        topPanel.setBackground(ModernTheme.BACKGROUND_DARK);
-
-        // Menu bar
-        topPanel.add(menuBar, BorderLayout.NORTH);
-
-        // Gateway Connection panel
-        JPanel gatewayPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
+        // Top area: Gateway Connection with theme selector
+        JPanel gatewayPanel = new JPanel(new BorderLayout(10, 0));
         gatewayPanel.setBackground(ModernTheme.PANEL_BACKGROUND);
         gatewayPanel.setBorder(BorderFactory.createCompoundBorder(
                 new TitledBorder(BorderFactory.createLineBorder(ModernTheme.BORDER_DEFAULT),
@@ -280,18 +228,34 @@ public class Python3IDE_v1_9 extends JPanel {
                 BorderFactory.createEmptyBorder(5, 5, 5, 5)
         ));
 
+        // Left side: URL and Connect button
+        JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
+        leftPanel.setBackground(ModernTheme.PANEL_BACKGROUND);
         JLabel urlLabel = new JLabel("URL:");
         urlLabel.setForeground(ModernTheme.FOREGROUND_PRIMARY);
-        gatewayPanel.add(urlLabel);
-        gatewayPanel.add(gatewayUrlField);
-        gatewayPanel.add(connectButton);
-        topPanel.add(gatewayPanel, BorderLayout.CENTER);
+        leftPanel.add(urlLabel);
+        leftPanel.add(gatewayUrlField);
+        leftPanel.add(connectButton);
+        gatewayPanel.add(leftPanel, BorderLayout.WEST);
 
-        add(topPanel, BorderLayout.NORTH);
+        // Right side: Theme selector
+        JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 5));
+        rightPanel.setBackground(ModernTheme.PANEL_BACKGROUND);
+        JLabel themeLabel = new JLabel("Theme:");
+        themeLabel.setForeground(ModernTheme.FOREGROUND_PRIMARY);
+        themeLabel.setFont(ModernTheme.FONT_REGULAR);
+        rightPanel.add(themeLabel);
+        rightPanel.add(themeSelector);
+        gatewayPanel.add(rightPanel, BorderLayout.EAST);
+
+        add(gatewayPanel, BorderLayout.NORTH);
 
         // Create main split pane (sidebar | editor)
         JSplitPane mainSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
         mainSplit.setDividerLocation(250);
+        mainSplit.setBackground(ModernTheme.BACKGROUND_DARK);
+        mainSplit.setBorder(null);
+        mainSplit.setDividerSize(8);
 
         // Left sidebar: Script browser + metadata
         JPanel sidebar = createSidebar();
@@ -359,6 +323,9 @@ public class Python3IDE_v1_9 extends JPanel {
         sidebarSplit.setTopComponent(treePanel);
         sidebarSplit.setBottomComponent(metadataPanel);
         sidebarSplit.setDividerLocation(400);
+        sidebarSplit.setBackground(ModernTheme.BACKGROUND_DARK);
+        sidebarSplit.setBorder(null);
+        sidebarSplit.setDividerSize(8);
 
         sidebar.add(sidebarSplit, BorderLayout.CENTER);
 
@@ -463,6 +430,15 @@ public class Python3IDE_v1_9 extends JPanel {
         // Export button
         exportButton.addActionListener(e -> exportCurrentScript());
 
+        // Theme selector
+        themeSelector.addActionListener(e -> {
+            String selected = (String) themeSelector.getSelectedItem();
+            if (selected != null) {
+                String themeKey = mapThemeNameToKey(selected);
+                applyTheme(themeKey);
+            }
+        });
+
         // Keyboard shortcuts
         setupKeyboardShortcuts();
 
@@ -491,6 +467,13 @@ public class Python3IDE_v1_9 extends JPanel {
 
         // Gateway URL enter key
         gatewayUrlField.addActionListener(e -> connectToGateway());
+
+        // Cursor position tracking
+        codeEditor.addCaretListener(e -> {
+            int line = codeEditor.getCaretLineNumber() + 1;  // Convert to 1-based
+            int col = codeEditor.getCaretOffsetFromLineStart() + 1;  // Convert to 1-based
+            statusBar.setCursorPosition(line, col);
+        });
     }
 
     /**
@@ -610,6 +593,7 @@ public class Python3IDE_v1_9 extends JPanel {
         try {
             restClient = new Python3RestClient(url);
             statusBar.setStatus("Connected to " + url, ModernStatusBar.MessageType.SUCCESS);
+            statusBar.setConnection("Connected", ModernTheme.SUCCESS);
             statusBar.setPoolStats("Pool: Checking...", ModernTheme.INFO);
 
             LOGGER.info("Connected to Gateway: {}", url);
@@ -624,11 +608,14 @@ public class Python3IDE_v1_9 extends JPanel {
             LOGGER.info("Real-time syntax checking enabled");
 
             refreshDiagnostics();
+            refreshPythonVersion();
             refreshScriptTree();
 
         } catch (Exception e) {
             statusBar.setStatus("Connection failed: " + e.getMessage(), ModernStatusBar.MessageType.ERROR);
+            statusBar.setConnection("Not Connected", ModernTheme.ERROR);
             statusBar.setPoolStats("Pool: Not Connected", ModernTheme.ERROR);
+            statusBar.setPythonVersion("Python: --");
             LOGGER.error("Failed to connect to Gateway: {}", url, e);
         }
     }
@@ -736,6 +723,36 @@ public class Python3IDE_v1_9 extends JPanel {
                     statusBar.updatePoolStats(stats);
                 } catch (Exception e) {
                     statusBar.setPoolStats("Pool: Unavailable", ModernTheme.ERROR);
+                }
+            }
+        };
+
+        worker.execute();
+    }
+
+    /**
+     * Refreshes Python version display in status bar.
+     */
+    private void refreshPythonVersion() {
+        if (restClient == null) {
+            statusBar.setPythonVersion("Python: --");
+            return;
+        }
+
+        SwingWorker<String, Void> worker = new SwingWorker<String, Void>() {
+            @Override
+            protected String doInBackground() throws Exception {
+                return restClient.getPythonVersion();
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    String version = get();
+                    statusBar.setPythonVersion("Python: " + version);
+                } catch (Exception e) {
+                    statusBar.setPythonVersion("Python: --");
+                    LOGGER.warn("Failed to get Python version", e);
                 }
             }
         };
@@ -1750,44 +1767,128 @@ public class Python3IDE_v1_9 extends JPanel {
     // Theme Management
 
     /**
-     * Applies a theme to the editor.
+     * Maps user-friendly theme names to internal theme keys.
+     */
+    private String mapThemeNameToKey(String displayName) {
+        switch (displayName) {
+            case "Dark":
+                return "dark";
+            case "VS Code Dark+":
+                return "vs";
+            case "Monokai":
+                return "monokai";
+            case "Dracula":
+                return "druid";
+            case "Default (Light)":
+                return "default";
+            case "IntelliJ Light":
+                return "idea";
+            case "Eclipse":
+                return "eclipse";
+            default:
+                return "dark";
+        }
+    }
+
+    /**
+     * Applies a theme to the editor and entire IDE.
      */
     private void applyTheme(String themeName) {
         try {
             Theme theme;
+            boolean isDarkTheme = false;
 
             switch (themeName.toLowerCase()) {
                 case "dark":
                     theme = Theme.load(getClass().getResourceAsStream(
                             "/org/fife/ui/rsyntaxtextarea/themes/dark.xml"));
+                    isDarkTheme = true;
                     break;
                 case "monokai":
                     theme = Theme.load(getClass().getResourceAsStream(
                             "/org/fife/ui/rsyntaxtextarea/themes/monokai.xml"));
+                    isDarkTheme = true;
                     break;
                 case "eclipse":
                     theme = Theme.load(getClass().getResourceAsStream(
                             "/org/fife/ui/rsyntaxtextarea/themes/eclipse.xml"));
+                    isDarkTheme = false;
                     break;
                 case "idea":
                     theme = Theme.load(getClass().getResourceAsStream(
                             "/org/fife/ui/rsyntaxtextarea/themes/idea.xml"));
+                    isDarkTheme = false;
                     break;
                 case "vs":
                     theme = Theme.load(getClass().getResourceAsStream(
                             "/org/fife/ui/rsyntaxtextarea/themes/vs.xml"));
+                    isDarkTheme = true;
                     break;
                 case "druid":  // Dracula-like theme
                     theme = Theme.load(getClass().getResourceAsStream(
                             "/org/fife/ui/rsyntaxtextarea/themes/druid.xml"));
+                    isDarkTheme = true;
                     break;
                 default:  // "default" or "light"
                     theme = Theme.load(getClass().getResourceAsStream(
                             "/org/fife/ui/rsyntaxtextarea/themes/default.xml"));
+                    isDarkTheme = false;
                     break;
             }
 
+            // Apply theme to code editor
             theme.apply(codeEditor);
+
+            // Apply theme colors to output and error areas
+            if (isDarkTheme) {
+                // Apply scrollbar theming
+                applyDarkScrollbarTheme();
+
+                // Output/Error areas
+                outputArea.setBackground(ModernTheme.BACKGROUND_DARKER);
+                outputArea.setForeground(ModernTheme.FOREGROUND_PRIMARY);
+                outputArea.setCaretColor(ModernTheme.FOREGROUND_PRIMARY);
+
+                errorArea.setBackground(ModernTheme.BACKGROUND_DARKER);
+                errorArea.setForeground(ModernTheme.ERROR);
+                errorArea.setCaretColor(ModernTheme.ERROR);
+
+                // Tree
+                scriptTree.setBackground(ModernTheme.TREE_BACKGROUND);
+                scriptTree.setForeground(ModernTheme.FOREGROUND_PRIMARY);
+
+                // Panels
+                updateComponent(this, ModernTheme.BACKGROUND_DARK);
+
+                // Apply dark theme to popup dialogs
+                applyDarkDialogTheme();
+            } else {
+                // Apply light scrollbar theming
+                applyLightScrollbarTheme();
+
+                // Output/Error areas
+                outputArea.setBackground(Color.WHITE);
+                outputArea.setForeground(Color.BLACK);
+                outputArea.setCaretColor(Color.BLACK);
+
+                errorArea.setBackground(Color.WHITE);
+                errorArea.setForeground(new Color(180, 0, 0));
+                errorArea.setCaretColor(new Color(180, 0, 0));
+
+                // Tree
+                scriptTree.setBackground(Color.WHITE);
+                scriptTree.setForeground(Color.BLACK);
+
+                // Panels
+                updateComponent(this, Color.WHITE);
+
+                // Apply light theme to popup dialogs
+                applyLightDialogTheme();
+            }
+
+            // Force repaint of all components
+            SwingUtilities.updateComponentTreeUI(this);
+
             currentTheme = themeName;
 
             // Save preference
@@ -1800,6 +1901,84 @@ public class Python3IDE_v1_9 extends JPanel {
         } catch (IOException e) {
             LOGGER.error("Failed to apply theme: {}", themeName, e);
             setStatus("Failed to apply theme: " + themeName, Color.RED);
+        }
+    }
+
+    /**
+     * Applies dark theme styling to popup dialogs (JOptionPane).
+     */
+    private void applyDarkDialogTheme() {
+        UIManager.put("OptionPane.background", ModernTheme.PANEL_BACKGROUND);
+        UIManager.put("OptionPane.messageForeground", ModernTheme.FOREGROUND_PRIMARY);
+        UIManager.put("Panel.background", ModernTheme.PANEL_BACKGROUND);
+        UIManager.put("TextField.background", ModernTheme.BACKGROUND_DARKER);
+        UIManager.put("TextField.foreground", ModernTheme.FOREGROUND_PRIMARY);
+        UIManager.put("TextField.caretForeground", ModernTheme.FOREGROUND_PRIMARY);
+        UIManager.put("Label.foreground", ModernTheme.FOREGROUND_PRIMARY);
+        UIManager.put("Button.background", ModernTheme.BACKGROUND_DARK);
+        UIManager.put("Button.foreground", ModernTheme.FOREGROUND_PRIMARY);
+    }
+
+    /**
+     * Applies light theme styling to popup dialogs (JOptionPane).
+     */
+    private void applyLightDialogTheme() {
+        UIManager.put("OptionPane.background", Color.WHITE);
+        UIManager.put("OptionPane.messageForeground", Color.BLACK);
+        UIManager.put("Panel.background", Color.WHITE);
+        UIManager.put("TextField.background", Color.WHITE);
+        UIManager.put("TextField.foreground", Color.BLACK);
+        UIManager.put("TextField.caretForeground", Color.BLACK);
+        UIManager.put("Label.foreground", Color.BLACK);
+        UIManager.put("Button.background", new Color(238, 238, 238));
+        UIManager.put("Button.foreground", Color.BLACK);
+    }
+
+    /**
+     * Applies dark theme styling to scrollbars.
+     */
+    private void applyDarkScrollbarTheme() {
+        UIManager.put("ScrollBar.track", ModernTheme.BACKGROUND_DARK);
+        UIManager.put("ScrollBar.thumb", ModernTheme.BORDER_DEFAULT);
+        UIManager.put("ScrollBar.thumbDarkShadow", ModernTheme.BACKGROUND_DARKER);
+        UIManager.put("ScrollBar.thumbHighlight", ModernTheme.FOREGROUND_SECONDARY);
+        UIManager.put("ScrollBar.thumbShadow", ModernTheme.BACKGROUND_DARKER);
+        UIManager.put("ScrollBar.background", ModernTheme.BACKGROUND_DARK);
+        UIManager.put("ScrollBar.foreground", ModernTheme.FOREGROUND_PRIMARY);
+        UIManager.put("ScrollPane.background", ModernTheme.BACKGROUND_DARK);
+        UIManager.put("Viewport.background", ModernTheme.BACKGROUND_DARK);
+    }
+
+    /**
+     * Applies light theme styling to scrollbars.
+     */
+    private void applyLightScrollbarTheme() {
+        UIManager.put("ScrollBar.track", Color.WHITE);
+        UIManager.put("ScrollBar.thumb", new Color(200, 200, 200));
+        UIManager.put("ScrollBar.thumbDarkShadow", new Color(150, 150, 150));
+        UIManager.put("ScrollBar.thumbHighlight", new Color(230, 230, 230));
+        UIManager.put("ScrollBar.thumbShadow", new Color(180, 180, 180));
+        UIManager.put("ScrollBar.background", Color.WHITE);
+        UIManager.put("ScrollBar.foreground", Color.BLACK);
+        UIManager.put("ScrollPane.background", Color.WHITE);
+        UIManager.put("Viewport.background", Color.WHITE);
+    }
+
+    /**
+     * Recursively updates component backgrounds.
+     * Traverses the component tree and applies theme colors to all panels.
+     *
+     * @param comp the component to update
+     * @param background the background color to apply
+     */
+    private void updateComponent(Component comp, Color background) {
+        if (comp instanceof JPanel) {
+            comp.setBackground(background);
+        }
+        if (comp instanceof Container) {
+            for (Component child : ((Container) comp).getComponents()) {
+                updateComponent(child, background);
+            }
         }
     }
 

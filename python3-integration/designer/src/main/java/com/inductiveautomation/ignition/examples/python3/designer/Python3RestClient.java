@@ -184,6 +184,27 @@ public class Python3RestClient {
     }
 
     /**
+     * Gets the Python version from the Gateway.
+     *
+     * @return Python version string (e.g., "3.11.2")
+     * @throws IOException if the HTTP request fails
+     */
+    public String getPythonVersion() throws IOException {
+        LOGGER.debug("Getting Python version via REST API");
+
+        String response = get("/version");
+        JsonObject json = JsonParser.parseString(response).getAsJsonObject();
+
+        if (json.has("pythonVersion")) {
+            return json.get("pythonVersion").getAsString();
+        } else if (json.has("version")) {
+            return json.get("version").getAsString();
+        }
+
+        return "Unknown";
+    }
+
+    /**
      * Checks Python code for syntax errors using AST parser and pyflakes.
      *
      * @param code the Python code to check

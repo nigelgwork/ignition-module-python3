@@ -26,8 +26,17 @@ public class ScriptMetadataPanel extends JPanel {
 
     public ScriptMetadataPanel() {
         setLayout(new BorderLayout(5, 5));
-        setBorder(new TitledBorder("Script Information"));
+        setBorder(BorderFactory.createCompoundBorder(
+                new TitledBorder(BorderFactory.createLineBorder(ModernTheme.BORDER_DEFAULT),
+                        "Script Information",
+                        TitledBorder.DEFAULT_JUSTIFICATION,
+                        TitledBorder.DEFAULT_POSITION,
+                        ModernTheme.FONT_REGULAR,
+                        ModernTheme.FOREGROUND_PRIMARY),
+                BorderFactory.createEmptyBorder(5, 5, 5, 5)
+        ));
         setPreferredSize(new Dimension(250, 180));
+        setBackground(ModernTheme.PANEL_BACKGROUND);
 
         // Create labels
         nameLabel = createValueLabel();
@@ -41,12 +50,15 @@ public class ScriptMetadataPanel extends JPanel {
         descriptionArea.setEditable(false);
         descriptionArea.setLineWrap(true);
         descriptionArea.setWrapStyleWord(true);
-        descriptionArea.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 11));
-        descriptionArea.setBackground(new Color(245, 245, 245));
+        descriptionArea.setFont(ModernTheme.withSize(ModernTheme.FONT_REGULAR, 11));
+        descriptionArea.setBackground(ModernTheme.BACKGROUND_DARKER);
+        descriptionArea.setForeground(ModernTheme.FOREGROUND_PRIMARY);
+        descriptionArea.setCaretColor(ModernTheme.FOREGROUND_PRIMARY);
 
         // Layout
         JPanel fieldsPanel = new JPanel(new GridLayout(5, 2, 5, 3));
         fieldsPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
+        fieldsPanel.setBackground(ModernTheme.PANEL_BACKGROUND);
 
         fieldsPanel.add(createKeyLabel("Name:"));
         fieldsPanel.add(nameLabel);
@@ -68,10 +80,14 @@ public class ScriptMetadataPanel extends JPanel {
         // Description section
         JPanel descPanel = new JPanel(new BorderLayout(3, 3));
         descPanel.setBorder(new EmptyBorder(0, 5, 5, 5));
+        descPanel.setBackground(ModernTheme.PANEL_BACKGROUND);
         descPanel.add(createKeyLabel("Description:"), BorderLayout.NORTH);
 
         JScrollPane descScroll = new JScrollPane(descriptionArea);
         descScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        descScroll.setBackground(ModernTheme.BACKGROUND_DARKER);
+        descScroll.getViewport().setBackground(ModernTheme.BACKGROUND_DARKER);
+        descScroll.setBorder(BorderFactory.createLineBorder(ModernTheme.BORDER_DEFAULT));
         descPanel.add(descScroll, BorderLayout.CENTER);
 
         add(descPanel, BorderLayout.CENTER);
@@ -141,8 +157,8 @@ public class ScriptMetadataPanel extends JPanel {
      */
     private JLabel createKeyLabel(String text) {
         JLabel label = new JLabel(text);
-        label.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 11));
-        label.setForeground(new Color(60, 60, 60));
+        label.setFont(ModernTheme.withSize(ModernTheme.FONT_BOLD, 11));
+        label.setForeground(ModernTheme.FOREGROUND_SECONDARY);
         return label;
     }
 
@@ -153,8 +169,8 @@ public class ScriptMetadataPanel extends JPanel {
      */
     private JLabel createValueLabel() {
         JLabel label = new JLabel("—");
-        label.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 11));
-        label.setForeground(new Color(40, 40, 40));
+        label.setFont(ModernTheme.withSize(ModernTheme.FONT_REGULAR, 11));
+        label.setForeground(ModernTheme.FOREGROUND_PRIMARY);
         return label;
     }
 }
