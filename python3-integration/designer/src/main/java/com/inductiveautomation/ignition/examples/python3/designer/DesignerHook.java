@@ -1,62 +1,189 @@
 package com.inductiveautomation.ignition.examples.python3.designer;
 
 import com.inductiveautomation.ignition.common.licensing.LicenseState;
-import com.inductiveautomation.ignition.common.script.ScriptManager;
-import com.inductiveautomation.ignition.common.script.hints.PropertiesFileDocProvider;
 import com.inductiveautomation.ignition.designer.model.AbstractDesignerModuleHook;
 import com.inductiveautomation.ignition.designer.model.DesignerContext;
-import com.inductiveautomation.ignition.examples.python3.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.swing.*;
+import java.awt.*;
+
 /**
- * Designer hook for Python 3 Integration module.
+ * Designer hook for the Python 3 Integration module (v1.7.0+).
  *
- * This hook registers the scripting functions in the Designer scope.
- * RPC initialization is done lazily to avoid blocking Designer startup.
+ * <p>This hook integrates the Python 3 IDE into the Ignition Designer by adding
+ * a menu item to the Tools menu. The IDE communicates with the Gateway via REST API.</p>
+ *
+ * <p>Lifecycle:</p>
+ * <ul>
+ *   <li>startup() - Adds "Python 3 IDE" menu item to Tools menu</li>
+ *   <li>shutdown() - Closes IDE window if open</li>
+ * </ul>
+ *
+ * <p><strong>Architecture Change (v1.7.0):</strong> This version uses REST API instead of RPC
+ * for Designer-Gateway communication, providing better performance and reliability.</p>
  */
 public class DesignerHook extends AbstractDesignerModuleHook {
     private static final Logger LOGGER = LoggerFactory.getLogger(DesignerHook.class);
 
-    private DesignerContext designerContext;
-    private Python3DesignerScriptModule scriptModule;
+    private DesignerContext context;
+    private JFrame ideFrame;
 
+    /**
+     * Called during Designer module setup phase.
+     *
+     * @param context the Designer context
+     * @param activationState the license state
+     */
     public void setup(DesignerContext context, LicenseState activationState) {
-        this.designerContext = context;
-        LOGGER.info("Python 3 Integration Designer module setup");
+        this.context = context;
+        LOGGER.info("Python 3 Integration Designer module setup (v1.7.0 - REST API)");
     }
 
-    public void startup(LicenseState activationState) {
-        LOGGER.info("Python 3 Integration Designer module startup");
+    /**
+     * Called when the Designer module is starting up.
+     *
+     * @param context the Designer context
+     * @param activationState the license state
+     */
+    @Override
+    public void startup(DesignerContext context, LicenseState activationState) throws Exception {
+        super.startup(context, activationState);
 
-        try {
-            // Create script module with lazy RPC initialization
-            scriptModule = new Python3DesignerScriptModule(designerContext);
+        LOGGER.info("Python 3 Integration Designer module starting up");
 
-            // Register script module
-            ScriptManager scriptManager = designerContext.getScriptManager();
-            scriptManager.addScriptModule(
-                    Constants.SCRIPT_NAMESPACE,
-                    scriptModule,
-                    new PropertiesFileDocProvider()
-            );
+        // Add menu item to Tools menu
+        addToolsMenuItem();
 
-            LOGGER.info("Python 3 scripting functions registered in Designer scope");
-            LOGGER.info("Functions will connect to Gateway via RPC on first use");
-
-        } catch (Exception e) {
-            LOGGER.error("Failed to register Python 3 script module in Designer", e);
-        }
+        LOGGER.info("Python 3 Integration Designer module startup complete");
+        LOGGER.info("Python 3 IDE available from Tools menu (communicates with Gateway via REST API)");
     }
 
+    /**
+     * Called when the Designer module is shutting down.
+     */
     @Override
     public void shutdown() {
-        LOGGER.info("Python 3 Integration Designer module shutdown");
+        super.shutdown();
 
-        if (scriptModule != null) {
-            scriptModule.shutdown();
+        LOGGER.info("Python 3 Integration Designer module shutting down");
+
+        // Close IDE window if open
+        if (ideFrame != null && ideFrame.isVisible()) {
+            ideFrame.dispose();
+            ideFrame = null;
         }
 
-        LOGGER.info("Python 3 Integration Designer module shut down successfully");
+        LOGGER.info("Python 3 Integration Designer module shutdown complete");
+    }
+
+    /**
+     * Adds the "Python 3 IDE" menu item to the Tools menu.
+     */
+    private void addToolsMenuItem() {
+        try {
+            // Get the main Designer frame
+            Frame designerFrame = context.getFrame();
+
+            // Get the menu bar (if it's a JFrame)
+            JMenuBar menuBar = null;
+            if (designerFrame instanceof JFrame) {
+                menuBar = ((JFrame) designerFrame).getJMenuBar();
+            }
+
+            if (menuBar == null) {
+                LOGGER.warn("Could not get menu bar from Designer frame");
+                return;
+            }
+
+            // Find the Tools menu
+            JMenu toolsMenu = findMenu(menuBar, "Tools");
+
+            if (toolsMenu != null) {
+                // Add separator if menu is not empty
+                if (toolsMenu.getItemCount() > 0) {
+                    toolsMenu.addSeparator();
+                }
+
+                // Create menu item
+                JMenuItem python3IDEItem = new JMenuItem("Python 3 IDE");
+                python3IDEItem.setToolTipText("Open the Python 3 IDE for testing Python code on the Gateway");
+                python3IDEItem.addActionListener(e -> openPython3IDE());
+
+                toolsMenu.add(python3IDEItem);
+
+                LOGGER.info("Added 'Python 3 IDE' menu item to Tools menu");
+
+            } else {
+                LOGGER.warn("Could not find Tools menu - Python 3 IDE will not be accessible from menu");
+            }
+
+        } catch (Exception e) {
+            LOGGER.error("Failed to add Tools menu item", e);
+        }
+    }
+
+    /**
+     * Finds a menu by name in the menu bar.
+     *
+     * @param menuBar the menu bar to search
+     * @param menuName the menu name to find
+     * @return the menu, or null if not found
+     */
+    private JMenu findMenu(JMenuBar menuBar, String menuName) {
+        for (int i = 0; i < menuBar.getMenuCount(); i++) {
+            JMenu menu = menuBar.getMenu(i);
+            if (menu != null && menuName.equals(menu.getText())) {
+                return menu;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Opens the Python 3 IDE window.
+     */
+    private void openPython3IDE() {
+        LOGGER.info("Opening Python 3 IDE");
+
+        // If window already exists, just bring it to front
+        if (ideFrame != null && ideFrame.isVisible()) {
+            ideFrame.toFront();
+            ideFrame.requestFocus();
+            return;
+        }
+
+        // Create new IDE window
+        SwingUtilities.invokeLater(() -> {
+            try {
+                // Create IDE panel
+                Python3IDE idePanel = new Python3IDE(context);
+
+                // Create frame
+                ideFrame = new JFrame("Python 3 IDE - Ignition Designer");
+                ideFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+                ideFrame.setContentPane(idePanel);
+
+                // Set size and location
+                ideFrame.setSize(1000, 700);
+                ideFrame.setLocationRelativeTo(context.getFrame());
+
+                // Show window
+                ideFrame.setVisible(true);
+
+                LOGGER.info("Python 3 IDE window opened");
+
+            } catch (Exception e) {
+                LOGGER.error("Failed to open Python 3 IDE", e);
+
+                JOptionPane.showMessageDialog(
+                        context.getFrame(),
+                        "Failed to open Python 3 IDE: " + e.getMessage(),
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE
+                );
+            }
+        });
     }
 }

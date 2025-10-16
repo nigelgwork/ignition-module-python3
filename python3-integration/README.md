@@ -5,9 +5,11 @@ This module enables Python 3 scripting functions in Ignition 8.3+, allowing you 
 ## Features
 
 - **Python 3 Execution**: Execute Python 3 code from Ignition scripts
+- **Designer IDE** *(v1.7.0+)*: Interactive Python 3 IDE in the Designer with code editor, output panel, and diagnostics
 - **Process Pool**: Efficient subprocess pooling for minimal overhead
 - **Full Python 3 Library Support**: Use numpy, pandas, requests, and any Python 3 package
 - **Simple API**: Easy-to-use scripting functions under `system.python3.*`
+- **REST API** *(v1.6.0+)*: HTTP endpoints for external integration and Designer communication
 - **Automatic Health Checking**: Self-healing process pool with automatic restart
 - **Cross-Platform**: Works on Windows, Linux, and macOS
 
@@ -128,6 +130,37 @@ cd python3-integration
 6. Module status should show **Running**
 
 ## Usage
+
+### Designer IDE (v1.7.0+)
+
+The Designer IDE provides an interactive development environment for testing Python 3 code directly in the Ignition Designer.
+
+**To open the IDE:**
+1. Open the Ignition Designer
+2. Navigate to **Tools → Python 3 IDE**
+3. A new window will open with the code editor
+
+**Features:**
+- **Code Editor**: Write and edit Python 3 code with monospaced font
+- **Execute Button**: Run code on the Gateway (Ctrl+Enter shortcut)
+- **Output Panel**: View execution results
+- **Error Panel**: View detailed error messages and tracebacks
+- **Diagnostics**: Real-time pool statistics (healthy processes, available, in use)
+- **Execution Timing**: See how long each execution takes
+- **Async Execution**: Non-blocking UI during code execution
+
+**Example Workflow:**
+```python
+# Write code in the editor
+import math
+result = math.sqrt(144)
+print(f"Square root: {result}")
+
+# Click Execute (or press Ctrl+Enter)
+# Results appear in Output panel
+```
+
+The Designer IDE communicates with the Gateway via REST API, so all code executes on the Gateway using the process pool (just like `system.python3.*` functions).
 
 ### Basic Examples
 
@@ -401,12 +434,21 @@ For high-performance scenarios, consider:
 
 ```
 python3-integration/
-├── common/                  # Shared code
+├── common/                  # Shared code (Common scope)
 ├── gateway/                 # Gateway scope
 │   └── src/main/
 │       ├── java/           # Java source
 │       └── resources/      # Python bridge script
+├── designer/                # Designer scope (v1.7.0+)
+│   └── src/main/java/      # Designer IDE components
+│       ├── Python3IDE.java              # Main IDE panel
+│       ├── Python3RestClient.java       # REST API client
+│       ├── Python3ExecutionWorker.java  # Async worker
+│       ├── DesignerHook.java            # Designer module hook
+│       ├── ExecutionResult.java         # Response model
+│       └── PoolStats.java               # Pool stats model
 ├── build.gradle.kts        # Root build file
+├── settings.gradle.kts     # Gradle settings
 └── README.md               # This file
 ```
 
@@ -453,12 +495,14 @@ Future enhancements:
 
 - [ ] Virtual environment support
 - [ ] Package manager UI in Gateway
-- [ ] Designer integration (Python 3 script editor)
+- [x] Designer integration (Python 3 script editor) - **Added in v1.7.0**
 - [ ] Async/callback support
 - [ ] Binary data handling (bytes, numpy arrays)
 - [ ] Streaming results for large datasets
 - [ ] Python process resource limits (CPU, memory)
 - [ ] Multiple Python versions support
+- [ ] Designer IDE: Syntax highlighting and code completion
+- [ ] Designer IDE: Variable input panel
 
 ## Examples
 
@@ -471,6 +515,26 @@ Built using the Ignition SDK:
 - https://www.sdk-docs.inductiveautomation.com/
 
 ## Changelog
+
+### 1.7.0 (Designer IDE Release)
+- **NEW**: Designer scope with interactive Python 3 IDE
+- **NEW**: Python3IDE panel accessible from Tools menu
+- **NEW**: REST API client for Designer-Gateway communication
+- **NEW**: Async execution worker (SwingWorker) for non-blocking UI
+- **NEW**: Real-time diagnostics in Designer IDE
+- **ARCHITECTURE**: Moved from RPC to REST API for Designer communication
+- **IMPROVED**: Better Designer experience with code editor, output, and error panels
+
+### 1.6.1 (License Fix)
+- **FIXED**: License display showing "Free" instead of "Trial"
+- **FIXED**: Module upgrade compatibility (restored original module ID)
+
+### 1.6.0 (REST API Release)
+- **NEW**: REST API endpoints for Python execution
+- **NEW**: OpenAPI 3.0 specification
+- **NEW**: Health check endpoint
+- **NEW**: Diagnostics endpoint
+- **IMPROVED**: Better external integration support
 
 ### 1.0.0 (Initial Release)
 - Python 3 subprocess execution
