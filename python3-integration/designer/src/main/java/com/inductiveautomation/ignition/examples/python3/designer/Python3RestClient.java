@@ -335,6 +335,20 @@ public class Python3RestClient {
         }
     }
 
+    /**
+     * Safely gets a string value from a JSON object, handling null values.
+     *
+     * @param json the JSON object
+     * @param key the key to look up
+     * @return the string value, or null if the key doesn't exist or value is null
+     */
+    private String getJsonString(JsonObject json, String key) {
+        if (json.has(key) && !json.get(key).isJsonNull()) {
+            return json.get(key).getAsString();
+        }
+        return null;
+    }
+
     // Script Management Methods
 
     /**
@@ -356,14 +370,14 @@ public class Python3RestClient {
             for (int i = 0; i < scriptsArray.size(); i++) {
                 JsonObject scriptJson = scriptsArray.get(i).getAsJsonObject();
                 ScriptMetadata metadata = new ScriptMetadata();
-                metadata.setId(scriptJson.has("id") ? scriptJson.get("id").getAsString() : null);
-                metadata.setName(scriptJson.has("name") ? scriptJson.get("name").getAsString() : null);
-                metadata.setDescription(scriptJson.has("description") ? scriptJson.get("description").getAsString() : null);
-                metadata.setAuthor(scriptJson.has("author") ? scriptJson.get("author").getAsString() : null);
-                metadata.setCreatedDate(scriptJson.has("createdDate") ? scriptJson.get("createdDate").getAsString() : null);
-                metadata.setLastModified(scriptJson.has("lastModified") ? scriptJson.get("lastModified").getAsString() : null);
-                metadata.setFolderPath(scriptJson.has("folderPath") ? scriptJson.get("folderPath").getAsString() : null);
-                metadata.setVersion(scriptJson.has("version") ? scriptJson.get("version").getAsString() : null);
+                metadata.setId(getJsonString(scriptJson, "id"));
+                metadata.setName(getJsonString(scriptJson, "name"));
+                metadata.setDescription(getJsonString(scriptJson, "description"));
+                metadata.setAuthor(getJsonString(scriptJson, "author"));
+                metadata.setCreatedDate(getJsonString(scriptJson, "createdDate"));
+                metadata.setLastModified(getJsonString(scriptJson, "lastModified"));
+                metadata.setFolderPath(getJsonString(scriptJson, "folderPath"));
+                metadata.setVersion(getJsonString(scriptJson, "version"));
                 scripts.add(metadata);
             }
         }
@@ -388,15 +402,15 @@ public class Python3RestClient {
         if (json.has("script") && json.get("script").isJsonObject()) {
             JsonObject scriptJson = json.getAsJsonObject("script");
             SavedScript script = new SavedScript();
-            script.setId(scriptJson.has("id") ? scriptJson.get("id").getAsString() : null);
-            script.setName(scriptJson.has("name") ? scriptJson.get("name").getAsString() : null);
-            script.setCode(scriptJson.has("code") ? scriptJson.get("code").getAsString() : null);
-            script.setDescription(scriptJson.has("description") ? scriptJson.get("description").getAsString() : null);
-            script.setAuthor(scriptJson.has("author") ? scriptJson.get("author").getAsString() : null);
-            script.setCreatedDate(scriptJson.has("createdDate") ? scriptJson.get("createdDate").getAsString() : null);
-            script.setLastModified(scriptJson.has("lastModified") ? scriptJson.get("lastModified").getAsString() : null);
-            script.setFolderPath(scriptJson.has("folderPath") ? scriptJson.get("folderPath").getAsString() : null);
-            script.setVersion(scriptJson.has("version") ? scriptJson.get("version").getAsString() : null);
+            script.setId(getJsonString(scriptJson, "id"));
+            script.setName(getJsonString(scriptJson, "name"));
+            script.setCode(getJsonString(scriptJson, "code"));
+            script.setDescription(getJsonString(scriptJson, "description"));
+            script.setAuthor(getJsonString(scriptJson, "author"));
+            script.setCreatedDate(getJsonString(scriptJson, "createdDate"));
+            script.setLastModified(getJsonString(scriptJson, "lastModified"));
+            script.setFolderPath(getJsonString(scriptJson, "folderPath"));
+            script.setVersion(getJsonString(scriptJson, "version"));
             return script;
         }
 

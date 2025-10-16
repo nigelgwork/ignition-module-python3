@@ -17,9 +17,8 @@ import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 import java.awt.*;
 import java.awt.event.*;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
+import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -58,6 +57,8 @@ public class Python3IDE_v1_9 extends JPanel {
     private JButton executeButton;
     private JButton clearButton;
     private JButton saveButton;
+    private JButton saveAsButton;
+    private JButton importButton;
     private JProgressBar progressBar;
 
     // Script Browser Components
@@ -156,6 +157,12 @@ public class Python3IDE_v1_9 extends JPanel {
         saveButton = new JButton("Save (Ctrl+S)");
         saveButton.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
 
+        saveAsButton = new JButton("Save As...");
+        saveAsButton.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
+
+        importButton = new JButton("Import...");
+        importButton.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
+
         progressBar = new JProgressBar();
         progressBar.setIndeterminate(false);
         progressBar.setVisible(false);
@@ -217,16 +224,19 @@ public class Python3IDE_v1_9 extends JPanel {
 
         // Toolbar above tree
         JPanel treeToolbar = new JPanel(new FlowLayout(FlowLayout.LEFT, 3, 2));
-        JButton newFolderBtn = new JButton("📁");
+        JButton newFolderBtn = new JButton("+Folder");
         newFolderBtn.setToolTipText("New Folder");
+        newFolderBtn.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 10));
         newFolderBtn.addActionListener(e -> createNewFolder());
 
-        JButton newScriptBtn = new JButton("➕");
+        JButton newScriptBtn = new JButton("+Script");
         newScriptBtn.setToolTipText("New Script");
+        newScriptBtn.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 10));
         newScriptBtn.addActionListener(e -> createNewScript());
 
-        JButton refreshBtn = new JButton("🔄");
+        JButton refreshBtn = new JButton("Refresh");
         refreshBtn.setToolTipText("Refresh Scripts");
+        refreshBtn.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 10));
         refreshBtn.addActionListener(e -> refreshScriptTree());
 
         treeToolbar.add(newFolderBtn);
@@ -272,6 +282,8 @@ public class Python3IDE_v1_9 extends JPanel {
         buttonPanel.add(executeButton);
         buttonPanel.add(clearButton);
         buttonPanel.add(saveButton);
+        buttonPanel.add(saveAsButton);
+        buttonPanel.add(importButton);
         buttonPanel.add(progressBar);
 
         JPanel infoPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
@@ -317,6 +329,12 @@ public class Python3IDE_v1_9 extends JPanel {
 
         // Save button
         saveButton.addActionListener(e -> saveCurrentScript());
+
+        // Save As button
+        saveAsButton.addActionListener(e -> saveScriptAs());
+
+        // Import button
+        importButton.addActionListener(e -> importScript());
 
         // Keyboard shortcuts
         setupKeyboardShortcuts();
@@ -372,6 +390,16 @@ public class Python3IDE_v1_9 extends JPanel {
             @Override
             public void actionPerformed(ActionEvent e) {
                 saveCurrentScript();
+            }
+        });
+
+        // Ctrl+Shift+S: Save As
+        KeyStroke ctrlShiftS = KeyStroke.getKeyStroke("control shift S");
+        inputMap.put(ctrlShiftS, "saveAs");
+        actionMap.put("saveAs", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                saveScriptAs();
             }
         });
 
@@ -783,8 +811,51 @@ public class Python3IDE_v1_9 extends JPanel {
 
     /**
      * Saves the current script.
+     * If script metadata exists (already saved), does a quick save.
+     * Otherwise, shows the save dialog.
      */
     private void saveCurrentScript() {
+        if (restClient == null) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Please connect to a Gateway first",
+                    "Not Connected",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+        String code = codeEditor.getText().trim();
+
+        if (code.isEmpty()) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Cannot save empty script",
+                    "Empty Script",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+        // If script already has metadata, do a quick save
+        if (currentScript != null && currentScript.getName() != null && !currentScript.getName().isEmpty()) {
+            String name = currentScript.getName();
+            String author = currentScript.getAuthor() != null ? currentScript.getAuthor() : "Unknown";
+            String version = currentScript.getVersion() != null ? currentScript.getVersion() : "1.0";
+            String folder = currentScript.getFolderPath() != null ? currentScript.getFolderPath() : "";
+            String description = currentScript.getDescription() != null ? currentScript.getDescription() : "";
+
+            saveScript(name, code, description, author, folder, version);
+        } else {
+            // New script - show save dialog
+            saveScriptAs();
+        }
+    }
+
+    /**
+     * Shows the Save As dialog to save script with a new name.
+     */
+    private void saveScriptAs() {
         if (restClient == null) {
             JOptionPane.showMessageDialog(
                     this,
@@ -881,6 +952,17 @@ public class Python3IDE_v1_9 extends JPanel {
                 try {
                     get();
                     changesTracker.markSaved();
+
+                    // Update currentScript metadata for future quick saves
+                    if (currentScript == null) {
+                        currentScript = new ScriptMetadata();
+                    }
+                    currentScript.setName(name);
+                    currentScript.setDescription(description);
+                    currentScript.setAuthor(author);
+                    currentScript.setFolderPath(folderPath);
+                    currentScript.setVersion(version);
+
                     setStatus("Script saved: " + name, new Color(0, 128, 0));
                     refreshScriptTree();
                 } catch (Exception e) {
@@ -1080,6 +1162,108 @@ public class Python3IDE_v1_9 extends JPanel {
         };
 
         worker.execute();
+    }
+
+    /**
+     * Imports a .py file into the script library.
+     */
+    private void importScript() {
+        if (restClient == null) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Please connect to a Gateway first",
+                    "Not Connected",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setFileFilter(new javax.swing.filechooser.FileFilter() {
+            @Override
+            public boolean accept(File f) {
+                return f.isDirectory() || f.getName().toLowerCase().endsWith(".py");
+            }
+
+            @Override
+            public String getDescription() {
+                return "Python Files (*.py)";
+            }
+        });
+
+        int result = fileChooser.showOpenDialog(this);
+
+        if (result == JFileChooser.APPROVE_OPTION) {
+            File file = fileChooser.getSelectedFile();
+
+            try {
+                // Read file content
+                String code = new String(Files.readAllBytes(file.toPath()));
+
+                // Get script name without extension
+                String fileName = file.getName();
+                String scriptName = fileName.endsWith(".py") ?
+                    fileName.substring(0, fileName.length() - 3) : fileName;
+
+                // Show save dialog with imported content
+                JTextField nameField = new JTextField(scriptName, 20);
+                JTextField authorField = new JTextField(System.getProperty("user.name", "Unknown"), 20);
+                JTextField versionField = new JTextField("1.0", 10);
+                JTextField folderField = new JTextField("", 20);
+                JTextField descField = new JTextField("Imported from " + fileName, 30);
+
+                JPanel panel = new JPanel(new GridLayout(5, 2, 5, 5));
+                panel.add(new JLabel("Script Name:"));
+                panel.add(nameField);
+                panel.add(new JLabel("Author:"));
+                panel.add(authorField);
+                panel.add(new JLabel("Version:"));
+                panel.add(versionField);
+                panel.add(new JLabel("Folder Path:"));
+                panel.add(folderField);
+                panel.add(new JLabel("Description:"));
+                panel.add(descField);
+
+                int dialogResult = JOptionPane.showConfirmDialog(
+                        this,
+                        panel,
+                        "Import Script",
+                        JOptionPane.OK_CANCEL_OPTION,
+                        JOptionPane.PLAIN_MESSAGE
+                );
+
+                if (dialogResult == JOptionPane.OK_OPTION) {
+                    String name = nameField.getText().trim();
+                    String author = authorField.getText().trim();
+                    String version = versionField.getText().trim();
+                    String folder = folderField.getText().trim();
+                    String description = descField.getText().trim();
+
+                    if (name.isEmpty()) {
+                        JOptionPane.showMessageDialog(
+                                this,
+                                "Script name cannot be empty",
+                                "Invalid Name",
+                                JOptionPane.WARNING_MESSAGE
+                        );
+                        return;
+                    }
+
+                    // Save imported script
+                    saveScript(name, code, description, author, folder, version);
+                    setStatus("Imported: " + fileName, new Color(0, 128, 0));
+                }
+
+            } catch (IOException e) {
+                LOGGER.error("Failed to import script", e);
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Failed to import script: " + e.getMessage(),
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE
+                );
+            }
+        }
     }
 
     /**
