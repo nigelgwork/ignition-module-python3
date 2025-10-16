@@ -26,15 +26,19 @@ public class ScriptTreeCellRenderer extends DefaultTreeCellRenderer {
 
         super.getTreeCellRendererComponent(tree, value, selected, expanded, leaf, row, hasFocus);
 
+        // Set readable font size and spacing
+        setFont(new Font("SansSerif", Font.PLAIN, 13));
+        setIconTextGap(6);  // Add spacing between icon and text
+
         if (value instanceof ScriptTreeNode) {
             ScriptTreeNode node = (ScriptTreeNode) value;
 
             if (node.isFolder()) {
                 setIcon(expanded ? FOLDER_OPEN_ICON : FOLDER_ICON);
-                setFont(getFont().deriveFont(Font.BOLD));
+                setFont(new Font("SansSerif", Font.BOLD, 13));
             } else if (node.isScript()) {
                 setIcon(SCRIPT_ICON);
-                setFont(getFont().deriveFont(Font.PLAIN));
+                setFont(new Font("SansSerif", Font.PLAIN, 13));
             }
         }
 

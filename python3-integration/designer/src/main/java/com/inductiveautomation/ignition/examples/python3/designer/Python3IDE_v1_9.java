@@ -21,6 +21,9 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 import java.awt.*;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.StringSelection;
+import java.awt.datatransfer.Transferable;
 import java.awt.event.*;
 import java.io.*;
 import java.nio.file.Files;
@@ -189,6 +192,10 @@ public class Python3IDE_v1_9 extends JPanel {
         scriptTree.setShowsRootHandles(true);
         scriptTree.setCellRenderer(new ScriptTreeCellRenderer());
         scriptTree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
+        scriptTree.setRowHeight(22);  // Increase row height for better readability
+        scriptTree.setDragEnabled(true);
+        scriptTree.setDropMode(DropMode.ON_OR_INSERT);
+        scriptTree.setTransferHandler(new ScriptTreeTransferHandler());
 
         // Metadata Panel
         metadataPanel = new ScriptMetadataPanel();
@@ -1154,6 +1161,10 @@ public class Python3IDE_v1_9 extends JPanel {
             exportItem.addActionListener(ev -> exportScript(scriptNode));
             menu.add(exportItem);
 
+            JMenuItem renameItem = new JMenuItem("Rename...");
+            renameItem.addActionListener(ev -> renameScript(scriptNode));
+            menu.add(renameItem);
+
             menu.addSeparator();
 
             JMenuItem deleteItem = new JMenuItem("Delete");
@@ -1210,6 +1221,81 @@ public class Python3IDE_v1_9 extends JPanel {
                     JOptionPane.showMessageDialog(
                             Python3IDE_v1_9.this,
                             "Failed to export script: " + e.getMessage(),
+                            "Error",
+                            JOptionPane.ERROR_MESSAGE
+                    );
+                }
+            }
+        };
+
+        worker.execute();
+    }
+
+    /**
+     * Renames a script.
+     */
+    private void renameScript(ScriptTreeNode scriptNode) {
+        ScriptMetadata metadata = scriptNode.getScriptMetadata();
+        String oldName = metadata.getName();
+
+        String newName = JOptionPane.showInputDialog(
+                this,
+                "Enter new name for script:",
+                oldName
+        );
+
+        if (newName == null || newName.trim().isEmpty()) {
+            return;  // User cancelled or entered empty name
+        }
+
+        final String finalNewName = newName.trim();
+
+        if (finalNewName.equals(oldName)) {
+            return;  // No change
+        }
+
+        // Rename by: load script -> delete old -> save with new name
+        SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
+            private SavedScript script;
+
+            @Override
+            protected Void doInBackground() throws Exception {
+                // Load the script
+                script = restClient.loadScript(oldName);
+
+                // Delete old script
+                restClient.deleteScript(oldName);
+
+                // Save with new name
+                restClient.saveScript(
+                        finalNewName,  // New name
+                        script.getCode(),
+                        script.getDescription(),
+                        script.getAuthor(),
+                        script.getFolderPath(),
+                        script.getVersion()
+                );
+
+                return null;
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    get();
+                    setStatus("Renamed '" + oldName + "' to '" + finalNewName + "'", new Color(0, 128, 0));
+                    refreshScriptTree();
+
+                    // Update current script metadata if this is the currently loaded script
+                    if (currentScript != null && currentScript.getName().equals(oldName)) {
+                        currentScript.setName(finalNewName);
+                    }
+
+                } catch (Exception e) {
+                    LOGGER.error("Failed to rename script", e);
+                    JOptionPane.showMessageDialog(
+                            Python3IDE_v1_9.this,
+                            "Failed to rename script: " + e.getMessage(),
                             "Error",
                             JOptionPane.ERROR_MESSAGE
                     );
@@ -1626,5 +1712,166 @@ public class Python3IDE_v1_9 extends JPanel {
 
     public JTextArea getErrorArea() {
         return errorArea;
+    }
+
+    /**
+     * Transfer handler for drag and drop in the script tree.
+     */
+    private class ScriptTreeTransferHandler extends TransferHandler {
+        @Override
+        public int getSourceActions(JComponent c) {
+            return MOVE;
+        }
+
+        @Override
+        protected Transferable createTransferable(JComponent c) {
+            if (c instanceof JTree) {
+                JTree tree = (JTree) c;
+                TreePath path = tree.getSelectionPath();
+                if (path != null) {
+                    Object node = path.getLastPathComponent();
+                    if (node instanceof ScriptTreeNode) {
+                        ScriptTreeNode scriptNode = (ScriptTreeNode) node;
+                        // Only allow dragging scripts, not folders or root
+                        if (scriptNode.isScript()) {
+                            return new StringSelection(scriptNode.getScriptMetadata().getName());
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+
+        @Override
+        public boolean canImport(TransferSupport support) {
+            if (!support.isDrop()) {
+                return false;
+            }
+
+            // Check if we're dropping on a folder
+            JTree.DropLocation dropLocation = (JTree.DropLocation) support.getDropLocation();
+            TreePath path = dropLocation.getPath();
+
+            if (path == null) {
+                return false;
+            }
+
+            Object targetNode = path.getLastPathComponent();
+            if (!(targetNode instanceof ScriptTreeNode)) {
+                return false;
+            }
+
+            ScriptTreeNode target = (ScriptTreeNode) targetNode;
+            // Can only drop on folders or root
+            return target.isFolder() || target == rootNode;
+        }
+
+        @Override
+        public boolean importData(TransferSupport support) {
+            if (!canImport(support)) {
+                return false;
+            }
+
+            try {
+                // Get the script name being dragged
+                String scriptName = (String) support.getTransferable().getTransferData(DataFlavor.stringFlavor);
+
+                // Get the target folder
+                JTree.DropLocation dropLocation = (JTree.DropLocation) support.getDropLocation();
+                TreePath path = dropLocation.getPath();
+                ScriptTreeNode targetFolder = (ScriptTreeNode) path.getLastPathComponent();
+
+                // Calculate new folder path
+                String newFolderPath;
+                if (targetFolder == rootNode) {
+                    newFolderPath = "";  // Root level
+                } else {
+                    newFolderPath = getFolderPath(targetFolder);
+                }
+
+                // Move the script by reloading with new folder path
+                moveScript(scriptName, newFolderPath);
+
+                return true;
+
+            } catch (Exception e) {
+                LOGGER.error("Failed to import script", e);
+                setStatus("Failed to move script: " + e.getMessage(), Color.RED);
+                return false;
+            }
+        }
+
+        /**
+         * Gets the full folder path for a folder node.
+         */
+        private String getFolderPath(ScriptTreeNode folderNode) {
+            if (folderNode == rootNode) {
+                return "";
+            }
+
+            StringBuilder path = new StringBuilder();
+            Object[] pathArray = folderNode.getPath();
+
+            // Skip root node (index 0)
+            for (int i = 1; i < pathArray.length; i++) {
+                if (path.length() > 0) {
+                    path.append("/");
+                }
+                path.append(pathArray[i].toString());
+            }
+
+            return path.toString();
+        }
+
+        /**
+         * Moves a script to a new folder.
+         */
+        private void moveScript(String scriptName, String newFolderPath) {
+            if (restClient == null) {
+                return;
+            }
+
+            SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
+                private SavedScript script;
+
+                @Override
+                protected Void doInBackground() throws Exception {
+                    // Load the script
+                    script = restClient.loadScript(scriptName);
+
+                    // Update folder path
+                    restClient.saveScript(
+                            script.getName(),
+                            script.getCode(),
+                            script.getDescription(),
+                            script.getAuthor(),
+                            newFolderPath,  // New folder path
+                            script.getVersion()
+                    );
+
+                    return null;
+                }
+
+                @Override
+                protected void done() {
+                    try {
+                        get();
+                        setStatus("Moved '" + scriptName + "' to " +
+                                (newFolderPath.isEmpty() ? "root" : newFolderPath), new Color(0, 128, 0));
+                        refreshScriptTree();
+                    } catch (Exception e) {
+                        LOGGER.error("Failed to move script", e);
+                        JOptionPane.showMessageDialog(
+                                Python3IDE_v1_9.this,
+                                "Failed to move script: " + e.getMessage(),
+                                "Error",
+                                JOptionPane.ERROR_MESSAGE
+                        );
+                    }
+                }
+            };
+
+            worker.execute();
+        }
     }
 }

@@ -1078,7 +1078,8 @@ pip install jedi pylint flake8
 |---------|--------|-------------------|-------------------|
 | v1.8.0 | ✅ Released | 100% | 2025-10-16 |
 | v1.9.1 | ✅ Released | 100% | 2025-10-16 |
-| v1.9.0 | 🔄 In Progress | 40% | Next (2-3 days) |
+| v1.9.2 | ✅ Released | 100% | 2025-10-16 |
+| v1.9.0 | 🔄 In Progress | 85% | Partial completion |
 | v1.10.0 | 📋 Planned | 0% | After v1.9.0 (2-3 days) |
 | v2.0.0 | 📋 Planned | 0% | After v1.10.0 (1-2 weeks) |
 | v2.5.0 | 🔮 Future | 0% | TBD |
