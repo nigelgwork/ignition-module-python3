@@ -518,6 +518,18 @@ Built using the Ignition SDK:
 
 ## Changelog
 
+### 1.12.0 (Modern UI Design)
+- **NEW**: Modern UI with VS Code-inspired dark theme
+- **NEW**: ModernStatusBar with connection status, pool stats, and cursor position
+- **NEW**: ModernButton components with hover effects and rounded corners
+- **NEW**: ModernTheme color palette for consistent styling
+- **NEW**: Rounded borders (RoundedBorder) for modern UI appearance
+- **IMPROVED**: All buttons replaced with ModernButton (primary, success, default)
+- **IMPROVED**: Dark theme applied to all panels, toolbars, and text areas
+- **IMPROVED**: Enhanced visual feedback with modern colors
+- **IMPROVED**: Better readability with updated fonts and spacing
+- **IMPROVED**: Professional IDE appearance matching modern code editors
+
 ### 1.11.0 (Real-time Syntax Checking)
 - **NEW**: Real-time Python syntax checking in Designer IDE
 - **NEW**: Red squiggly underlines for syntax errors

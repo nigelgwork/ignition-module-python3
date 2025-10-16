@@ -62,8 +62,7 @@ public class Python3IDE_v1_9 extends JPanel {
     private RSyntaxTextArea codeEditor;
     private JTextArea outputArea;
     private JTextArea errorArea;
-    private JLabel statusLabel;
-    private JLabel poolStatsLabel;
+    private ModernStatusBar statusBar;
     private JButton executeButton;
     private JButton clearButton;
     private JButton saveButton;
@@ -123,8 +122,7 @@ public class Python3IDE_v1_9 extends JPanel {
         gatewayUrlField = new JTextField("http://localhost:9088", 25);
         gatewayUrlField.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
 
-        connectButton = new JButton("Connect");
-        connectButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 11));
+        connectButton = ModernButton.createPrimary("Connect");
 
         // Code editor with RSyntaxTextArea
         codeEditor = new RSyntaxTextArea(20, 80);
@@ -146,43 +144,30 @@ public class Python3IDE_v1_9 extends JPanel {
 
         // Output area
         outputArea = new JTextArea(8, 80);
-        outputArea.setFont(new Font("Monospaced", Font.PLAIN, 11));
+        outputArea.setFont(ModernTheme.FONT_MONOSPACE);
         outputArea.setEditable(false);
-        outputArea.setBackground(new Color(245, 245, 245));
+        outputArea.setBackground(ModernTheme.BACKGROUND_DARKER);
+        outputArea.setForeground(ModernTheme.FOREGROUND_PRIMARY);
+        outputArea.setCaretColor(ModernTheme.FOREGROUND_PRIMARY);
 
         // Error area
         errorArea = new JTextArea(8, 80);
-        errorArea.setFont(new Font("Monospaced", Font.PLAIN, 11));
+        errorArea.setFont(ModernTheme.FONT_MONOSPACE);
         errorArea.setEditable(false);
-        errorArea.setBackground(new Color(255, 245, 245));
-        errorArea.setForeground(Color.RED);
+        errorArea.setBackground(ModernTheme.BACKGROUND_DARKER);
+        errorArea.setForeground(ModernTheme.ERROR);
+        errorArea.setCaretColor(ModernTheme.ERROR);
 
-        // Status labels
-        statusLabel = new JLabel("Ready");
-        statusLabel.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 11));
-
-        poolStatsLabel = new JLabel("Pool: Not Connected");
-        poolStatsLabel.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 11));
-        poolStatsLabel.setForeground(Color.GRAY);
+        // Status bar
+        statusBar = new ModernStatusBar();
 
         // Buttons
-        executeButton = new JButton("Execute (Ctrl+Enter)");
-        executeButton.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 12));
-
-        clearButton = new JButton("Clear");
-        clearButton.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
-
-        saveButton = new JButton("Save (Ctrl+S)");
-        saveButton.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
-
-        saveAsButton = new JButton("Save As...");
-        saveAsButton.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
-
-        importButton = new JButton("Import...");
-        importButton.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
-
-        exportButton = new JButton("Export...");
-        exportButton.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
+        executeButton = ModernButton.createPrimary("Execute (Ctrl+Enter)");
+        clearButton = ModernButton.createDefault("Clear");
+        saveButton = ModernButton.createSuccess("Save (Ctrl+S)");
+        saveAsButton = ModernButton.createDefault("Save As...");
+        importButton = ModernButton.createDefault("Import...");
+        exportButton = ModernButton.createDefault("Export...");
 
         progressBar = new JProgressBar();
         progressBar.setIndeterminate(false);
@@ -196,10 +181,15 @@ public class Python3IDE_v1_9 extends JPanel {
         scriptTree.setShowsRootHandles(true);
         scriptTree.setCellRenderer(new ScriptTreeCellRenderer());
         scriptTree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
-        scriptTree.setRowHeight(26);  // Increase row height for better readability with 14pt font
+        scriptTree.setRowHeight(26);  // Increase row height for better readability
         scriptTree.setDragEnabled(true);
         scriptTree.setDropMode(DropMode.ON_OR_INSERT);
         scriptTree.setTransferHandler(new ScriptTreeTransferHandler());
+
+        // Modern theme styling
+        scriptTree.setBackground(ModernTheme.TREE_BACKGROUND);
+        scriptTree.setForeground(ModernTheme.FOREGROUND_PRIMARY);
+        scriptTree.setFont(ModernTheme.FONT_REGULAR);
 
         // Metadata Panel
         metadataPanel = new ScriptMetadataPanel();
@@ -268,17 +258,31 @@ public class Python3IDE_v1_9 extends JPanel {
     private void layoutComponents() {
         setLayout(new BorderLayout(5, 5));
         setBorder(new EmptyBorder(10, 10, 10, 10));
+        setBackground(ModernTheme.BACKGROUND_DARK);
 
         // Top area: Menu bar + Gateway Connection
         JPanel topPanel = new JPanel(new BorderLayout());
+        topPanel.setBackground(ModernTheme.BACKGROUND_DARK);
 
         // Menu bar
         topPanel.add(menuBar, BorderLayout.NORTH);
 
         // Gateway Connection panel
         JPanel gatewayPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
-        gatewayPanel.setBorder(new TitledBorder("Gateway Connection"));
-        gatewayPanel.add(new JLabel("URL:"));
+        gatewayPanel.setBackground(ModernTheme.PANEL_BACKGROUND);
+        gatewayPanel.setBorder(BorderFactory.createCompoundBorder(
+                new TitledBorder(BorderFactory.createLineBorder(ModernTheme.BORDER_DEFAULT),
+                        "Gateway Connection",
+                        TitledBorder.DEFAULT_JUSTIFICATION,
+                        TitledBorder.DEFAULT_POSITION,
+                        ModernTheme.FONT_REGULAR,
+                        ModernTheme.FOREGROUND_PRIMARY),
+                BorderFactory.createEmptyBorder(5, 5, 5, 5)
+        ));
+
+        JLabel urlLabel = new JLabel("URL:");
+        urlLabel.setForeground(ModernTheme.FOREGROUND_PRIMARY);
+        gatewayPanel.add(urlLabel);
         gatewayPanel.add(gatewayUrlField);
         gatewayPanel.add(connectButton);
         topPanel.add(gatewayPanel, BorderLayout.CENTER);
@@ -298,6 +302,9 @@ public class Python3IDE_v1_9 extends JPanel {
         mainSplit.setRightComponent(editorPanel);
 
         add(mainSplit, BorderLayout.CENTER);
+
+        // Status bar at the bottom
+        add(statusBar, BorderLayout.SOUTH);
     }
 
     /**
@@ -306,26 +313,36 @@ public class Python3IDE_v1_9 extends JPanel {
     private JPanel createSidebar() {
         JPanel sidebar = new JPanel(new BorderLayout(5, 5));
         sidebar.setPreferredSize(new Dimension(250, 600));
+        sidebar.setBackground(ModernTheme.BACKGROUND_DARK);
 
         // Script tree
         JScrollPane treeScroll = new JScrollPane(scriptTree);
-        treeScroll.setBorder(new TitledBorder("Script Browser"));
+        treeScroll.setBorder(BorderFactory.createCompoundBorder(
+                new TitledBorder(BorderFactory.createLineBorder(ModernTheme.BORDER_DEFAULT),
+                        "Script Browser",
+                        TitledBorder.DEFAULT_JUSTIFICATION,
+                        TitledBorder.DEFAULT_POSITION,
+                        ModernTheme.FONT_REGULAR,
+                        ModernTheme.FOREGROUND_PRIMARY),
+                BorderFactory.createEmptyBorder(5, 5, 5, 5)
+        ));
+        treeScroll.setBackground(ModernTheme.TREE_BACKGROUND);
+        treeScroll.getViewport().setBackground(ModernTheme.TREE_BACKGROUND);
 
         // Toolbar above tree
         JPanel treeToolbar = new JPanel(new FlowLayout(FlowLayout.LEFT, 3, 2));
-        JButton newFolderBtn = new JButton("+Folder");
+        treeToolbar.setBackground(ModernTheme.PANEL_BACKGROUND);
+
+        ModernButton newFolderBtn = ModernButton.createSmall("+Folder");
         newFolderBtn.setToolTipText("New Folder");
-        newFolderBtn.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 10));
         newFolderBtn.addActionListener(e -> createNewFolder());
 
-        JButton newScriptBtn = new JButton("+Script");
+        ModernButton newScriptBtn = ModernButton.createSmall("+Script");
         newScriptBtn.setToolTipText("New Script");
-        newScriptBtn.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 10));
         newScriptBtn.addActionListener(e -> createNewScript());
 
-        JButton refreshBtn = new JButton("Refresh");
+        ModernButton refreshBtn = ModernButton.createSmall("Refresh");
         refreshBtn.setToolTipText("Refresh Scripts");
-        refreshBtn.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 10));
         refreshBtn.addActionListener(e -> refreshScriptTree());
 
         treeToolbar.add(newFolderBtn);
@@ -333,6 +350,7 @@ public class Python3IDE_v1_9 extends JPanel {
         treeToolbar.add(refreshBtn);
 
         JPanel treePanel = new JPanel(new BorderLayout());
+        treePanel.setBackground(ModernTheme.BACKGROUND_DARK);
         treePanel.add(treeToolbar, BorderLayout.NORTH);
         treePanel.add(treeScroll, BorderLayout.CENTER);
 
@@ -352,50 +370,66 @@ public class Python3IDE_v1_9 extends JPanel {
      */
     private JPanel createEditorPanel() {
         JPanel panel = new JPanel(new BorderLayout(5, 5));
+        panel.setBackground(ModernTheme.BACKGROUND_DARK);
 
         // Editor with line numbers
         RTextScrollPane editorScroll = new RTextScrollPane(codeEditor);
         editorScroll.setLineNumbersEnabled(true);
 
         JPanel editorContainer = new JPanel(new BorderLayout());
-        editorContainer.setBorder(new TitledBorder("Python 3 Code Editor"));
+        editorContainer.setBackground(ModernTheme.PANEL_BACKGROUND);
+        editorContainer.setBorder(BorderFactory.createCompoundBorder(
+                new TitledBorder(BorderFactory.createLineBorder(ModernTheme.BORDER_DEFAULT),
+                        "Python 3 Code Editor",
+                        TitledBorder.DEFAULT_JUSTIFICATION,
+                        TitledBorder.DEFAULT_POSITION,
+                        ModernTheme.FONT_REGULAR,
+                        ModernTheme.FOREGROUND_PRIMARY),
+                BorderFactory.createEmptyBorder(5, 5, 5, 5)
+        ));
         editorContainer.add(editorScroll, BorderLayout.CENTER);
 
         panel.add(editorContainer, BorderLayout.CENTER);
 
         // Toolbar
-        JPanel toolbar = new JPanel(new BorderLayout(10, 0));
-        toolbar.setBorder(new EmptyBorder(5, 0, 5, 0));
-
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
-        buttonPanel.add(executeButton);
-        buttonPanel.add(clearButton);
-        buttonPanel.add(saveButton);
-        buttonPanel.add(saveAsButton);
-        buttonPanel.add(importButton);
-        buttonPanel.add(exportButton);
-        buttonPanel.add(progressBar);
-
-        JPanel infoPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
-        infoPanel.add(poolStatsLabel);
-        infoPanel.add(statusLabel);
-
-        toolbar.add(buttonPanel, BorderLayout.WEST);
-        toolbar.add(infoPanel, BorderLayout.EAST);
+        JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 5));
+        toolbar.setBackground(ModernTheme.PANEL_BACKGROUND);
+        toolbar.add(executeButton);
+        toolbar.add(clearButton);
+        toolbar.add(saveButton);
+        toolbar.add(saveAsButton);
+        toolbar.add(importButton);
+        toolbar.add(exportButton);
+        toolbar.add(progressBar);
 
         panel.add(toolbar, BorderLayout.NORTH);
 
         // Output tabs
         JTabbedPane outputTabs = new JTabbedPane();
+        outputTabs.setBackground(ModernTheme.PANEL_BACKGROUND);
+        outputTabs.setForeground(ModernTheme.FOREGROUND_PRIMARY);
 
         JScrollPane outputScroll = new JScrollPane(outputArea);
+        outputScroll.setBackground(ModernTheme.BACKGROUND_DARKER);
+        outputScroll.getViewport().setBackground(ModernTheme.BACKGROUND_DARKER);
         outputTabs.addTab("Output", outputScroll);
 
         JScrollPane errorScroll = new JScrollPane(errorArea);
+        errorScroll.setBackground(ModernTheme.BACKGROUND_DARKER);
+        errorScroll.getViewport().setBackground(ModernTheme.BACKGROUND_DARKER);
         outputTabs.addTab("Errors", errorScroll);
 
         JPanel bottomPanel = new JPanel(new BorderLayout());
-        bottomPanel.setBorder(new TitledBorder("Execution Results"));
+        bottomPanel.setBackground(ModernTheme.PANEL_BACKGROUND);
+        bottomPanel.setBorder(BorderFactory.createCompoundBorder(
+                new TitledBorder(BorderFactory.createLineBorder(ModernTheme.BORDER_DEFAULT),
+                        "Execution Results",
+                        TitledBorder.DEFAULT_JUSTIFICATION,
+                        TitledBorder.DEFAULT_POSITION,
+                        ModernTheme.FONT_REGULAR,
+                        ModernTheme.FOREGROUND_PRIMARY),
+                BorderFactory.createEmptyBorder(5, 5, 5, 5)
+        ));
         bottomPanel.add(outputTabs, BorderLayout.CENTER);
         bottomPanel.setPreferredSize(new Dimension(600, 200));
 
@@ -575,9 +609,8 @@ public class Python3IDE_v1_9 extends JPanel {
 
         try {
             restClient = new Python3RestClient(url);
-            setStatus("Connected to " + url, new Color(0, 128, 0));
-            poolStatsLabel.setText("Pool: Checking...");
-            poolStatsLabel.setForeground(Color.BLUE);
+            statusBar.setStatus("Connected to " + url, ModernStatusBar.MessageType.SUCCESS);
+            statusBar.setPoolStats("Pool: Checking...", ModernTheme.INFO);
 
             LOGGER.info("Connected to Gateway: {}", url);
 
@@ -594,9 +627,8 @@ public class Python3IDE_v1_9 extends JPanel {
             refreshScriptTree();
 
         } catch (Exception e) {
-            setStatus("Connection failed: " + e.getMessage(), Color.RED);
-            poolStatsLabel.setText("Pool: Not Connected");
-            poolStatsLabel.setForeground(Color.RED);
+            statusBar.setStatus("Connection failed: " + e.getMessage(), ModernStatusBar.MessageType.ERROR);
+            statusBar.setPoolStats("Pool: Not Connected", ModernTheme.ERROR);
             LOGGER.error("Failed to connect to Gateway: {}", url, e);
         }
     }
@@ -701,10 +733,9 @@ public class Python3IDE_v1_9 extends JPanel {
             protected void done() {
                 try {
                     PoolStats stats = get();
-                    updatePoolStatsDisplay(stats);
+                    statusBar.updatePoolStats(stats);
                 } catch (Exception e) {
-                    poolStatsLabel.setText("Pool: Unavailable");
-                    poolStatsLabel.setForeground(Color.RED);
+                    statusBar.setPoolStats("Pool: Unavailable", ModernTheme.ERROR);
                 }
             }
         };
@@ -713,27 +744,19 @@ public class Python3IDE_v1_9 extends JPanel {
     }
 
     /**
-     * Updates pool stats display.
-     */
-    private void updatePoolStatsDisplay(PoolStats stats) {
-        String text = String.format("Pool: %d/%d healthy, %d available",
-                stats.getHealthy(), stats.getTotalSize(), stats.getAvailable());
-
-        poolStatsLabel.setText(text);
-
-        if (stats.isHealthy()) {
-            poolStatsLabel.setForeground(new Color(0, 128, 0));
-        } else {
-            poolStatsLabel.setForeground(Color.ORANGE);
-        }
-    }
-
-    /**
-     * Sets status message.
+     * Sets status message with color.
      */
     private void setStatus(String message, Color color) {
-        statusLabel.setText(message);
-        statusLabel.setForeground(color);
+        // Map Color to MessageType
+        ModernStatusBar.MessageType type = ModernStatusBar.MessageType.INFO;
+        if (color.equals(Color.RED) || color.equals(ModernTheme.ERROR)) {
+            type = ModernStatusBar.MessageType.ERROR;
+        } else if (color.equals(Color.ORANGE) || color.equals(ModernTheme.WARNING)) {
+            type = ModernStatusBar.MessageType.WARNING;
+        } else if (color.equals(new Color(0, 128, 0)) || color.equals(ModernTheme.SUCCESS)) {
+            type = ModernStatusBar.MessageType.SUCCESS;
+        }
+        statusBar.setStatus(message, type);
     }
 
     // Script Management Methods
