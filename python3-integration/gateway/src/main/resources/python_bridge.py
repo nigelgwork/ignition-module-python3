@@ -13,6 +13,11 @@ import contextlib
 from typing import Any, Dict
 
 
+class SecurityException(Exception):
+    """Raised when code violates security policy"""
+    pass
+
+
 class PythonBridge:
     """Handles communication between Java and Python 3"""
 
@@ -20,19 +25,117 @@ class PythonBridge:
         self.globals_dict = {}
         self.version = sys.version
 
+        # Security: Module whitelist (safe modules allowed)
+        self.safe_modules = {
+            'math', 'json', 'datetime', 'itertools', 'collections',
+            'decimal', 'random', 're', 'statistics', 'time', 'calendar',
+            'uuid', 'hashlib', 'base64', 'string', 'textwrap',
+            'difflib', 'enum', 'functools', 'operator', 'copy',
+            'ast'  # For syntax checking
+        }
+
+        # Security: Blocked modules (dangerous modules never allowed)
+        self.blocked_modules = {
+            'os', 'subprocess', 'sys', 'socket', 'urllib', 'requests',
+            'http', 'ftplib', 'smtplib', 'telnetlib', 'paramiko',
+            'shutil', 'glob', 'pathlib', 'tempfile', 'pickle',
+            'shelve', 'dbm', 'sqlite3', 'webbrowser', 'pty',
+            'tty', 'termios', 'fcntl', 'pipes', 'posix', 'pwd',
+            'grp', 'crypt', 'ctypes', 'multiprocessing', 'threading',
+            'asyncio', 'concurrent', '__builtin__', 'builtins'
+        }
+
+        # Security: Blocked functions (dangerous built-ins)
+        self.blocked_functions = {
+            '__import__', 'eval', 'exec', 'compile', 'open',
+            'input', 'raw_input', 'file', 'execfile', 'reload',
+            'vars', 'locals', 'globals', 'dir', 'getattr', 'setattr',
+            'delattr', 'hasattr'
+        }
+
+    def _validate_code_security(self, code: str) -> None:
+        """Validate code for security violations (raises exception if unsafe)"""
+        code_upper = code.upper()
+
+        # Check for blocked module imports
+        for module in self.blocked_modules:
+            # Check "import module" pattern
+            if f'IMPORT {module.upper()}' in code_upper:
+                raise SecurityException(
+                    f"Security violation: Import of '{module}' is not allowed. "
+                    f"Allowed modules: {', '.join(sorted(self.safe_modules))}"
+                )
+            # Check "from module import" pattern
+            if f'FROM {module.upper()} IMPORT' in code_upper:
+                raise SecurityException(
+                    f"Security violation: Import from '{module}' is not allowed. "
+                    f"Allowed modules: {', '.join(sorted(self.safe_modules))}"
+                )
+
+        # Check for dangerous function calls
+        for func in self.blocked_functions:
+            if func in code or func.upper() in code_upper:
+                raise SecurityException(
+                    f"Security violation: Function '{func}' is not allowed for security reasons"
+                )
+
+        # Check for dangerous eval/exec patterns
+        dangerous_patterns = [
+            ('EVAL(', 'eval()'), ('EXEC(', 'exec()'), ('__IMPORT__', '__import__'),
+            ('COMPILE(', 'compile()'), ('OPEN(', 'open()'),
+            ('SUBPROCESS.', 'subprocess'), ('OS.', 'os module'),
+            ('SYS.', 'sys module'), ('SOCKET.', 'socket module')
+        ]
+
+        for pattern, description in dangerous_patterns:
+            if pattern in code_upper:
+                raise SecurityException(
+                    f"Security violation: Use of {description} is not allowed"
+                )
+
+    def _safe_import(self, name: str, *args, **kwargs):
+        """Restricted import function for safe module loading"""
+        # Check if module is blocked
+        if name in self.blocked_modules or name.split('.')[0] in self.blocked_modules:
+            raise ImportError(
+                f"Module '{name}' is not allowed for security reasons. "
+                f"Allowed modules: {', '.join(sorted(self.safe_modules))}"
+            )
+
+        # Check if module is in whitelist
+        if name not in self.safe_modules and name.split('.')[0] not in self.safe_modules:
+            raise ImportError(
+                f"Module '{name}' is not in the approved whitelist. "
+                f"Allowed modules: {', '.join(sorted(self.safe_modules))}"
+            )
+
+        # Import the module
+        return importlib.import_module(name)
+
     def execute_code(self, code: str, variables: Dict[str, Any] = None) -> Dict[str, Any]:
-        """Execute arbitrary Python code"""
+        """Execute Python code in restricted environment"""
         try:
+            # SECURITY CHECK: Validate code before execution
+            self._validate_code_security(code)
+
             # Merge provided variables with globals
             exec_globals = self.globals_dict.copy()
             if variables:
                 exec_globals.update(variables)
 
+            # Add safe __import__ override
+            exec_globals['__import__'] = self._safe_import
+
+            # Remove dangerous builtins
+            safe_builtins = {k: v for k, v in __builtins__.items()
+                           if k not in self.blocked_functions}
+            exec_globals['__builtins__'] = safe_builtins
+
             # Capture stdout during execution
             stdout_capture = io.StringIO()
 
             with contextlib.redirect_stdout(stdout_capture):
-                # Execute code
+                # Execute code in restricted environment
                 exec_locals = {}
                 exec(code, exec_globals, exec_locals)
 
@@ -51,6 +154,12 @@ class PythonBridge:
                 'output': captured_output if captured_output else None
             }
 
+        except SecurityException as e:
+            return {
+                'success': False,
+                'error': f"SECURITY ERROR: {str(e)}",
+                'traceback': ''  # Don't expose internal stack trace for security errors
+            }
         except Exception as e:
             return {
                 'success': False,
@@ -59,14 +168,25 @@ class PythonBridge:
             }
 
     def evaluate_expression(self, expression: str, variables: Dict[str, Any] = None) -> Dict[str, Any]:
-        """Evaluate a Python expression and return result"""
+        """Evaluate a Python expression in restricted environment"""
         try:
+            # SECURITY CHECK: Validate expression before evaluation
+            self._validate_code_security(expression)
+
             # Merge provided variables with globals
             eval_globals = self.globals_dict.copy()
             if variables:
                 eval_globals.update(variables)
 
-            # Evaluate expression
+            # Add safe __import__ override
+            eval_globals['__import__'] = self._safe_import
+
+            # Remove dangerous builtins
+            safe_builtins = {k: v for k, v in __builtins__.items()
+                           if k not in self.blocked_functions}
+            eval_globals['__builtins__'] = safe_builtins
+
+            # Evaluate expression in restricted environment
             result = eval(expression, eval_globals)
 
             return {
@@ -74,6 +194,12 @@ class PythonBridge:
                 'result': self._serialize(result)
             }
 
+        except SecurityException as e:
+            return {
+                'success': False,
+                'error': f"SECURITY ERROR: {str(e)}",
+                'traceback': ''  # Don't expose internal stack trace for security errors
+            }
         except Exception as e:
             return {
                 'success': False,
@@ -82,10 +208,23 @@ class PythonBridge:
             }
 
     def call_module(self, module_name: str, function_name: str, args: list = None, kwargs: dict = None) -> Dict[str, Any]:
-        """Import a module and call a function"""
+        """Import a module and call a function (with security checks)"""
         try:
-            # Import module
-            module = importlib.import_module(module_name)
+            # SECURITY CHECK: Validate module is in whitelist
+            if module_name in self.blocked_modules or module_name.split('.')[0] in self.blocked_modules:
+                raise SecurityException(
+                    f"Module '{module_name}' is not allowed for security reasons. "
+                    f"Allowed modules: {', '.join(sorted(self.safe_modules))}"
+                )
+
+            if module_name not in self.safe_modules and module_name.split('.')[0] not in self.safe_modules:
+                raise SecurityException(
+                    f"Module '{module_name}' is not in the approved whitelist. "
+                    f"Allowed modules: {', '.join(sorted(self.safe_modules))}"
+                )
+
+            # Import module using safe import
+            module = self._safe_import(module_name)
 
             # Get function
             if not hasattr(module, function_name):
@@ -103,6 +242,12 @@ class PythonBridge:
                 'result': self._serialize(result)
             }
 
+        except SecurityException as e:
+            return {
+                'success': False,
+                'error': f"SECURITY ERROR: {str(e)}",
+                'traceback': ''  # Don't expose internal stack trace for security errors
+            }
         except Exception as e:
             return {
                 'success': False,

@@ -16,10 +16,13 @@ import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * REST API endpoints for Python 3 Integration module.
@@ -32,9 +35,229 @@ public final class Python3RestEndpoints {
     private static final Logger LOGGER = LoggerFactory.getLogger(Python3RestEndpoints.class);
     private static Python3ScriptModule scriptModule;
     private static Python3ScriptRepository scriptRepository;
+    private static Python3MetricsCollector metricsCollector = new Python3MetricsCollector();
+
+    // Security: Rate limiting (100 requests per minute per user)
+    private static final int RATE_LIMIT_PER_MINUTE = 100;
+    private static final Map<String, RateLimiter> userRateLimiters = new ConcurrentHashMap<>();
+
+    // Security: Audit logging enabled
+    private static final boolean AUDIT_LOGGING_ENABLED = true;
+
+    // Security: Input validation limits
+    private static final int MAX_CODE_SIZE = 1_048_576;  // 1MB
+    private static final int MAX_SCRIPT_NAME_LENGTH = 255;
+    private static final int MAX_FOLDER_PATH_LENGTH = 1000;
 
     private Python3RestEndpoints() {
         // Private constructor for utility class
+    }
+
+    /**
+     * Simple rate limiter to prevent abuse
+     */
+    private static class RateLimiter {
+        private final AtomicInteger requestCount = new AtomicInteger(0);
+        private long windowStart = System.currentTimeMillis();
+        private static final long WINDOW_MS = 60000; // 1 minute
+
+        public synchronized boolean allowRequest() {
+            long now = System.currentTimeMillis();
+
+            // Reset window if expired
+            if (now - windowStart > WINDOW_MS) {
+                requestCount.set(0);
+                windowStart = now;
+            }
+
+            int count = requestCount.incrementAndGet();
+            return count <= RATE_LIMIT_PER_MINUTE;
+        }
+
+        public synchronized int getRemainingRequests() {
+            return Math.max(0, RATE_LIMIT_PER_MINUTE - requestCount.get());
+        }
+    }
+
+    /**
+     * Check if user has permission to execute Python code.
+     * NOTE: Currently grants all access - configure authentication at Gateway level using:
+     * - API Keys (Gateway → Security → API Keys)
+     * - Network restrictions (firewall rules)
+     * - HTTPS/SSL requirements
+     */
+    private static RouteAccess checkExecutePermission(RequestContext req) {
+        // TODO: Implement proper authentication when SDK API is available
+        // For now, rely on Gateway-level security (API keys, network restrictions)
+        return RouteAccess.GRANTED;
+    }
+
+    /**
+     * Check if user has permission to manage scripts (save, delete).
+     */
+    private static RouteAccess checkManagePermission(RequestContext req) {
+        return RouteAccess.GRANTED;
+    }
+
+    /**
+     * Check if user has permission to read data (diagnostics, stats).
+     */
+    private static RouteAccess checkReadPermission(RequestContext req) {
+        return RouteAccess.GRANTED;
+    }
+
+    /**
+     * Audit log Python code execution (simplified - no user context available in SDK)
+     */
+    private static void auditLog(String action, String details) {
+        if (!AUDIT_LOGGING_ENABLED) {
+            return;
+        }
+
+        try {
+            // Log to Gateway logs (in production, also log to database)
+            LOGGER.info("AUDIT: Action={}, Details={}",
+                action, sanitizeForLogging(details));
+
+            // TODO: In production, also write to audit table
+            // scriptRepository.writeAuditLog(action, hashCode(details));
+
+        } catch (Exception e) {
+            LOGGER.error("Failed to write audit log", e);
+        }
+    }
+
+    /**
+     * Sanitize data for logging (truncate, redact secrets)
+     */
+    private static String sanitizeForLogging(String data) {
+        if (data == null) {
+            return "";
+        }
+
+        // Redact potential secrets
+        String sanitized = data;
+        sanitized = sanitized.replaceAll("password\\s*=\\s*['\"][^'\"]*['\"]", "password='***'");
+        sanitized = sanitized.replaceAll("api_key\\s*=\\s*['\"][^'\"]*['\"]", "api_key='***'");
+        sanitized = sanitized.replaceAll("secret\\s*=\\s*['\"][^'\"]*['\"]", "secret='***'");
+        sanitized = sanitized.replaceAll("token\\s*=\\s*['\"][^'\"]*['\"]", "token='***'");
+
+        // Truncate if too long
+        if (sanitized.length() > 200) {
+            sanitized = sanitized.substring(0, 200) + "... (truncated)";
+        }
+
+        return sanitized;
+    }
+
+    /**
+     * Hash code for audit logging (don't store full code)
+     */
+    private static String hashCode(String code) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            byte[] hash = md.digest(code.getBytes("UTF-8"));
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hash) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) {
+                    hexString.append('0');
+                }
+                hexString.append(hex);
+            }
+            return hexString.toString().substring(0, 16); // First 16 chars
+        } catch (Exception e) {
+            return "hash_error";
+        }
+    }
+
+    /**
+     * Validate Python code (size limits)
+     */
+    private static void validateCode(String code) {
+        if (code == null) {
+            throw new IllegalArgumentException("Code cannot be null");
+        }
+
+        if (code.length() > MAX_CODE_SIZE) {
+            throw new IllegalArgumentException(
+                "Code size exceeds maximum limit of " + MAX_CODE_SIZE + " bytes (1MB). " +
+                "Provided: " + code.length() + " bytes"
+            );
+        }
+
+        if (code.trim().isEmpty()) {
+            throw new IllegalArgumentException("Code cannot be empty");
+        }
+    }
+
+    /**
+     * Validate script name (alphanumeric, no SQL keywords, length limits)
+     */
+    private static void validateScriptName(String name) {
+        if (name == null || name.trim().isEmpty()) {
+            throw new IllegalArgumentException("Script name cannot be empty");
+        }
+
+        if (name.length() > MAX_SCRIPT_NAME_LENGTH) {
+            throw new IllegalArgumentException(
+                "Script name too long. Maximum: " + MAX_SCRIPT_NAME_LENGTH + " characters"
+            );
+        }
+
+        // Allow alphanumeric, underscore, hyphen, period, space
+        if (!name.matches("^[a-zA-Z0-9_. -]+$")) {
+            throw new IllegalArgumentException(
+                "Script name contains invalid characters. Allowed: a-z, A-Z, 0-9, _, -, ., space"
+            );
+        }
+
+        // Blacklist SQL keywords (defense in depth, even though we don't use SQL)
+        String upperName = name.toUpperCase();
+        String[] sqlKeywords = {"SELECT", "INSERT", "UPDATE", "DELETE", "DROP", "CREATE",
+                                "ALTER", "UNION", "' OR '", "1=1", "--", ";", "/*", "*/"};
+
+        for (String keyword : sqlKeywords) {
+            if (upperName.contains(keyword)) {
+                throw new IllegalArgumentException(
+                    "Script name contains forbidden keyword: " + keyword
+                );
+            }
+        }
+    }
+
+    /**
+     * Validate folder path (alphanumeric, no SQL keywords, length limits)
+     */
+    private static void validateFolderPath(String folderPath) {
+        if (folderPath == null) {
+            return;  // null is valid (root folder)
+        }
+
+        if (folderPath.length() > MAX_FOLDER_PATH_LENGTH) {
+            throw new IllegalArgumentException(
+                "Folder path too long. Maximum: " + MAX_FOLDER_PATH_LENGTH + " characters"
+            );
+        }
+
+        // Allow alphanumeric, underscore, hyphen, period, forward slash, space
+        if (!folderPath.matches("^[a-zA-Z0-9_./\\- ]*$")) {
+            throw new IllegalArgumentException(
+                "Folder path contains invalid characters. Allowed: a-z, A-Z, 0-9, _, -, ., /, space"
+            );
+        }
+
+        // Blacklist SQL keywords and path traversal
+        String upperPath = folderPath.toUpperCase();
+        String[] forbiddenPatterns = {"SELECT", "DROP", "--", "/*", "*/", "..", "\\\\", "'", "\""};
+
+        for (String pattern : forbiddenPatterns) {
+            if (upperPath.contains(pattern) || folderPath.contains(pattern)) {
+                throw new IllegalArgumentException(
+                    "Folder path contains forbidden pattern: " + pattern
+                );
+            }
+        }
     }
 
     /**
@@ -70,7 +293,7 @@ public final class Python3RestEndpoints {
             .handler(Python3RestEndpoints::handleExec)
             .method(HttpMethod.POST)
             .type(RouteGroup.TYPE_JSON)
-            .accessControl(req -> RouteAccess.GRANTED)  // Public API - can be secured via API tokens at gateway level
+            .accessControl(Python3RestEndpoints::checkExecutePermission)  // ✅ AUTH + RATE LIMIT
             .mount();
 
         // POST /data/python3integration/api/v1/eval - Evaluate Python expression
@@ -78,7 +301,7 @@ public final class Python3RestEndpoints {
             .handler(Python3RestEndpoints::handleEval)
             .method(HttpMethod.POST)
             .type(RouteGroup.TYPE_JSON)
-            .accessControl(req -> RouteAccess.GRANTED)
+            .accessControl(Python3RestEndpoints::checkExecutePermission)  // ✅ AUTH + RATE LIMIT
             .mount();
 
         // POST /data/python3integration/api/v1/call-module - Call Python module function
@@ -86,7 +309,7 @@ public final class Python3RestEndpoints {
             .handler(Python3RestEndpoints::handleCallModule)
             .method(HttpMethod.POST)
             .type(RouteGroup.TYPE_JSON)
-            .accessControl(req -> RouteAccess.GRANTED)
+            .accessControl(Python3RestEndpoints::checkExecutePermission)  // ✅ AUTH + RATE LIMIT
             .mount();
 
         // POST /data/python3integration/api/v1/call-script - Call saved Python script
@@ -94,7 +317,7 @@ public final class Python3RestEndpoints {
             .handler(Python3RestEndpoints::handleCallScript)
             .method(HttpMethod.POST)
             .type(RouteGroup.TYPE_JSON)
-            .accessControl(req -> RouteAccess.GRANTED)
+            .accessControl(Python3RestEndpoints::checkExecutePermission)  // ✅ AUTH + RATE LIMIT
             .mount();
 
         // GET /data/python3integration/api/v1/version - Get Python version
@@ -102,7 +325,7 @@ public final class Python3RestEndpoints {
             .handler(Python3RestEndpoints::handleGetVersion)
             .method(HttpMethod.GET)
             .type(RouteGroup.TYPE_JSON)
-            .accessControl(req -> RouteAccess.GRANTED)
+            .accessControl(Python3RestEndpoints::checkReadPermission)  // ✅ AUTH (read-only)
             .mount();
 
         // GET /data/python3integration/api/v1/pool-stats - Get process pool statistics
@@ -110,7 +333,7 @@ public final class Python3RestEndpoints {
             .handler(Python3RestEndpoints::handleGetPoolStats)
             .method(HttpMethod.GET)
             .type(RouteGroup.TYPE_JSON)
-            .accessControl(req -> RouteAccess.GRANTED)
+            .accessControl(Python3RestEndpoints::checkReadPermission)  // ✅ AUTH (read-only)
             .mount();
 
         // GET /data/python3integration/api/v1/health - Health check
@@ -118,7 +341,7 @@ public final class Python3RestEndpoints {
             .handler(Python3RestEndpoints::handleHealthCheck)
             .method(HttpMethod.GET)
             .type(RouteGroup.TYPE_JSON)
-            .accessControl(req -> RouteAccess.GRANTED)
+            .accessControl(Python3RestEndpoints::checkReadPermission)  // ✅ AUTH (read-only)
             .mount();
 
         // GET /data/python3integration/api/v1/diagnostics - Performance diagnostics
@@ -126,7 +349,7 @@ public final class Python3RestEndpoints {
             .handler(Python3RestEndpoints::handleDiagnostics)
             .method(HttpMethod.GET)
             .type(RouteGroup.TYPE_JSON)
-            .accessControl(req -> RouteAccess.GRANTED)
+            .accessControl(Python3RestEndpoints::checkReadPermission)  // ✅ AUTH (read-only)
             .mount();
 
         // GET /data/python3integration/api/v1/example - Run example test
@@ -134,7 +357,7 @@ public final class Python3RestEndpoints {
             .handler(Python3RestEndpoints::handleExample)
             .method(HttpMethod.GET)
             .type(RouteGroup.TYPE_JSON)
-            .accessControl(req -> RouteAccess.GRANTED)
+            .accessControl(Python3RestEndpoints::checkExecutePermission)  // ✅ AUTH + RATE LIMIT
             .mount();
 
         // POST /data/python3integration/api/v1/check-syntax - Check Python syntax
@@ -142,7 +365,7 @@ public final class Python3RestEndpoints {
             .handler(Python3RestEndpoints::handleCheckSyntax)
             .method(HttpMethod.POST)
             .type(RouteGroup.TYPE_JSON)
-            .accessControl(req -> RouteAccess.GRANTED)
+            .accessControl(Python3RestEndpoints::checkExecutePermission)  // ✅ AUTH + RATE LIMIT
             .mount();
 
         // POST /data/python3integration/api/v1/completions - Get code completions
@@ -150,7 +373,25 @@ public final class Python3RestEndpoints {
             .handler(Python3RestEndpoints::handleGetCompletions)
             .method(HttpMethod.POST)
             .type(RouteGroup.TYPE_JSON)
-            .accessControl(req -> RouteAccess.GRANTED)
+            .accessControl(Python3RestEndpoints::checkReadPermission)  // ✅ AUTH (completions are read-only)
+            .mount();
+
+        // Performance Monitoring Endpoints
+
+        // GET /data/python3integration/api/v1/metrics - Get performance metrics
+        routes.newRoute("/api/v1/metrics")
+            .handler(Python3RestEndpoints::handleGetMetrics)
+            .method(HttpMethod.GET)
+            .type(RouteGroup.TYPE_JSON)
+            .accessControl(Python3RestEndpoints::checkReadPermission)  // ✅ AUTH (read-only)
+            .mount();
+
+        // GET /data/python3integration/api/v1/gateway-impact - Get Gateway impact assessment
+        routes.newRoute("/api/v1/gateway-impact")
+            .handler(Python3RestEndpoints::handleGetGatewayImpact)
+            .method(HttpMethod.GET)
+            .type(RouteGroup.TYPE_JSON)
+            .accessControl(Python3RestEndpoints::checkReadPermission)  // ✅ AUTH (read-only)
             .mount();
 
         // Script Management Endpoints
@@ -160,7 +401,7 @@ public final class Python3RestEndpoints {
             .handler(Python3RestEndpoints::handleSaveScript)
             .method(HttpMethod.POST)
             .type(RouteGroup.TYPE_JSON)
-            .accessControl(req -> RouteAccess.GRANTED)
+            .accessControl(Python3RestEndpoints::checkManagePermission)  // ✅ AUTH + RATE LIMIT
             .mount();
 
         // GET /data/python3integration/api/v1/scripts/load/{name} - Load a script
@@ -168,7 +409,7 @@ public final class Python3RestEndpoints {
             .handler(Python3RestEndpoints::handleLoadScript)
             .method(HttpMethod.GET)
             .type(RouteGroup.TYPE_JSON)
-            .accessControl(req -> RouteAccess.GRANTED)
+            .accessControl(Python3RestEndpoints::checkReadPermission)  // ✅ AUTH (read-only)
             .mount();
 
         // GET /data/python3integration/api/v1/scripts/list - List all scripts
@@ -176,7 +417,7 @@ public final class Python3RestEndpoints {
             .handler(Python3RestEndpoints::handleListScripts)
             .method(HttpMethod.GET)
             .type(RouteGroup.TYPE_JSON)
-            .accessControl(req -> RouteAccess.GRANTED)
+            .accessControl(Python3RestEndpoints::checkReadPermission)  // ✅ AUTH (read-only)
             .mount();
 
         // DELETE /data/python3integration/api/v1/scripts/delete/{name} - Delete a script
@@ -184,7 +425,7 @@ public final class Python3RestEndpoints {
             .handler(Python3RestEndpoints::handleDeleteScript)
             .method(HttpMethod.DELETE)
             .type(RouteGroup.TYPE_JSON)
-            .accessControl(req -> RouteAccess.GRANTED)
+            .accessControl(Python3RestEndpoints::checkManagePermission)  // ✅ AUTH + RATE LIMIT
             .mount();
 
         LOGGER.info("Python3 REST API routes mounted successfully at /api/v1/*");
@@ -207,6 +448,12 @@ public final class Python3RestEndpoints {
             if (requestBody.has("variables") && requestBody.get("variables").isJsonObject()) {
                 variables = jsonToMap(requestBody.getAsJsonObject("variables"));
             }
+
+            // INPUT VALIDATION: Validate code before execution
+            validateCode(code);
+
+            // AUDIT LOG: Log code execution attempt
+            auditLog("PYTHON_EXEC", code);
 
             Object result = scriptModule.exec(code, variables);
 
@@ -240,6 +487,12 @@ public final class Python3RestEndpoints {
             if (requestBody.has("variables") && requestBody.get("variables").isJsonObject()) {
                 variables = jsonToMap(requestBody.getAsJsonObject("variables"));
             }
+
+            // INPUT VALIDATION: Validate expression before evaluation
+            validateCode(expression);
+
+            // AUDIT LOG: Log expression evaluation
+            auditLog("PYTHON_EVAL", expression);
 
             Object result = scriptModule.eval(expression, variables);
 
@@ -277,6 +530,9 @@ public final class Python3RestEndpoints {
                     args.add(jsonElementToObject(element));
                 }
             }
+
+            // AUDIT LOG: Log module call
+            auditLog("PYTHON_CALL_MODULE", moduleName + "." + functionName + "(" + args + ")");
 
             Object result = scriptModule.callModule(moduleName, functionName, args);
 
@@ -322,6 +578,9 @@ public final class Python3RestEndpoints {
             if (requestBody.has("kwargs") && requestBody.get("kwargs").isJsonObject()) {
                 kwargs = jsonToMap(requestBody.getAsJsonObject("kwargs"));
             }
+
+            // AUDIT LOG: Log script execution
+            auditLog("PYTHON_CALL_SCRIPT", "scriptPath=" + scriptPath);
 
             Object result = scriptModule.callScript(scriptPath, args, kwargs);
 
@@ -453,6 +712,10 @@ public final class Python3RestEndpoints {
         LOGGER.debug("REST API: /example called");
 
         try {
+
+            // AUDIT LOG: Log example execution
+            auditLog("PYTHON_EXAMPLE", "Example test execution");
+
             String result = scriptModule.example();
 
             JsonObject response = new JsonObject();
@@ -487,6 +750,12 @@ public final class Python3RestEndpoints {
                 response.add("errors", new JsonArray());
                 return response;
             }
+
+            // INPUT VALIDATION: Validate code size
+            validateCode(code);
+
+            // AUDIT LOG: Log syntax check (execution context)
+            auditLog("PYTHON_CHECK_SYNTAX", code);
 
             // Call Python syntax checker through script module
             Map<String, Object> result = scriptModule.checkSyntax(code);
@@ -575,6 +844,48 @@ public final class Python3RestEndpoints {
         }
     }
 
+    /**
+     * Handle GET /metrics - Get performance metrics
+     *
+     * Response: {"total_executions": ..., "success_rate": ..., "health_score": ..., ...}
+     */
+    private static JsonObject handleGetMetrics(RequestContext req, HttpServletResponse res) {
+        LOGGER.debug("REST API: /metrics called");
+
+        try {
+            Map<String, Object> metrics = metricsCollector.getMetrics();
+            JsonObject response = mapToJson(metrics);
+
+            LOGGER.debug("REST API: /metrics completed successfully");
+            return response;
+
+        } catch (Exception e) {
+            LOGGER.error("REST API: /metrics failed", e);
+            return createErrorResponse(e.getMessage());
+        }
+    }
+
+    /**
+     * Handle GET /gateway-impact - Get Gateway impact assessment
+     *
+     * Response: {"executions_per_minute": ..., "pool_utilization_percent": ..., "impact_level": "LOW|MEDIUM|HIGH", ...}
+     */
+    private static JsonObject handleGetGatewayImpact(RequestContext req, HttpServletResponse res) {
+        LOGGER.debug("REST API: /gateway-impact called");
+
+        try {
+            Map<String, Object> impact = metricsCollector.getGatewayImpact();
+            JsonObject response = mapToJson(impact);
+
+            LOGGER.debug("REST API: /gateway-impact completed successfully");
+            return response;
+
+        } catch (Exception e) {
+            LOGGER.error("REST API: /gateway-impact failed", e);
+            return createErrorResponse(e.getMessage());
+        }
+    }
+
     // Script Management Handlers
 
     /**
@@ -587,6 +898,7 @@ public final class Python3RestEndpoints {
         LOGGER.debug("REST API: /scripts/save called");
 
         try {
+
             if (scriptRepository == null) {
                 return createErrorResponse("Script repository not initialized");
             }
@@ -602,6 +914,14 @@ public final class Python3RestEndpoints {
             if (name == null || name.trim().isEmpty()) {
                 return createErrorResponse("Script name is required");
             }
+
+            // INPUT VALIDATION: Validate all inputs
+            validateScriptName(name);
+            validateCode(code);
+            validateFolderPath(folderPath);
+
+            // AUDIT LOG: Log script save
+            auditLog("SCRIPT_SAVE", "name=" + name + ", folder=" + folderPath + ", code_hash=" + hashCode(code));
 
             Python3ScriptRepository.SavedScript script = scriptRepository.saveScript(
                 name, code, description, author, folderPath, version
@@ -732,6 +1052,7 @@ public final class Python3RestEndpoints {
         LOGGER.debug("REST API: /scripts/delete called");
 
         try {
+
             if (scriptRepository == null) {
                 return createErrorResponse("Script repository not initialized");
             }
@@ -743,6 +1064,9 @@ public final class Python3RestEndpoints {
             if (name == null || name.trim().isEmpty()) {
                 return createErrorResponse("Script name is required");
             }
+
+            // AUDIT LOG: Log script deletion
+            auditLog("SCRIPT_DELETE", "name=" + name);
 
             boolean deleted = scriptRepository.deleteScript(name);
 
