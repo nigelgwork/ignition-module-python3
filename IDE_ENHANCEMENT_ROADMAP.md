@@ -260,10 +260,401 @@ dependencies {
 
 ---
 
-## 🎯 v2.0.0 - Professional Python IDE
+## 🔌 v1.10.0 - Reusable Script Library Integration
 
 **Status**: Planned
 **Release Target**: After v1.9.0
+**Effort Estimate**: 2-3 days
+
+### Overview
+
+Enable saved Python 3 scripts to be called from anywhere in Ignition's scripting environment, making the script library a reusable function library accessible from Script Transforms, Expression Structures, Gateway Event Scripts, and any other Jython context.
+
+### Problem Statement
+
+Currently, saved scripts can only be executed manually from the Designer IDE. However, users often want to:
+- Call a saved data processing script from a Perspective Script Transform
+- Use a saved utility function from multiple Gateway Event Scripts
+- Reuse complex Python 3 logic across different Ignition scripting contexts
+- Maintain a centralized library of Python 3 functions without copy-pasting code
+
+### Solution
+
+Add a new scripting function: `system.python3.callScript(scriptPath, args=[], kwargs={})`
+
+This allows any Ignition script (Jython 2.7) to execute a saved Python 3 script by name/path and receive the result.
+
+### Features
+
+#### 1. New Scripting Function: `callScript()`
+
+**Function Signature**:
+```python
+system.python3.callScript(scriptPath, args=[], kwargs={})
+```
+
+**Parameters**:
+- `scriptPath` (str): Path to saved script (e.g., "My Scripts/data_processor" or "Utils/API/fetch_data")
+- `args` (list, optional): Positional arguments to pass to the script
+- `kwargs` (dict, optional): Keyword arguments to pass to the script
+
+**Returns**: The value of the `result` variable set by the Python script
+
+**Example Usage**:
+
+```python
+# In Perspective Script Transform (Jython 2.7)
+# Call a saved Python 3 script that processes sensor data
+processed = system.python3.callScript(
+    "Data Processing/normalize_sensor_data",
+    args=[value.sensorReading, value.sensorType],
+    kwargs={"method": "zscore", "threshold": 3.0}
+)
+
+return processed
+```
+
+#### 2. Script Execution Model
+
+**Saved Script Contract**:
+Scripts must set a `result` variable to return a value:
+
+```python
+# Saved script: "Data Processing/normalize_sensor_data"
+import numpy as np
+
+def normalize(data, sensor_type, method='minmax', threshold=None):
+    """Normalize sensor data using specified method"""
+    if method == 'zscore':
+        mean = np.mean(data)
+        std = np.std(data)
+        normalized = (data - mean) / std
+        if threshold:
+            normalized = np.clip(normalized, -threshold, threshold)
+        return normalized
+    elif method == 'minmax':
+        return (data - min(data)) / (max(data) - min(data))
+    return data
+
+# Get arguments passed from Ignition
+data = args[0]          # First positional argument
+sensor_type = args[1]   # Second positional argument
+method = kwargs.get('method', 'minmax')
+threshold = kwargs.get('threshold', None)
+
+# Execute and set result
+result = normalize(data, sensor_type, method, threshold)
+```
+
+**Variable Injection**:
+- `args` - List of positional arguments
+- `kwargs` - Dictionary of keyword arguments
+- All other variables from `system.python3.callScript()` kwargs
+
+#### 3. REST API Extension
+
+**New Endpoint**: `/data/python3integration/api/v1/call-script`
+
+**Method**: POST
+
+**Request Body**:
+```json
+{
+  "scriptPath": "Data Processing/normalize_sensor_data",
+  "args": [42.5, "temperature"],
+  "kwargs": {
+    "method": "zscore",
+    "threshold": 3.0
+  }
+}
+```
+
+**Response**:
+```json
+{
+  "success": true,
+  "result": 1.23,
+  "executionTimeMs": 45,
+  "timestamp": 1697234567890
+}
+```
+
+**Error Response**:
+```json
+{
+  "success": false,
+  "error": "Script not found: Data Processing/normalize_sensor_data",
+  "timestamp": 1697234567890
+}
+```
+
+#### 4. Script Path Resolution
+
+**Supported Formats**:
+- `"My Script"` - Root-level script
+- `"Folder/My Script"` - Script in folder
+- `"Folder/Subfolder/My Script"` - Nested folders
+- `"/Folder/My Script"` - Leading slash optional
+
+**Resolution Logic**:
+1. Normalize path (remove leading/trailing slashes, handle multiple slashes)
+2. Query script repository for exact match
+3. If not found, try case-insensitive match
+4. If still not found, return error
+
+#### 5. Error Handling
+
+**Script Not Found**:
+```python
+# Returns error if script doesn't exist
+result = system.python3.callScript("NonExistent/Script")
+# Throws: ScriptNotFoundException: Script not found: NonExistent/Script
+```
+
+**Execution Error**:
+```python
+# Returns error if script execution fails
+result = system.python3.callScript("Utils/divide", args=[10, 0])
+# Throws: PythonExecutionException: ZeroDivisionError: division by zero
+```
+
+**No Result Variable**:
+```python
+# Warns if script doesn't set 'result' variable
+result = system.python3.callScript("Utils/print_hello")
+# Returns: None (logs warning: "Script did not set 'result' variable")
+```
+
+### Technical Implementation
+
+#### 1. New Methods in Python3ScriptModule.java
+
+```java
+@ScriptFunction(docBundlePrefix = "Python3ScriptModule")
+public Object callScript(String scriptPath,
+                        @KeywordArgs({"args", "kwargs"}) Map<String, Object> params)
+                        throws IOException {
+
+    // Extract args and kwargs from params
+    List<Object> args = (List<Object>) params.getOrDefault("args", new ArrayList<>());
+    Map<String, Object> kwargs = (Map<String, Object>) params.getOrDefault("kwargs", new HashMap<>());
+
+    // Load script from repository
+    SavedScript script = scriptRepository.loadScript(scriptPath);
+    if (script == null) {
+        throw new ScriptNotFoundException("Script not found: " + scriptPath);
+    }
+
+    // Prepare execution variables
+    Map<String, Object> variables = new HashMap<>(kwargs);
+    variables.put("args", args);
+    variables.put("kwargs", kwargs);
+
+    // Execute script code
+    String result = processPool.execute(script.getCode(), variables);
+
+    return result;
+}
+```
+
+#### 2. New REST Endpoint in Python3RestEndpoints.java
+
+```java
+private static JsonObject handleCallScript(RequestContext req, HttpServletResponse res) {
+    try {
+        // Parse request body
+        JsonObject requestBody = JsonParser.parseString(req.getBodyAsString()).getAsJsonObject();
+        String scriptPath = requestBody.get("scriptPath").getAsString();
+
+        JsonArray argsArray = requestBody.has("args") ?
+            requestBody.getAsJsonArray("args") : new JsonArray();
+        JsonObject kwargsObj = requestBody.has("kwargs") ?
+            requestBody.getAsJsonObject("kwargs") : new JsonObject();
+
+        // Load script
+        SavedScript script = scriptRepository.loadScript(scriptPath);
+        if (script == null) {
+            return createErrorResponse("Script not found: " + scriptPath);
+        }
+
+        // Prepare variables
+        Map<String, Object> variables = new HashMap<>();
+        variables.put("args", convertJsonArray(argsArray));
+        variables.put("kwargs", convertJsonObject(kwargsObj));
+
+        // Execute
+        long startTime = System.currentTimeMillis();
+        String result = processPool.execute(script.getCode(), variables);
+        long executionTime = System.currentTimeMillis() - startTime;
+
+        // Build response
+        JsonObject response = new JsonObject();
+        response.addProperty("success", true);
+        response.addProperty("result", result);
+        response.addProperty("executionTimeMs", executionTime);
+        response.addProperty("timestamp", System.currentTimeMillis());
+
+        return response;
+
+    } catch (Exception e) {
+        return createErrorResponse(e.getMessage());
+    }
+}
+```
+
+#### 3. Script Path Resolution in Python3ScriptRepository.java
+
+```java
+/**
+ * Load script by path (supports folder hierarchy)
+ *
+ * @param scriptPath Path like "Folder/Subfolder/Script Name"
+ * @return SavedScript or null if not found
+ */
+public SavedScript loadScript(String scriptPath) throws IOException {
+    // Normalize path: remove leading/trailing slashes
+    String normalizedPath = scriptPath.replaceAll("^/+|/+$", "");
+
+    // Try exact match first
+    SavedScript script = loadScriptExact(normalizedPath);
+    if (script != null) {
+        return script;
+    }
+
+    // Try case-insensitive match
+    return loadScriptCaseInsensitive(normalizedPath);
+}
+```
+
+#### 4. Modified Classes
+
+**Python3ScriptModule.java**:
+- Add `callScript()` method with @ScriptFunction annotation
+
+**Python3RestEndpoints.java**:
+- Add `/call-script` endpoint
+- Add `handleCallScript()` method
+
+**Python3ScriptRepository.java**:
+- Add `loadScript(String path)` method for path-based lookup
+- Handle folder hierarchy in path resolution
+
+**Python3ScriptModule.properties** (Documentation):
+```properties
+callScript.desc=Executes a saved Python 3 script by path and returns the result
+callScript.param.scriptPath=Path to saved script (e.g., "Folder/Script Name")
+callScript.param.args=List of positional arguments to pass to script
+callScript.param.kwargs=Dictionary of keyword arguments to pass to script
+callScript.returns=The value of the 'result' variable set by the script
+```
+
+### Use Cases
+
+#### 1. Data Transform in Perspective
+
+```python
+# Perspective component custom property script transform
+def transform(self, value, quality, timestamp):
+    # Call Python 3 script to process complex data
+    result = system.python3.callScript(
+        "Transforms/process_machine_data",
+        args=[value],
+        kwargs={"machine_id": self.custom.machineId}
+    )
+    return result
+```
+
+#### 2. Gateway Event Script
+
+```python
+# Tag Change Event Script
+def valueChanged(tag, tagPath, previousValue, currentValue, initialChange, missedEvents):
+    # Use Python 3 for advanced analytics
+    anomaly_score = system.python3.callScript(
+        "Analytics/detect_anomaly",
+        args=[currentValue.value],
+        kwargs={
+            "baseline": system.tag.readBlocking([tagPath + ".Baseline"])[0].value,
+            "sensitivity": 0.95
+        }
+    )
+
+    if anomaly_score > 0.8:
+        system.util.sendEmail(
+            smtp="localhost",
+            fromAddr="alerts@company.com",
+            subject="Anomaly Detected",
+            body="Anomaly score: " + str(anomaly_score)
+        )
+```
+
+#### 3. Named Query Post-Processing
+
+```python
+# Named query result processing
+raw_data = system.db.runNamedQuery("Production/GetSensorReadings")
+
+# Process with Python 3 (pandas, numpy, etc.)
+processed_data = system.python3.callScript(
+    "Data Processing/aggregate_sensor_data",
+    args=[raw_data],
+    kwargs={"interval": "1H", "method": "mean"}
+)
+
+return processed_data
+```
+
+### Testing Plan
+
+1. **Script Path Resolution**
+   - Test root-level scripts: `"My Script"`
+   - Test nested scripts: `"Folder/Subfolder/Script"`
+   - Test case-insensitive matching
+   - Test non-existent scripts (verify error)
+
+2. **Argument Passing**
+   - Test positional args: `args=[1, 2, 3]`
+   - Test keyword args: `kwargs={"x": 10, "y": 20}`
+   - Test mixed args and kwargs
+   - Test complex objects (lists, dicts, nested structures)
+
+3. **Return Values**
+   - Test primitive returns (int, float, string, bool)
+   - Test complex returns (list, dict, nested)
+   - Test no result variable (verify warning)
+   - Test None return
+
+4. **Error Handling**
+   - Test script not found
+   - Test Python execution error
+   - Test timeout handling
+   - Test invalid arguments
+
+5. **Integration Tests**
+   - Call from Perspective script transform
+   - Call from Gateway event script
+   - Call from Expression Structure binding
+   - Call from Script Console
+
+### Documentation Updates
+
+**Designer IDE Help**:
+- Add "Using Saved Scripts in Ignition" section
+- Document `system.python3.callScript()` function
+- Provide use case examples
+- Document script contract (`result` variable requirement)
+
+**README.md Updates**:
+- Add to "API Reference" section
+- Add to "Examples" section
+- Update architecture diagram
+
+---
+
+## 🎯 v2.0.0 - Professional Python IDE
+
+**Status**: Planned
+**Release Target**: After v1.10.0
 **Effort Estimate**: 1-2 weeks
 
 ### Features
@@ -686,8 +1077,10 @@ pip install jedi pylint flake8
 | Version | Status | Features Complete | Estimated Release |
 |---------|--------|-------------------|-------------------|
 | v1.8.0 | ✅ Released | 100% | 2025-10-16 |
-| v1.9.0 | 🔄 In Progress | 0% | Next (3-5 days) |
-| v2.0.0 | 📋 Planned | 0% | After v1.9.0 (1-2 weeks) |
+| v1.9.1 | ✅ Released | 100% | 2025-10-16 |
+| v1.9.0 | 🔄 In Progress | 40% | Next (2-3 days) |
+| v1.10.0 | 📋 Planned | 0% | After v1.9.0 (2-3 days) |
+| v2.0.0 | 📋 Planned | 0% | After v1.10.0 (1-2 weeks) |
 | v2.5.0 | 🔮 Future | 0% | TBD |
 | v3.0.0 | 🔮 Vision | 0% | TBD |
 

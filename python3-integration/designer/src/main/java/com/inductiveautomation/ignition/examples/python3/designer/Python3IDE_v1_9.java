@@ -5,6 +5,11 @@ import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rsyntaxtextarea.Theme;
 import org.fife.ui.rtextarea.RTextScrollPane;
+import org.fife.ui.rtextarea.SearchContext;
+import org.fife.ui.rtextarea.SearchEngine;
+import org.fife.rsta.ui.search.FindDialog;
+import org.fife.rsta.ui.search.ReplaceDialog;
+import org.fife.rsta.ui.search.SearchListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,6 +52,7 @@ public class Python3IDE_v1_9 extends JPanel {
     private Python3RestClient restClient;
 
     // UI Components
+    private JMenuBar menuBar;
     private JTextField gatewayUrlField;
     private JButton connectButton;
     private RSyntaxTextArea codeEditor;
@@ -59,6 +65,7 @@ public class Python3IDE_v1_9 extends JPanel {
     private JButton saveButton;
     private JButton saveAsButton;
     private JButton importButton;
+    private JButton exportButton;
     private JProgressBar progressBar;
 
     // Script Browser Components
@@ -70,6 +77,10 @@ public class Python3IDE_v1_9 extends JPanel {
     // Theme and Settings
     private String currentTheme;
     private int fontSize;
+
+    // Find/Replace Dialogs
+    private FindDialog findDialog;
+    private ReplaceDialog replaceDialog;
 
     // Unsaved Changes Tracking
     private UnsavedChangesTracker changesTracker;
@@ -163,6 +174,9 @@ public class Python3IDE_v1_9 extends JPanel {
         importButton = new JButton("Import...");
         importButton.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
 
+        exportButton = new JButton("Export...");
+        exportButton.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
+
         progressBar = new JProgressBar();
         progressBar.setIndeterminate(false);
         progressBar.setVisible(false);
@@ -178,6 +192,63 @@ public class Python3IDE_v1_9 extends JPanel {
 
         // Metadata Panel
         metadataPanel = new ScriptMetadataPanel();
+
+        // Menu Bar
+        menuBar = createMenuBar();
+
+        // Find/Replace Dialogs (lazy initialized when first used)
+        findDialog = null;
+        replaceDialog = null;
+    }
+
+    /**
+     * Creates the menu bar with themes.
+     */
+    private JMenuBar createMenuBar() {
+        JMenuBar bar = new JMenuBar();
+
+        // View Menu
+        JMenu viewMenu = new JMenu("View");
+
+        // Themes submenu
+        JMenu themesMenu = new JMenu("Themes");
+
+        // Light themes
+        JMenuItem defaultTheme = new JMenuItem("Default (Light)");
+        defaultTheme.addActionListener(e -> applyTheme("default"));
+        themesMenu.add(defaultTheme);
+
+        JMenuItem intellijTheme = new JMenuItem("IntelliJ Light");
+        intellijTheme.addActionListener(e -> applyTheme("idea"));
+        themesMenu.add(intellijTheme);
+
+        JMenuItem eclipseTheme = new JMenuItem("Eclipse");
+        eclipseTheme.addActionListener(e -> applyTheme("eclipse"));
+        themesMenu.add(eclipseTheme);
+
+        themesMenu.addSeparator();
+
+        // Dark themes
+        JMenuItem darkTheme = new JMenuItem("Dark");
+        darkTheme.addActionListener(e -> applyTheme("dark"));
+        themesMenu.add(darkTheme);
+
+        JMenuItem vsCodeTheme = new JMenuItem("VS Code Dark+");
+        vsCodeTheme.addActionListener(e -> applyTheme("vs"));
+        themesMenu.add(vsCodeTheme);
+
+        JMenuItem monokaiTheme = new JMenuItem("Monokai");
+        monokaiTheme.addActionListener(e -> applyTheme("monokai"));
+        themesMenu.add(monokaiTheme);
+
+        JMenuItem draculaTheme = new JMenuItem("Dracula");
+        draculaTheme.addActionListener(e -> applyTheme("druid"));
+        themesMenu.add(draculaTheme);
+
+        viewMenu.add(themesMenu);
+        bar.add(viewMenu);
+
+        return bar;
     }
 
     /**
@@ -187,14 +258,21 @@ public class Python3IDE_v1_9 extends JPanel {
         setLayout(new BorderLayout(5, 5));
         setBorder(new EmptyBorder(10, 10, 10, 10));
 
-        // Top panel: Gateway Connection
+        // Top area: Menu bar + Gateway Connection
+        JPanel topPanel = new JPanel(new BorderLayout());
+
+        // Menu bar
+        topPanel.add(menuBar, BorderLayout.NORTH);
+
+        // Gateway Connection panel
         JPanel gatewayPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
         gatewayPanel.setBorder(new TitledBorder("Gateway Connection"));
         gatewayPanel.add(new JLabel("URL:"));
         gatewayPanel.add(gatewayUrlField);
         gatewayPanel.add(connectButton);
+        topPanel.add(gatewayPanel, BorderLayout.CENTER);
 
-        add(gatewayPanel, BorderLayout.NORTH);
+        add(topPanel, BorderLayout.NORTH);
 
         // Create main split pane (sidebar | editor)
         JSplitPane mainSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
@@ -284,6 +362,7 @@ public class Python3IDE_v1_9 extends JPanel {
         buttonPanel.add(saveButton);
         buttonPanel.add(saveAsButton);
         buttonPanel.add(importButton);
+        buttonPanel.add(exportButton);
         buttonPanel.add(progressBar);
 
         JPanel infoPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
@@ -335,6 +414,9 @@ public class Python3IDE_v1_9 extends JPanel {
 
         // Import button
         importButton.addActionListener(e -> importScript());
+
+        // Export button
+        exportButton.addActionListener(e -> exportCurrentScript());
 
         // Keyboard shortcuts
         setupKeyboardShortcuts();
@@ -440,6 +522,26 @@ public class Python3IDE_v1_9 extends JPanel {
             @Override
             public void actionPerformed(ActionEvent e) {
                 setFontSize(12);
+            }
+        });
+
+        // Ctrl+F: Find
+        KeyStroke ctrlF = KeyStroke.getKeyStroke("control F");
+        inputMap.put(ctrlF, "find");
+        actionMap.put("find", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                showFindDialog();
+            }
+        });
+
+        // Ctrl+H: Replace
+        KeyStroke ctrlH = KeyStroke.getKeyStroke("control H");
+        inputMap.put(ctrlH, "replace");
+        actionMap.put("replace", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                showReplaceDialog();
             }
         });
     }
@@ -1267,6 +1369,55 @@ public class Python3IDE_v1_9 extends JPanel {
     }
 
     /**
+     * Exports the current code in the editor to a .py file.
+     */
+    private void exportCurrentScript() {
+        String code = codeEditor.getText().trim();
+
+        if (code.isEmpty()) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Cannot export empty code",
+                    "Empty Code",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+        JFileChooser fileChooser = new JFileChooser();
+
+        // Default filename based on current script name or generic
+        String defaultName = (currentScript != null && currentScript.getName() != null) ?
+                currentScript.getName() + ".py" : "script.py";
+        fileChooser.setSelectedFile(new File(defaultName));
+
+        int result = fileChooser.showSaveDialog(this);
+
+        if (result == JFileChooser.APPROVE_OPTION) {
+            File file = fileChooser.getSelectedFile();
+
+            // Ensure .py extension
+            if (!file.getName().endsWith(".py")) {
+                file = new File(file.getAbsolutePath() + ".py");
+            }
+
+            try (FileWriter writer = new FileWriter(file)) {
+                writer.write(code);
+                setStatus("Exported: " + file.getName(), new Color(0, 128, 0));
+                LOGGER.info("Exported script to: {}", file.getAbsolutePath());
+            } catch (IOException e) {
+                LOGGER.error("Failed to export script", e);
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Failed to export script: " + e.getMessage(),
+                        "Error",
+                        JOptionPane.ERROR_MESSAGE
+                );
+            }
+        }
+    }
+
+    /**
      * Shows unsaved changes dialog.
      */
     private int showUnsavedChangesDialog() {
@@ -1316,6 +1467,18 @@ public class Python3IDE_v1_9 extends JPanel {
                     theme = Theme.load(getClass().getResourceAsStream(
                             "/org/fife/ui/rsyntaxtextarea/themes/eclipse.xml"));
                     break;
+                case "idea":
+                    theme = Theme.load(getClass().getResourceAsStream(
+                            "/org/fife/ui/rsyntaxtextarea/themes/idea.xml"));
+                    break;
+                case "vs":
+                    theme = Theme.load(getClass().getResourceAsStream(
+                            "/org/fife/ui/rsyntaxtextarea/themes/vs.xml"));
+                    break;
+                case "druid":  // Dracula-like theme
+                    theme = Theme.load(getClass().getResourceAsStream(
+                            "/org/fife/ui/rsyntaxtextarea/themes/druid.xml"));
+                    break;
                 default:  // "default" or "light"
                     theme = Theme.load(getClass().getResourceAsStream(
                             "/org/fife/ui/rsyntaxtextarea/themes/default.xml"));
@@ -1329,10 +1492,84 @@ public class Python3IDE_v1_9 extends JPanel {
             Preferences prefs = Preferences.userNodeForPackage(Python3IDE_v1_9.class);
             prefs.put(PREF_THEME, themeName);
 
+            setStatus("Theme changed: " + themeName, new Color(0, 128, 0));
             LOGGER.info("Applied theme: {}", themeName);
 
         } catch (IOException e) {
             LOGGER.error("Failed to apply theme: {}", themeName, e);
+            setStatus("Failed to apply theme: " + themeName, Color.RED);
+        }
+    }
+
+    // Find/Replace Management
+
+    /**
+     * Shows the Find dialog.
+     */
+    private void showFindDialog() {
+        if (findDialog == null) {
+            // Lazy initialization
+            findDialog = new FindDialog((Frame) SwingUtilities.getWindowAncestor(this), new SearchListenerImpl());
+            findDialog.setSearchContext(new SearchContext());
+        }
+
+        findDialog.setVisible(true);
+    }
+
+    /**
+     * Shows the Replace dialog.
+     */
+    private void showReplaceDialog() {
+        if (replaceDialog == null) {
+            // Lazy initialization
+            replaceDialog = new ReplaceDialog((Frame) SwingUtilities.getWindowAncestor(this), new SearchListenerImpl());
+            replaceDialog.setSearchContext(new SearchContext());
+        }
+
+        replaceDialog.setVisible(true);
+    }
+
+    /**
+     * Search listener implementation for Find/Replace dialogs.
+     */
+    private class SearchListenerImpl implements SearchListener {
+        @Override
+        public void searchEvent(org.fife.rsta.ui.search.SearchEvent e) {
+            org.fife.rsta.ui.search.SearchEvent.Type type = e.getType();
+            SearchContext context = e.getSearchContext();
+
+            switch (type) {
+                case FIND:
+                    org.fife.ui.rtextarea.SearchResult result = SearchEngine.find(codeEditor, context);
+                    if (!result.wasFound()) {
+                        setStatus("Text not found: " + context.getSearchFor(), Color.ORANGE);
+                    }
+                    break;
+
+                case REPLACE:
+                    org.fife.ui.rtextarea.SearchResult replaceResult = SearchEngine.replace(codeEditor, context);
+                    if (!replaceResult.wasFound()) {
+                        setStatus("Text not found: " + context.getSearchFor(), Color.ORANGE);
+                    }
+                    break;
+
+                case REPLACE_ALL:
+                    org.fife.ui.rtextarea.SearchResult replaceAllResult = SearchEngine.replaceAll(codeEditor, context);
+                    setStatus("Replaced " + replaceAllResult.getCount() + " occurrences", new Color(0, 128, 0));
+                    break;
+
+                case MARK_ALL:
+                    org.fife.ui.rtextarea.SearchResult markResult = SearchEngine.markAll(codeEditor, context);
+                    if (!markResult.wasFound()) {
+                        setStatus("Text not found: " + context.getSearchFor(), Color.ORANGE);
+                    }
+                    break;
+            }
+        }
+
+        @Override
+        public String getSelectedText() {
+            return codeEditor.getSelectedText();
         }
     }
 
