@@ -8,6 +8,8 @@ import sys
 import json
 import traceback
 import importlib
+import io
+import contextlib
 from typing import Any, Dict
 
 
@@ -26,19 +28,27 @@ class PythonBridge:
             if variables:
                 exec_globals.update(variables)
 
-            # Execute code
-            exec_locals = {}
-            exec(code, exec_globals, exec_locals)
+            # Capture stdout during execution
+            stdout_capture = io.StringIO()
+
+            with contextlib.redirect_stdout(stdout_capture):
+                # Execute code
+                exec_locals = {}
+                exec(code, exec_globals, exec_locals)
+
+            # Get captured output
+            captured_output = stdout_capture.getvalue()
 
             # Update globals with new definitions
             self.globals_dict.update(exec_locals)
 
-            # Return the 'result' variable if it exists, otherwise return locals
-            result = exec_locals.get('result', exec_locals)
+            # Return the 'result' variable if it exists, otherwise return captured output
+            result = exec_locals.get('result', captured_output if captured_output else None)
 
             return {
                 'success': True,
-                'result': self._serialize(result)
+                'result': self._serialize(result),
+                'output': captured_output if captured_output else None
             }
 
         except Exception as e:
