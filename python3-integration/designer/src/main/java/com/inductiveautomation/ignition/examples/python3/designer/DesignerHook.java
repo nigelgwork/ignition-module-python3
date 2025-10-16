@@ -53,17 +53,11 @@ public class DesignerHook extends AbstractDesignerModuleHook {
 
         LOGGER.info("Python 3 Integration Designer module starting up");
 
-        // Defer menu item addition until Designer UI is fully initialized
-        SwingUtilities.invokeLater(() -> {
-            try {
-                addToolsMenuItem();
-            } catch (Exception e) {
-                LOGGER.error("Failed to add Tools menu item in deferred initialization", e);
-            }
-        });
+        // Add menu item to Tools menu (call directly, no deferral needed)
+        addToolsMenuItem();
 
         LOGGER.info("Python 3 Integration Designer module startup complete");
-        LOGGER.info("Python 3 IDE will be available from Tools menu (communicates with Gateway via REST API)");
+        LOGGER.info("Python 3 IDE available from Tools menu (communicates with Gateway via REST API)");
     }
 
     /**
@@ -95,20 +89,20 @@ public class DesignerHook extends AbstractDesignerModuleHook {
             Frame designerFrame = context.getFrame();
             LOGGER.info("Designer frame type: {}", designerFrame != null ? designerFrame.getClass().getName() : "null");
 
-            // Get the menu bar (if it's a JFrame)
-            JMenuBar menuBar = null;
-            if (designerFrame instanceof JFrame) {
-                menuBar = ((JFrame) designerFrame).getJMenuBar();
-                LOGGER.info("Got menu bar from JFrame: {}", menuBar != null ? "success" : "null");
-            } else {
-                LOGGER.warn("Designer frame is not a JFrame, it's: {}",
-                    designerFrame != null ? designerFrame.getClass().getName() : "null");
+            if (!(designerFrame instanceof JFrame)) {
+                LOGGER.warn("Designer frame is not a JFrame, cannot add menu item");
+                return;
             }
+
+            JFrame jFrame = (JFrame) designerFrame;
+            JMenuBar menuBar = jFrame.getJMenuBar();
 
             if (menuBar == null) {
                 LOGGER.warn("Could not get menu bar from Designer frame");
                 return;
             }
+
+            LOGGER.info("Got menu bar successfully");
 
             // Log all available menus
             LOGGER.info("Available menus (count={}): ", menuBar.getMenuCount());
@@ -119,30 +113,30 @@ public class DesignerHook extends AbstractDesignerModuleHook {
                 }
             }
 
-            // Find the Tools menu
+            // Find or create Tools menu
             JMenu toolsMenu = findMenu(menuBar, "Tools");
-
-            if (toolsMenu != null) {
-                LOGGER.info("Found Tools menu, adding Python 3 IDE item");
-
-                // Add separator if menu is not empty
-                if (toolsMenu.getItemCount() > 0) {
-                    toolsMenu.addSeparator();
-                }
-
-                // Create menu item
-                JMenuItem python3IDEItem = new JMenuItem("Python 3 IDE");
-                python3IDEItem.setToolTipText("Open the Python 3 IDE for testing Python code on the Gateway");
-                python3IDEItem.addActionListener(e -> openPython3IDE());
-
-                toolsMenu.add(python3IDEItem);
-
-                LOGGER.info("Successfully added 'Python 3 IDE' menu item to Tools menu");
-
+            if (toolsMenu == null) {
+                LOGGER.info("Tools menu not found, creating it");
+                toolsMenu = new JMenu("Tools");
+                menuBar.add(toolsMenu);
+                LOGGER.info("Created new Tools menu");
             } else {
-                LOGGER.warn("Could not find Tools menu - available menus listed above");
-                LOGGER.warn("Python 3 IDE will not be accessible from menu");
+                LOGGER.info("Found existing Tools menu");
             }
+
+            // Add separator if menu is not empty
+            if (toolsMenu.getItemCount() > 0) {
+                toolsMenu.addSeparator();
+            }
+
+            // Create menu item
+            JMenuItem python3IDEItem = new JMenuItem("Python 3 IDE");
+            python3IDEItem.setToolTipText("Open the Python 3 IDE for testing Python code on the Gateway");
+            python3IDEItem.addActionListener(e -> openPython3IDE());
+
+            toolsMenu.add(python3IDEItem);
+
+            LOGGER.info("Successfully added 'Python 3 IDE' menu item to Tools menu");
 
         } catch (Exception e) {
             LOGGER.error("Failed to add Tools menu item", e);
