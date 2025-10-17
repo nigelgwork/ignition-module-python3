@@ -19,6 +19,7 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
 import javax.swing.plaf.basic.BasicSplitPaneUI;
+import javax.swing.plaf.basic.BasicSplitPaneDivider;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
@@ -276,10 +277,18 @@ public class Python3IDE_v1_9 extends JPanel {
         mainSplit.setDividerLocation(250);
         mainSplit.setBackground(ModernTheme.BACKGROUND_DARK);
         mainSplit.setBorder(null);
-        mainSplit.setDividerSize(8);
+        mainSplit.setDividerSize(4);  // Reduced from 8 to 4 for cleaner look
 
-        // Fix divider color for dark theme (Issue 1 - v1.15.1)
-        ((BasicSplitPaneUI) mainSplit.getUI()).getDivider().setBackground(ModernTheme.BACKGROUND_DARKER);
+        // Fix divider color for dark theme using custom UI (Issue 1 - v1.15.1)
+        mainSplit.setUI(new BasicSplitPaneUI() {
+            @Override
+            public BasicSplitPaneDivider createDefaultDivider() {
+                BasicSplitPaneDivider divider = new BasicSplitPaneDivider(this);
+                divider.setBackground(new Color(60, 63, 65));
+                divider.setBorder(null);
+                return divider;
+            }
+        });
 
         // Left sidebar: Script browser + metadata
         JPanel sidebar = createSidebar();
@@ -357,10 +366,18 @@ public class Python3IDE_v1_9 extends JPanel {
         sidebarSplit.setResizeWeight(0.6);  // More weight to tree
         sidebarSplit.setBackground(ModernTheme.BACKGROUND_DARK);
         sidebarSplit.setBorder(null);
-        sidebarSplit.setDividerSize(8);
+        sidebarSplit.setDividerSize(4);  // Reduced from 8 to 4 for cleaner look
 
-        // Fix divider color for dark theme (Issue 1 - v1.15.1)
-        ((BasicSplitPaneUI) sidebarSplit.getUI()).getDivider().setBackground(ModernTheme.BACKGROUND_DARKER);
+        // Fix divider color for dark theme using custom UI (Issue 1 - v1.15.1)
+        sidebarSplit.setUI(new BasicSplitPaneUI() {
+            @Override
+            public BasicSplitPaneDivider createDefaultDivider() {
+                BasicSplitPaneDivider divider = new BasicSplitPaneDivider(this);
+                divider.setBackground(new Color(60, 63, 65));
+                divider.setBorder(null);
+                return divider;
+            }
+        });
 
         sidebar.add(sidebarSplit, BorderLayout.CENTER);
 
@@ -418,6 +435,7 @@ public class Python3IDE_v1_9 extends JPanel {
         JScrollPane outputScroll = new JScrollPane(outputArea);
         outputScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);  // Hide when not needed (Issue 4 - v1.15.1)
         outputScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        outputScroll.setBorder(BorderFactory.createEmptyBorder());  // Remove border to prevent white bars
         outputScroll.setBackground(ModernTheme.BACKGROUND_DARKER);
         outputScroll.getViewport().setBackground(ModernTheme.BACKGROUND_DARKER);
         outputTabs.addTab("Output", outputScroll);
@@ -425,6 +443,7 @@ public class Python3IDE_v1_9 extends JPanel {
         JScrollPane errorScroll = new JScrollPane(errorArea);
         errorScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);  // Hide when not needed (Issue 4 - v1.15.1)
         errorScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        errorScroll.setBorder(BorderFactory.createEmptyBorder());  // Remove border to prevent white bars
         errorScroll.setBackground(ModernTheme.BACKGROUND_DARKER);
         errorScroll.getViewport().setBackground(ModernTheme.BACKGROUND_DARKER);
         outputTabs.addTab("Errors", errorScroll);
@@ -449,13 +468,19 @@ public class Python3IDE_v1_9 extends JPanel {
         bottomSplit.setResizeWeight(0.75);  // 75% for execution results, 25% for diagnostics
         bottomSplit.setBackground(ModernTheme.BACKGROUND_DARK);
         bottomSplit.setBorder(null);
-        bottomSplit.setDividerSize(8);
+        bottomSplit.setDividerSize(4);  // Reduced from 8 to 4 for cleaner look
         bottomSplit.setPreferredSize(new Dimension(600, 200));
 
-        // Fix divider color for dark theme (v1.17.2)
-        if (bottomSplit.getUI() instanceof BasicSplitPaneUI) {
-            ((BasicSplitPaneUI) bottomSplit.getUI()).getDivider().setBackground(ModernTheme.BACKGROUND_DARKER);
-        }
+        // Fix divider color for dark theme using custom UI (v1.17.2)
+        bottomSplit.setUI(new BasicSplitPaneUI() {
+            @Override
+            public BasicSplitPaneDivider createDefaultDivider() {
+                BasicSplitPaneDivider divider = new BasicSplitPaneDivider(this);
+                divider.setBackground(new Color(60, 63, 65));
+                divider.setBorder(null);
+                return divider;
+            }
+        });
 
         panel.add(bottomSplit, BorderLayout.SOUTH);
 
@@ -1246,6 +1271,9 @@ public class Python3IDE_v1_9 extends JPanel {
      * Shows the save script dialog.
      */
     private void showSaveDialog() {
+        // Apply dark theme to dialogs BEFORE showing them
+        applyDialogDarkTheme();
+
         JTextField nameField = new JTextField(currentScript != null ? currentScript.getName() : "", 20);
         JTextField authorField = new JTextField(currentScript != null ? currentScript.getAuthor() : "Unknown", 20);
         JTextField versionField = new JTextField(currentScript != null ? currentScript.getVersion() : "1.0", 10);
@@ -1263,6 +1291,9 @@ public class Python3IDE_v1_9 extends JPanel {
         panel.add(folderField);
         panel.add(new JLabel("Description:"));
         panel.add(descField);
+
+        // Apply dark theme to panel components
+        setComponentsDark(panel);
 
         int result = JOptionPane.showConfirmDialog(
                 this,
@@ -1478,6 +1509,9 @@ public class Python3IDE_v1_9 extends JPanel {
             protected void done() {
                 try {
                     SavedScript script = get();
+
+                    // Apply dark theme to file chooser dialog
+                    applyDialogDarkTheme();
 
                     JFileChooser fileChooser = new JFileChooser();
                     fileChooser.setSelectedFile(new File(script.getName() + ".py"));
@@ -1763,6 +1797,9 @@ public class Python3IDE_v1_9 extends JPanel {
             return;
         }
 
+        // Apply dark theme to file chooser dialog
+        applyDialogDarkTheme();
+
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setFileFilter(new javax.swing.filechooser.FileFilter() {
             @Override
@@ -1866,6 +1903,9 @@ public class Python3IDE_v1_9 extends JPanel {
             );
             return;
         }
+
+        // Apply dark theme to file chooser dialog
+        applyDialogDarkTheme();
 
         JFileChooser fileChooser = new JFileChooser();
 
@@ -2179,6 +2219,63 @@ public class Python3IDE_v1_9 extends JPanel {
         UIManager.put("ScrollBar.foreground", Color.BLACK);
         UIManager.put("ScrollPane.background", Color.WHITE);
         UIManager.put("Viewport.background", Color.WHITE);
+    }
+
+    /**
+     * Applies dialog dark theme via UIManager for JOptionPane and JFileChooser components.
+     * Must be called BEFORE showing any JOptionPane dialog or JFileChooser.
+     */
+    private void applyDialogDarkTheme() {
+        // JOptionPane dark theme
+        UIManager.put("OptionPane.background", new Color(43, 43, 43));
+        UIManager.put("Panel.background", new Color(43, 43, 43));
+        UIManager.put("OptionPane.messageForeground", new Color(224, 224, 224));
+        UIManager.put("TextField.background", new Color(30, 30, 30));
+        UIManager.put("TextField.foreground", new Color(224, 224, 224));
+        UIManager.put("TextField.caretForeground", new Color(224, 224, 224));
+        UIManager.put("Button.background", new Color(60, 63, 65));
+        UIManager.put("Button.foreground", new Color(224, 224, 224));
+        UIManager.put("Label.foreground", new Color(224, 224, 224));
+
+        // JFileChooser dark theme
+        UIManager.put("FileChooser.background", new Color(43, 43, 43));
+        UIManager.put("FileChooser.foreground", new Color(224, 224, 224));
+        UIManager.put("List.background", new Color(30, 30, 30));
+        UIManager.put("List.foreground", new Color(224, 224, 224));
+        UIManager.put("List.selectionBackground", new Color(60, 63, 65));
+        UIManager.put("List.selectionForeground", new Color(224, 224, 224));
+        UIManager.put("Table.background", new Color(30, 30, 30));
+        UIManager.put("Table.foreground", new Color(224, 224, 224));
+    }
+
+    /**
+     * Recursively applies dark theme colors to all components in a container.
+     * This ensures dialog panels, labels, and text fields have proper dark styling.
+     *
+     * @param container the container to apply styling to
+     */
+    private static void setComponentsDark(Container container) {
+        container.setBackground(new Color(43, 43, 43));
+        Component[] components = container.getComponents();
+        for (Component component : components) {
+            if (component instanceof JTextField || component instanceof JTextArea) {
+                component.setBackground(new Color(30, 30, 30));
+                component.setForeground(new Color(224, 224, 224));
+                if (component instanceof JTextField) {
+                    ((JTextField) component).setCaretColor(new Color(224, 224, 224));
+                }
+            } else if (component instanceof JLabel) {
+                component.setForeground(new Color(224, 224, 224));
+            } else if (component instanceof JPanel) {
+                component.setBackground(new Color(43, 43, 43));
+            } else if (component instanceof JButton) {
+                component.setBackground(new Color(60, 63, 65));
+                component.setForeground(new Color(224, 224, 224));
+            }
+            if (component instanceof Container) {
+                setComponentsDark((Container) component);
+            }
+        }
     }
 
     /**
