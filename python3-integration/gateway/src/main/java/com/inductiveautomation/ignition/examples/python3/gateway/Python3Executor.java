@@ -140,10 +140,24 @@ public class Python3Executor {
      * @throws Python3Exception if execution fails
      */
     public Python3Result execute(String code, Map<String, Object> variables) throws Python3Exception {
+        return execute(code, variables, "RESTRICTED");
+    }
+
+    /**
+     * Execute Python code with security mode
+     *
+     * @param code         Python code to execute
+     * @param variables    Variables to pass to Python
+     * @param securityMode Security mode: "RESTRICTED" (default) or "ADMIN" (for Ignition Administrators)
+     * @return Result object
+     * @throws Python3Exception if execution fails
+     */
+    public Python3Result execute(String code, Map<String, Object> variables, String securityMode) throws Python3Exception {
         Map<String, Object> request = new HashMap<>();
         request.put("command", "execute");
         request.put("code", code);
         request.put("variables", variables);
+        request.put("security_mode", securityMode);
 
         return sendRequest(request, DEFAULT_TIMEOUT_MS);
     }
@@ -157,10 +171,24 @@ public class Python3Executor {
      * @throws Python3Exception if evaluation fails
      */
     public Python3Result evaluate(String expression, Map<String, Object> variables) throws Python3Exception {
+        return evaluate(expression, variables, "RESTRICTED");
+    }
+
+    /**
+     * Evaluate Python expression with security mode
+     *
+     * @param expression   Python expression to evaluate
+     * @param variables    Variables to pass to Python
+     * @param securityMode Security mode: "RESTRICTED" (default) or "ADMIN" (for Ignition Administrators)
+     * @return Result object
+     * @throws Python3Exception if evaluation fails
+     */
+    public Python3Result evaluate(String expression, Map<String, Object> variables, String securityMode) throws Python3Exception {
         Map<String, Object> request = new HashMap<>();
         request.put("command", "evaluate");
         request.put("expression", expression);
         request.put("variables", variables);
+        request.put("security_mode", securityMode);
 
         return sendRequest(request, DEFAULT_TIMEOUT_MS);
     }
@@ -177,12 +205,29 @@ public class Python3Executor {
      */
     public Python3Result callModule(String moduleName, String functionName,
                                      List<Object> args, Map<String, Object> kwargs) throws Python3Exception {
+        return callModule(moduleName, functionName, args, kwargs, "RESTRICTED");
+    }
+
+    /**
+     * Call a Python module function with security mode
+     *
+     * @param moduleName   Module name (e.g., "math")
+     * @param functionName Function name (e.g., "sqrt")
+     * @param args         Positional arguments
+     * @param kwargs       Keyword arguments
+     * @param securityMode Security mode: "RESTRICTED" (default) or "ADMIN" (for Ignition Administrators)
+     * @return Result object
+     * @throws Python3Exception if call fails
+     */
+    public Python3Result callModule(String moduleName, String functionName,
+                                     List<Object> args, Map<String, Object> kwargs, String securityMode) throws Python3Exception {
         Map<String, Object> request = new HashMap<>();
         request.put("command", "call_module");
         request.put("module", moduleName);
         request.put("function", functionName);
         request.put("args", args);
         request.put("kwargs", kwargs);
+        request.put("security_mode", securityMode);
 
         return sendRequest(request, DEFAULT_TIMEOUT_MS);
     }

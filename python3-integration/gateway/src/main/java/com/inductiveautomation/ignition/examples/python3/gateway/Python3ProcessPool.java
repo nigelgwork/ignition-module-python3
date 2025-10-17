@@ -161,10 +161,23 @@ public class Python3ProcessPool {
      * @throws Python3Exception if execution fails
      */
     public Python3Result execute(String code, java.util.Map<String, Object> variables) throws Python3Exception {
+        return execute(code, variables, "RESTRICTED");
+    }
+
+    /**
+     * Execute code using a pooled executor with security mode
+     *
+     * @param code         Python code to execute
+     * @param variables    Variables to pass
+     * @param securityMode Security mode: "RESTRICTED" or "ADMIN"
+     * @return Result
+     * @throws Python3Exception if execution fails
+     */
+    public Python3Result execute(String code, java.util.Map<String, Object> variables, String securityMode) throws Python3Exception {
         Python3Executor executor = null;
         try {
             executor = borrowExecutor(30, TimeUnit.SECONDS);
-            return executor.execute(code, variables);
+            return executor.execute(code, variables, securityMode);
         } catch (InterruptedException | TimeoutException e) {
             throw new Python3Exception("Failed to acquire executor: " + e.getMessage(), e);
         } finally {
@@ -178,10 +191,23 @@ public class Python3ProcessPool {
      * Evaluate expression using a pooled executor
      */
     public Python3Result evaluate(String expression, java.util.Map<String, Object> variables) throws Python3Exception {
+        return evaluate(expression, variables, "RESTRICTED");
+    }
+
+    /**
+     * Evaluate expression using a pooled executor with security mode
+     *
+     * @param expression   Python expression to evaluate
+     * @param variables    Variables to pass
+     * @param securityMode Security mode: "RESTRICTED" or "ADMIN"
+     * @return Result
+     * @throws Python3Exception if evaluation fails
+     */
+    public Python3Result evaluate(String expression, java.util.Map<String, Object> variables, String securityMode) throws Python3Exception {
         Python3Executor executor = null;
         try {
             executor = borrowExecutor(30, TimeUnit.SECONDS);
-            return executor.evaluate(expression, variables);
+            return executor.evaluate(expression, variables, securityMode);
         } catch (InterruptedException | TimeoutException e) {
             throw new Python3Exception("Failed to acquire executor: " + e.getMessage(), e);
         } finally {
@@ -197,10 +223,28 @@ public class Python3ProcessPool {
     public Python3Result callModule(String moduleName, String functionName,
                                      java.util.List<Object> args,
                                      java.util.Map<String, Object> kwargs) throws Python3Exception {
+        return callModule(moduleName, functionName, args, kwargs, "RESTRICTED");
+    }
+
+    /**
+     * Call module function using a pooled executor with security mode
+     *
+     * @param moduleName   Module name
+     * @param functionName Function name
+     * @param args         Arguments
+     * @param kwargs       Keyword arguments
+     * @param securityMode Security mode: "RESTRICTED" or "ADMIN"
+     * @return Result
+     * @throws Python3Exception if call fails
+     */
+    public Python3Result callModule(String moduleName, String functionName,
+                                     java.util.List<Object> args,
+                                     java.util.Map<String, Object> kwargs,
+                                     String securityMode) throws Python3Exception {
         Python3Executor executor = null;
         try {
             executor = borrowExecutor(30, TimeUnit.SECONDS);
-            return executor.callModule(moduleName, functionName, args, kwargs);
+            return executor.callModule(moduleName, functionName, args, kwargs, securityMode);
         } catch (InterruptedException | TimeoutException e) {
             throw new Python3Exception("Failed to acquire executor: " + e.getMessage(), e);
         } finally {

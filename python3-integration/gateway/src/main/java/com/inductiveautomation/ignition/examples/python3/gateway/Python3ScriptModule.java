@@ -65,7 +65,20 @@ public class Python3ScriptModule implements Python3RpcFunctions {
      */
     @Override
     public Object exec(String code, Map<String, Object> variables) throws Exception {
-        LOGGER.debug("exec() called with code length: {}", code != null ? code.length() : 0);
+        return exec(code, variables, "RESTRICTED");
+    }
+
+    /**
+     * Execute Python 3 code with variables and security mode.
+     *
+     * @param code         Python code to execute
+     * @param variables    Dictionary of variables to pass to Python
+     * @param securityMode Security mode: "RESTRICTED" or "ADMIN"
+     * @return Result of execution
+     */
+    public Object exec(String code, Map<String, Object> variables, String securityMode) throws Exception {
+        LOGGER.debug("exec() called with code length: {}, security mode: {}",
+                    code != null ? code.length() : 0, securityMode);
 
         try {
             Python3ProcessPool pool = getProcessPool();
@@ -76,7 +89,7 @@ public class Python3ScriptModule implements Python3RpcFunctions {
             }
 
             LOGGER.debug("Executing Python code via process pool");
-            Python3Result result = pool.execute(code, variables != null ? variables : Collections.emptyMap());
+            Python3Result result = pool.execute(code, variables != null ? variables : Collections.emptyMap(), securityMode);
 
             if (result.isSuccess()) {
                 LOGGER.debug("Python code executed successfully");
@@ -115,7 +128,19 @@ public class Python3ScriptModule implements Python3RpcFunctions {
      */
     @Override
     public Object eval(String expression, Map<String, Object> variables) throws Exception {
-        LOGGER.debug("eval() called with expression: {}", expression);
+        return eval(expression, variables, "RESTRICTED");
+    }
+
+    /**
+     * Evaluate a Python 3 expression with variables and security mode.
+     *
+     * @param expression   Python expression to evaluate
+     * @param variables    Dictionary of variables to pass to Python
+     * @param securityMode Security mode: "RESTRICTED" or "ADMIN"
+     * @return Result of expression
+     */
+    public Object eval(String expression, Map<String, Object> variables, String securityMode) throws Exception {
+        LOGGER.debug("eval() called with expression: {}, security mode: {}", expression, securityMode);
 
         try {
             Python3ProcessPool pool = getProcessPool();
@@ -126,7 +151,7 @@ public class Python3ScriptModule implements Python3RpcFunctions {
             }
 
             LOGGER.debug("Evaluating Python expression via process pool");
-            Python3Result result = pool.evaluate(expression, variables != null ? variables : Collections.emptyMap());
+            Python3Result result = pool.evaluate(expression, variables != null ? variables : Collections.emptyMap(), securityMode);
 
             if (result.isSuccess()) {
                 LOGGER.debug("Python expression evaluated successfully");
@@ -169,7 +194,21 @@ public class Python3ScriptModule implements Python3RpcFunctions {
      * @return Result of function call
      */
     public Object callModule(String moduleName, String functionName, List<Object> args, Map<String, Object> kwargs) {
-        LOGGER.debug("callModule() called: {}.{}()", moduleName, functionName);
+        return callModule(moduleName, functionName, args, kwargs, "RESTRICTED");
+    }
+
+    /**
+     * Call a function from a Python 3 module with keyword arguments and security mode.
+     *
+     * @param moduleName   Module name (e.g., "math")
+     * @param functionName Function name (e.g., "sqrt")
+     * @param args         List of positional arguments
+     * @param kwargs       Dictionary of keyword arguments
+     * @param securityMode Security mode: "RESTRICTED" or "ADMIN"
+     * @return Result of function call
+     */
+    public Object callModule(String moduleName, String functionName, List<Object> args, Map<String, Object> kwargs, String securityMode) {
+        LOGGER.debug("callModule() called: {}.{}(), security mode: {}", moduleName, functionName, securityMode);
 
         try {
             Python3ProcessPool pool = getProcessPool();
@@ -184,7 +223,8 @@ public class Python3ScriptModule implements Python3RpcFunctions {
                 moduleName,
                 functionName,
                 args != null ? args : Collections.emptyList(),
-                kwargs != null ? kwargs : Collections.emptyMap()
+                kwargs != null ? kwargs : Collections.emptyMap(),
+                securityMode
             );
 
             if (result.isSuccess()) {

@@ -2,9 +2,11 @@
 
 A production-ready Ignition module that enables Python 3.11 scripting in Ignition 8.3+, bridging the gap between Ignition's Jython 2.7 and modern Python 3.
 
-## Current Version: 1.8.0
+## Current Version: 1.14.0
 
 **Latest Features:**
+- 🔒 **Security Hardening** - Admin mode, input validation, audit logging (NEW in 1.14.0)
+- 📊 **Performance Monitoring** - Real-time metrics and Gateway impact assessment (NEW in 1.14.0)
 - ✨ **Saved Scripts** - Build a library of reusable Python scripts
 - 🎨 **Designer IDE** - Visual code editor with saved script management
 - 🔄 **REST API** - Remote execution and script management
@@ -16,7 +18,7 @@ A production-ready Ignition module that enables Python 3.11 scripting in Ignitio
 
 ### Installation
 
-1. Download: [Python3Integration-1.8.0.modl](/modules/ignition-module-python3/python3-integration/build/Python3Integration-1.8.0.modl)
+1. Download: [Python3Integration-1.14.0.modl](/modules/ignition-module-python3/python3-integration/build/Python3Integration-1.14.0.modl)
 2. Install: Config → System → Modules → Install or Upgrade a Module
 3. Upload the .modl file
 4. Restart Gateway
@@ -53,6 +55,43 @@ print(result)  # Output: Status: 200
 | **Call Modules** | Direct function calls to Python modules |
 | **Variable Passing** | Share data between Jython and Python 3 |
 | **Package Support** | Install any package via pip |
+
+### 🔒 Security Hardening (New in 1.14.0)
+
+**Admin Mode:**
+- **RESTRICTED mode** (default): Only safe modules allowed (math, json, datetime, etc.)
+- **ADMIN mode**: Full access to advanced modules (os, subprocess, requests, pandas, numpy, etc.)
+- Automatic role detection (Ignition Administrator role required for ADMIN mode)
+- Always-blocked modules for security (telnetlib, paramiko, threading, ctypes, etc.)
+
+**Input Validation:**
+- Code size limits (1MB max)
+- Script name validation (alphanumeric only)
+- Path traversal prevention
+- SQL injection protection
+
+**Audit Logging:**
+- All code execution logged
+- Code hash tracking (not full code for privacy)
+- Sanitized logging (redacts passwords, tokens, secrets)
+
+### 📊 Performance Monitoring (New in 1.14.0)
+
+**Real-Time Metrics:**
+- Total executions, success/failure counts, success rate
+- Min/max/average execution time
+- Pool utilization and health score (0-100)
+- Error tracking by type
+
+**Gateway Impact Assessment:**
+- Executions per minute
+- Pool contention events
+- Impact level classification (LOW/MEDIUM/HIGH)
+- Average CPU time consumed
+
+**REST API Endpoints:**
+- `GET /api/v1/metrics` - Get comprehensive performance metrics
+- `GET /api/v1/gateway-impact` - Get Gateway impact assessment
 
 ### 💾 Saved Scripts (New in 1.8.0)
 
@@ -157,6 +196,8 @@ system.python3.example()
 | `/eval` | POST | Evaluate Python expression |
 | `/pool-stats` | GET | Get process pool statistics |
 | `/health` | GET | Health check |
+| `/metrics` | GET | Get performance metrics (NEW in 1.14.0) |
+| `/gateway-impact` | GET | Get Gateway impact assessment (NEW in 1.14.0) |
 | `/scripts/list` | GET | List all saved scripts |
 | `/scripts/load/:name` | GET | Load a saved script |
 | `/scripts/save` | POST | Save a new script |
@@ -201,6 +242,20 @@ Installed packages are available to all Python processes immediately.
 
 ## Upgrading
 
+### From 1.8.x to 1.14.0
+
+**Important:** This upgrade adds security hardening and performance monitoring.
+
+**Recommended Process:**
+1. Install v1.14.0 over existing version
+2. Restart Gateway
+3. Restart Designer clients (if using Designer IDE)
+
+**Key Changes:**
+- Default security mode is RESTRICTED (only safe Python modules allowed)
+- Administrators automatically get ADMIN mode (can use advanced modules)
+- New REST endpoints for metrics and Gateway impact assessment
+
 ### From 1.7.x to 1.8.0
 
 **Important:** This upgrade adds new Designer classes and requires a manual process.
@@ -208,11 +263,11 @@ Installed packages are available to all Python processes immediately.
 **Method 1 (Recommended):**
 1. Uninstall v1.7.x
 2. Restart Gateway
-3. Install v1.8.0
+3. Install v1.8.0+
 4. Restart Designer clients
 
 **Method 2:**
-1. Install v1.8.0 over v1.7.x
+1. Install v1.8.0+ over v1.7.x
 2. Close all Designer clients
 3. Reopen Designer clients
 
@@ -296,7 +351,7 @@ cd python3-integration
 ./gradlew clean build --no-daemon
 ```
 
-Output: `build/Python3Integration-1.8.0.modl`
+Output: `build/Python3Integration-1.14.0.modl`
 
 ### Testing
 

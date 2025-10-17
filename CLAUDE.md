@@ -68,6 +68,31 @@ git push
 
 **Remember:** NEVER build without incrementing version, tidying code, and pushing to git!
 
+## ⚠️ CRITICAL: Pre-Push Requirements (User Request)
+
+**BEFORE EVERY PUSH TO GITHUB, YOU MUST:**
+
+1. **Update ALL Documentation**:
+   - README.md - ensure version numbers match current version
+   - ARCHITECTURE.md - update if architecture changed
+   - CHANGELOG.md - add release notes if exists
+   - Any other .md files that reference version numbers or features
+   - Version references in comments and docstrings
+
+2. **Clean Working Folder**:
+   - Delete Zone.Identifier files: `find . -name "*Zone.Identifier*" -type f -delete`
+   - Remove commented-out code
+   - Remove temporary files
+   - Fix formatting issues
+   - Remove debug statements
+
+3. **Verify Git Status**:
+   - Run `git status` to check for untracked or modified files
+   - Ensure no unexpected files are being committed
+   - Review changes with `git diff`
+
+**This is a MANDATORY workflow requirement requested by the user. Do NOT skip these steps.**
+
 ## Repository Purpose
 
 This is a **Python 3 Integration module** for Ignition 8.3 SDK. The repository contains both:

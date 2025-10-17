@@ -18,6 +18,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.security.MessageDigest;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -104,6 +105,34 @@ public final class Python3RestEndpoints {
      */
     private static RouteAccess checkReadPermission(RequestContext req) {
         return RouteAccess.GRANTED;
+    }
+
+    /**
+     * Determine security mode based on user role.
+     *
+     * @return "ADMIN" if user is Ignition Administrator, "RESTRICTED" otherwise
+     *
+     * TODO: Implement proper Administrator role detection when SDK API is available.
+     * Options to implement:
+     * 1. Check for "Administrator" role in Ignition's security system
+     * 2. Check if user is in Administrator authority group
+     * 3. Use Ignition's SecurityContext API (when available)
+     *
+     * For now, defaults to RESTRICTED mode for all users.
+     * To test ADMIN mode, system administrators can:
+     * - Use Ignition's API key system with elevated privileges
+     * - Configure Gateway-level permissions
+     */
+    private static String getSecurityMode(RequestContext req) {
+        // TODO: Implement proper admin detection
+        // Example (when SDK API is available):
+        // User user = req.getUser();
+        // if (user != null && user.hasRole("Administrator")) {
+        //     return "ADMIN";
+        // }
+
+        // Default to RESTRICTED mode for security
+        return "RESTRICTED";
     }
 
     /**
@@ -452,10 +481,14 @@ public final class Python3RestEndpoints {
             // INPUT VALIDATION: Validate code before execution
             validateCode(code);
 
+            // SECURITY: Determine security mode based on user role
+            String securityMode = getSecurityMode(req);
+            LOGGER.debug("Security mode for /exec: {}", securityMode);
+
             // AUDIT LOG: Log code execution attempt
             auditLog("PYTHON_EXEC", code);
 
-            Object result = scriptModule.exec(code, variables);
+            Object result = scriptModule.exec(code, variables, securityMode);
 
             JsonObject response = new JsonObject();
             response.addProperty("success", true);
@@ -491,10 +524,14 @@ public final class Python3RestEndpoints {
             // INPUT VALIDATION: Validate expression before evaluation
             validateCode(expression);
 
+            // SECURITY: Determine security mode based on user role
+            String securityMode = getSecurityMode(req);
+            LOGGER.debug("Security mode for /eval: {}", securityMode);
+
             // AUDIT LOG: Log expression evaluation
             auditLog("PYTHON_EVAL", expression);
 
-            Object result = scriptModule.eval(expression, variables);
+            Object result = scriptModule.eval(expression, variables, securityMode);
 
             JsonObject response = new JsonObject();
             response.addProperty("success", true);
@@ -531,10 +568,14 @@ public final class Python3RestEndpoints {
                 }
             }
 
+            // SECURITY: Determine security mode based on user role
+            String securityMode = getSecurityMode(req);
+            LOGGER.debug("Security mode for /call-module: {}", securityMode);
+
             // AUDIT LOG: Log module call
             auditLog("PYTHON_CALL_MODULE", moduleName + "." + functionName + "(" + args + ")");
 
-            Object result = scriptModule.callModule(moduleName, functionName, args);
+            Object result = scriptModule.callModule(moduleName, functionName, args, Collections.emptyMap(), securityMode);
 
             JsonObject response = new JsonObject();
             response.addProperty("success", true);
