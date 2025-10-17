@@ -1080,11 +1080,35 @@ public String loadScript(String name) {
 - Security penetration testing (8h)
 - Performance testing under load (4h)
 
-### v1.15.0 - Advanced Security + Enterprise Features
+### v1.15.0 - UI Polish + UX Improvements (NEXT AFTER v1.14.0)
+
+**Priority:** HIGH (User Feedback)
+**Timeline:** 1-2 weeks
+**Effort:** 16-24 hours
+**User Request:** Multiple UI/UX issues discovered after v1.14.0 installation
+
+**UI Fixes:**
+1. Update version header to v1.14.0/v1.15.0 (30min)
+2. Redesign script browser tree (Ignition Tag Browser style) (4-6h)
+3. Fix scrollbar theming in dark mode (1-2h)
+4. Add diagnostics/metrics display panel (3-4h)
+5. Fix button text truncation and sizing (1-2h)
+6. Add selected script indicator in editor header (1-2h)
+7. Fix description pane scrollbar behavior (1h)
+8. Standardize button sizes and alignment (1-2h)
+
+**Deferred Features:**
+- Administrator role detection for auto-switching to ADMIN mode (2-4h) - Deferred to v1.16.0+
+  - Currently defaults to RESTRICTED mode for all users
+  - Administrators can manually enable ADMIN mode when SDK API available
+  - TODO comment in `Python3RestEndpoints.getSecurityMode()` for future implementation
+
+### v1.16.0 - Advanced Security + Enterprise Features
 
 **Timeline:** 3-4 weeks
 **Effort:** 80-100 hours
 
+- Administrator role detection (2-4h) - Implement automatic ADMIN mode for Ignition Administrators
 - Docker container isolation (24h)
 - Script signing and verification (12h)
 - Enhanced RBAC with custom permissions (16h)

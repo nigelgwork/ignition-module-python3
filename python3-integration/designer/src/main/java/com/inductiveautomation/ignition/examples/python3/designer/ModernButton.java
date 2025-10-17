@@ -55,8 +55,8 @@ public class ModernButton extends JButton {
         setContentAreaFilled(false);
         setOpaque(false);
 
-        // Add padding
-        setBorder(BorderFactory.createEmptyBorder(8, 16, 8, 16));
+        // Add padding - generous for text readability
+        setBorder(BorderFactory.createEmptyBorder(8, 15, 8, 15));
 
         // Add hover and press listeners
         addMouseListener(new MouseAdapter() {
@@ -85,8 +85,8 @@ public class ModernButton extends JButton {
             }
         });
 
-        // Set preferred size for consistency
-        setPreferredSize(new Dimension(120, 36));
+        // Auto-size based on text content, but set minimum size
+        setMinimumSize(new Dimension(80, 28));
     }
 
     @Override
@@ -214,7 +214,7 @@ public class ModernButton extends JButton {
         ModernButton button = new ModernButton(text);
         button.setFont(ModernTheme.withSize(ModernTheme.FONT_BOLD, 11));
         button.setBorder(BorderFactory.createEmptyBorder(4, 12, 4, 12));
-        button.setPreferredSize(new Dimension(80, 28));
+        button.setMinimumSize(new Dimension(70, 24));
         return button;
     }
 
@@ -225,7 +225,7 @@ public class ModernButton extends JButton {
         ModernButton button = new ModernButton(text, ModernTheme.CORNER_RADIUS_LARGE);
         button.setFont(ModernTheme.withSize(ModernTheme.FONT_BOLD, 14));
         button.setBorder(BorderFactory.createEmptyBorder(12, 24, 12, 24));
-        button.setPreferredSize(new Dimension(160, 44));
+        button.setMinimumSize(new Dimension(120, 44));
         return button;
     }
 }

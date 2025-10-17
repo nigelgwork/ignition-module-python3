@@ -8,6 +8,9 @@ import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.InputStream;
+import java.io.IOException;
+import java.util.Properties;
 
 /**
  * Designer hook for the Python 3 Integration module (v1.9.0).
@@ -161,6 +164,25 @@ public class DesignerHook extends AbstractDesignerModuleHook {
     }
 
     /**
+     * Gets the module version from version.properties.
+     */
+    private static String getModuleVersion() {
+        try (InputStream is = DesignerHook.class.getResourceAsStream("/version.properties")) {
+            if (is != null) {
+                Properties props = new Properties();
+                props.load(is);
+                String major = props.getProperty("version.major", "1");
+                String minor = props.getProperty("version.minor", "15");
+                String patch = props.getProperty("version.patch", "0");
+                return major + "." + minor + "." + patch;
+            }
+        } catch (IOException e) {
+            LOGGER.warn("Failed to load version.properties, using fallback version", e);
+        }
+        return "1.15.0";
+    }
+
+    /**
      * Opens the Python 3 IDE window.
      */
     private void openPython3IDE() {
@@ -179,8 +201,9 @@ public class DesignerHook extends AbstractDesignerModuleHook {
                 // Create IDE panel (v1.9.0 with enhanced features)
                 Python3IDE_v1_9 idePanel = new Python3IDE_v1_9(context);
 
-                // Create frame
-                ideFrame = new JFrame("Python 3 IDE v1.9.0 - Enhanced");
+                // Create frame with dynamic version
+                String version = getModuleVersion();
+                ideFrame = new JFrame("Python 3 IDE v" + version);
                 ideFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
                 ideFrame.setContentPane(idePanel);
 

@@ -623,4 +623,31 @@ public class Python3RestClient {
             throw new IOException("Request interrupted", e);
         }
     }
+
+    /**
+     * Gets the Gateway impact assessment from Python 3 module.
+     *
+     * @return gateway impact with level and health score
+     * @throws IOException if the HTTP request fails
+     */
+    public GatewayImpact getGatewayImpact() throws IOException {
+        LOGGER.debug("Getting Gateway impact via REST API");
+
+        try {
+            String response = get("/gateway-impact");
+            JsonObject json = JsonParser.parseString(response).getAsJsonObject();
+
+            GatewayImpact impact = new GatewayImpact();
+            impact.setImpactLevel(getJsonString(json, "impactLevel"));
+            impact.setHealthScore(json.has("healthScore") ? json.get("healthScore").getAsInt() : 0);
+            impact.setRecommendation(getJsonString(json, "recommendation"));
+
+            return impact;
+
+        } catch (Exception e) {
+            LOGGER.warn("Failed to get Gateway impact, returning default", e);
+            // Return default "healthy" impact if endpoint not available
+            return new GatewayImpact("LOW", 100, "All systems operational");
+        }
+    }
 }

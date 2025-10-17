@@ -35,7 +35,7 @@ public class ScriptMetadataPanel extends JPanel {
                         ModernTheme.FOREGROUND_PRIMARY),
                 BorderFactory.createEmptyBorder(5, 5, 5, 5)
         ));
-        setPreferredSize(new Dimension(250, 180));
+        setPreferredSize(new Dimension(250, 220));  // Increased from 180 to 220
         setBackground(ModernTheme.PANEL_BACKGROUND);
 
         // Create labels
@@ -45,8 +45,8 @@ public class ScriptMetadataPanel extends JPanel {
         modifiedLabel = createValueLabel();
         versionLabel = createValueLabel();
 
-        // Description text area
-        descriptionArea = new JTextArea(3, 20);
+        // Description text area - no fixed rows for better scrollbar behavior
+        descriptionArea = new JTextArea();
         descriptionArea.setEditable(false);
         descriptionArea.setLineWrap(true);
         descriptionArea.setWrapStyleWord(true);
@@ -54,6 +54,10 @@ public class ScriptMetadataPanel extends JPanel {
         descriptionArea.setBackground(ModernTheme.BACKGROUND_DARKER);
         descriptionArea.setForeground(ModernTheme.FOREGROUND_PRIMARY);
         descriptionArea.setCaretColor(ModernTheme.FOREGROUND_PRIMARY);
+
+        // Set minimum size to prevent collapse
+        descriptionArea.setMinimumSize(new Dimension(200, 40));
+        descriptionArea.setPreferredSize(new Dimension(200, 60));
 
         // Layout
         JPanel fieldsPanel = new JPanel(new GridLayout(5, 2, 5, 3));
@@ -77,17 +81,27 @@ public class ScriptMetadataPanel extends JPanel {
 
         add(fieldsPanel, BorderLayout.NORTH);
 
-        // Description section
+        // Description section with better spacing
         JPanel descPanel = new JPanel(new BorderLayout(3, 3));
-        descPanel.setBorder(new EmptyBorder(0, 5, 5, 5));
+        descPanel.setBorder(new EmptyBorder(5, 5, 5, 5));  // More padding
         descPanel.setBackground(ModernTheme.PANEL_BACKGROUND);
-        descPanel.add(createKeyLabel("Description:"), BorderLayout.NORTH);
 
+        JLabel descLabel = createKeyLabel("Description:");
+        descLabel.setBorder(new EmptyBorder(0, 0, 3, 0));  // Space below label
+        descPanel.add(descLabel, BorderLayout.NORTH);
+
+        // Scroll pane with smart scrollbar policy
         JScrollPane descScroll = new JScrollPane(descriptionArea);
         descScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        descScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         descScroll.setBackground(ModernTheme.BACKGROUND_DARKER);
         descScroll.getViewport().setBackground(ModernTheme.BACKGROUND_DARKER);
         descScroll.setBorder(BorderFactory.createLineBorder(ModernTheme.BORDER_DEFAULT));
+
+        // Ensure scroll pane doesn't show scrollbar when content fits
+        descScroll.setPreferredSize(new Dimension(240, 70));
+        descScroll.setMinimumSize(new Dimension(240, 50));
+
         descPanel.add(descScroll, BorderLayout.CENTER);
 
         add(descPanel, BorderLayout.CENTER);
@@ -114,7 +128,12 @@ public class ScriptMetadataPanel extends JPanel {
         modifiedLabel.setText(formatDate(metadata.getLastModified()));
 
         versionLabel.setText(metadata.getVersion() != null ? metadata.getVersion() : "1.0");
-        descriptionArea.setText(metadata.getDescription() != null ? metadata.getDescription() : "");
+
+        String description = metadata.getDescription() != null ? metadata.getDescription() : "";
+        descriptionArea.setText(description);
+
+        // Scroll to top when displaying new metadata
+        descriptionArea.setCaretPosition(0);
     }
 
     /**

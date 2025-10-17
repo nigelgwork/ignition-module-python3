@@ -64,6 +64,7 @@ public class Python3IDE_v1_9 extends JPanel {
     private JButton connectButton;
     private JComboBox<String> themeSelector;
     private RSyntaxTextArea codeEditor;
+    private JLabel currentScriptLabel;
     private JTextArea outputArea;
     private JTextArea errorArea;
     private ModernStatusBar statusBar;
@@ -80,6 +81,7 @@ public class Python3IDE_v1_9 extends JPanel {
     private DefaultTreeModel treeModel;
     private ScriptTreeNode rootNode;
     private ScriptMetadataPanel metadataPanel;
+    private DiagnosticsPanel diagnosticsPanel;
 
     // Theme and Settings
     private String currentTheme;
@@ -154,6 +156,12 @@ public class Python3IDE_v1_9 extends JPanel {
         changesTracker = new UnsavedChangesTracker(codeEditor);
         changesTracker.addChangeListener(this::onDirtyStateChanged);
 
+        // Current script indicator label
+        currentScriptLabel = new JLabel("No script selected");
+        currentScriptLabel.setFont(ModernTheme.withSize(ModernTheme.FONT_BOLD, 11));
+        currentScriptLabel.setForeground(ModernTheme.FOREGROUND_SECONDARY);
+        currentScriptLabel.setBorder(BorderFactory.createEmptyBorder(3, 5, 3, 5));
+
         // Output area
         outputArea = new JTextArea(8, 80);
         outputArea.setFont(ModernTheme.FONT_MONOSPACE);
@@ -185,7 +193,7 @@ public class Python3IDE_v1_9 extends JPanel {
         progressBar.setIndeterminate(false);
         progressBar.setVisible(false);
 
-        // Script Browser Tree
+        // Script Browser Tree (Ignition Tag Browser style)
         rootNode = new ScriptTreeNode("Scripts");
         treeModel = new DefaultTreeModel(rootNode);
         scriptTree = new JTree(treeModel);
@@ -193,18 +201,23 @@ public class Python3IDE_v1_9 extends JPanel {
         scriptTree.setShowsRootHandles(true);
         scriptTree.setCellRenderer(new ScriptTreeCellRenderer());
         scriptTree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
-        scriptTree.setRowHeight(22);  // Fixed row height for consistent alignment (16px icon + 6px padding)
+        scriptTree.setRowHeight(20);  // Compact 20px rows (16px icon + 4px padding)
         scriptTree.setDragEnabled(true);
         scriptTree.setDropMode(DropMode.ON_OR_INSERT);
         scriptTree.setTransferHandler(new ScriptTreeTransferHandler());
 
-        // Modern theme styling
+        // Ignition Tag Browser-style tree appearance
         scriptTree.setBackground(ModernTheme.TREE_BACKGROUND);
         scriptTree.setForeground(ModernTheme.FOREGROUND_PRIMARY);
-        scriptTree.setFont(ModernTheme.FONT_REGULAR);
+        scriptTree.setFont(new Font("SansSerif", Font.PLAIN, 12));
+        scriptTree.putClientProperty("JTree.lineStyle", "None");  // Clean look without connecting lines
+        scriptTree.setToggleClickCount(1);  // Single-click to expand (like Tag Browser)
 
         // Metadata Panel
         metadataPanel = new ScriptMetadataPanel();
+
+        // Diagnostics Panel (v1.15.0 - displays performance metrics)
+        diagnosticsPanel = new DiagnosticsPanel();
 
         // Find/Replace Dialogs (lazy initialized when first used)
         findDialog = null;
@@ -233,7 +246,7 @@ public class Python3IDE_v1_9 extends JPanel {
         ));
 
         // Left side: URL and Connect button
-        JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
+        JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 3));
         leftPanel.setBackground(ModernTheme.PANEL_BACKGROUND);
         JLabel urlLabel = new JLabel("URL:");
         urlLabel.setForeground(ModernTheme.FOREGROUND_PRIMARY);
@@ -243,7 +256,7 @@ public class Python3IDE_v1_9 extends JPanel {
         gatewayPanel.add(leftPanel, BorderLayout.WEST);
 
         // Right side: Theme selector
-        JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 5));
+        JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 3));
         rightPanel.setBackground(ModernTheme.PANEL_BACKGROUND);
         JLabel themeLabel = new JLabel("Theme:");
         themeLabel.setForeground(ModernTheme.FOREGROUND_PRIMARY);
@@ -322,10 +335,16 @@ public class Python3IDE_v1_9 extends JPanel {
         treePanel.add(treeToolbar, BorderLayout.NORTH);
         treePanel.add(treeScroll, BorderLayout.CENTER);
 
-        // Split tree and metadata
+        // Bottom panel: metadata and diagnostics stacked vertically
+        JPanel bottomPanel = new JPanel(new BorderLayout(0, 5));
+        bottomPanel.setBackground(ModernTheme.BACKGROUND_DARK);
+        bottomPanel.add(metadataPanel, BorderLayout.NORTH);
+        bottomPanel.add(diagnosticsPanel, BorderLayout.CENTER);
+
+        // Split tree and bottom panel (metadata + diagnostics)
         JSplitPane sidebarSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
         sidebarSplit.setTopComponent(treePanel);
-        sidebarSplit.setBottomComponent(metadataPanel);
+        sidebarSplit.setBottomComponent(bottomPanel);
         sidebarSplit.setDividerLocation(400);
         sidebarSplit.setBackground(ModernTheme.BACKGROUND_DARK);
         sidebarSplit.setBorder(null);
@@ -358,12 +377,15 @@ public class Python3IDE_v1_9 extends JPanel {
                         ModernTheme.FOREGROUND_PRIMARY),
                 BorderFactory.createEmptyBorder(5, 5, 5, 5)
         ));
+
+        // Add current script indicator at top
+        editorContainer.add(currentScriptLabel, BorderLayout.NORTH);
         editorContainer.add(editorScroll, BorderLayout.CENTER);
 
         panel.add(editorContainer, BorderLayout.CENTER);
 
-        // Toolbar
-        JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 5));
+        // Toolbar - aligned with tree toolbar (3px gaps)
+        JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.LEFT, 3, 3));
         toolbar.setBackground(ModernTheme.PANEL_BACKGROUND);
         toolbar.add(executeButton);
         toolbar.add(clearButton);
@@ -599,6 +621,9 @@ public class Python3IDE_v1_9 extends JPanel {
             statusBar.setStatus("Connected to " + url, ModernStatusBar.MessageType.SUCCESS);
             statusBar.setConnection("Connected", ModernTheme.SUCCESS);
             statusBar.setPoolStats("Pool: Checking...", ModernTheme.INFO);
+
+            // Initialize diagnostics panel with REST client (v1.15.0)
+            diagnosticsPanel.setRestClient(restClient);
 
             LOGGER.info("Connected to Gateway: {}", url);
 
@@ -1008,6 +1033,7 @@ public class Python3IDE_v1_9 extends JPanel {
                     SavedScript script = get();
                     changesTracker.loadContent(script.getCode());
                     currentScript = convertToMetadata(script);
+                    updateCurrentScriptLabel();
                     setStatus("Loaded: " + script.getName(), new Color(0, 128, 0));
                 } catch (Exception e) {
                     LOGGER.error("Failed to load script", e);
@@ -1249,6 +1275,7 @@ public class Python3IDE_v1_9 extends JPanel {
         // Clear editor for new script
         changesTracker.loadContent("# New Python Script\n\n");
         currentScript = null;
+        updateCurrentScriptLabel();
         metadataPanel.clear();
         setStatus("New script", Color.BLUE);
     }
@@ -1777,9 +1804,40 @@ public class Python3IDE_v1_9 extends JPanel {
             title += " *";  // Indicate unsaved changes
         }
 
+        // Update current script label to show unsaved changes indicator
+        updateCurrentScriptLabel();
+
         // Could update window title or status here
         setStatus(isDirty ? "Unsaved changes" : "All changes saved",
                   isDirty ? Color.ORANGE : new Color(0, 128, 0));
+    }
+
+    /**
+     * Updates the current script label to show the selected script name and folder path.
+     */
+    private void updateCurrentScriptLabel() {
+        if (currentScript == null || currentScript.getName() == null || currentScript.getName().isEmpty()) {
+            currentScriptLabel.setText("No script selected");
+            currentScriptLabel.setForeground(ModernTheme.FOREGROUND_SECONDARY);
+        } else {
+            StringBuilder labelText = new StringBuilder();
+
+            // Add folder path if exists
+            if (currentScript.getFolderPath() != null && !currentScript.getFolderPath().isEmpty()) {
+                labelText.append(currentScript.getFolderPath()).append(" / ");
+            }
+
+            // Add script name
+            labelText.append(currentScript.getName());
+
+            // Add unsaved changes indicator
+            if (changesTracker.isDirty()) {
+                labelText.append(" *");
+            }
+
+            currentScriptLabel.setText(labelText.toString());
+            currentScriptLabel.setForeground(ModernTheme.FOREGROUND_PRIMARY);
+        }
     }
 
     // Theme Management
@@ -1907,6 +1965,9 @@ public class Python3IDE_v1_9 extends JPanel {
             // Force repaint of all components
             SwingUtilities.updateComponentTreeUI(this);
 
+            // Force update of all scrollbar UI delegates
+            updateScrollPaneTheme(this, isDarkTheme);
+
             currentTheme = themeName;
 
             // Save preference
@@ -1996,6 +2057,56 @@ public class Python3IDE_v1_9 extends JPanel {
         if (comp instanceof Container) {
             for (Component child : ((Container) comp).getComponents()) {
                 updateComponent(child, background);
+            }
+        }
+    }
+
+    /**
+     * Recursively updates all scrollbar UI delegates to match the current theme.
+     * Forces scrollbars to pick up the theme changes by updating their UI components.
+     *
+     * @param comp the component to traverse
+     * @param isDarkTheme true if dark theme, false if light theme
+     */
+    private void updateScrollPaneTheme(Component comp, boolean isDarkTheme) {
+        if (comp instanceof JScrollPane) {
+            JScrollPane scrollPane = (JScrollPane) comp;
+
+            // Force update scrollbar UI delegates
+            JScrollBar verticalBar = scrollPane.getVerticalScrollBar();
+            JScrollBar horizontalBar = scrollPane.getHorizontalScrollBar();
+
+            if (verticalBar != null) {
+                verticalBar.updateUI();
+                if (isDarkTheme) {
+                    verticalBar.setBackground(ModernTheme.BACKGROUND_DARK);
+                    verticalBar.setForeground(ModernTheme.FOREGROUND_PRIMARY);
+                } else {
+                    verticalBar.setBackground(Color.WHITE);
+                    verticalBar.setForeground(Color.BLACK);
+                }
+            }
+
+            if (horizontalBar != null) {
+                horizontalBar.updateUI();
+                if (isDarkTheme) {
+                    horizontalBar.setBackground(ModernTheme.BACKGROUND_DARK);
+                    horizontalBar.setForeground(ModernTheme.FOREGROUND_PRIMARY);
+                } else {
+                    horizontalBar.setBackground(Color.WHITE);
+                    horizontalBar.setForeground(Color.BLACK);
+                }
+            }
+
+            // Update viewport background
+            scrollPane.getViewport().setBackground(isDarkTheme ? ModernTheme.BACKGROUND_DARK : Color.WHITE);
+            scrollPane.setBackground(isDarkTheme ? ModernTheme.BACKGROUND_DARK : Color.WHITE);
+        }
+
+        // Recursively traverse child components
+        if (comp instanceof Container) {
+            for (Component child : ((Container) comp).getComponents()) {
+                updateScrollPaneTheme(child, isDarkTheme);
             }
         }
     }
