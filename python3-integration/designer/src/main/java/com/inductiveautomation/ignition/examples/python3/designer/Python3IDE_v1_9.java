@@ -138,7 +138,7 @@ public class Python3IDE_v1_9 extends JPanel {
         themeSelector.setFont(ModernTheme.FONT_REGULAR);
         themeSelector.setBackground(ModernTheme.PANEL_BACKGROUND);
         themeSelector.setForeground(ModernTheme.FOREGROUND_PRIMARY);
-        themeSelector.setPreferredSize(new Dimension(150, 28));  // Expanded width to avoid text cutoff (Issue 3 - v1.15.1)
+        themeSelector.setPreferredSize(new Dimension(180, 28));  // Expanded width to avoid text cutoff (Issue 2 - v1.17.1)
 
         // Code editor with RSyntaxTextArea
         codeEditor = new RSyntaxTextArea(20, 80);
@@ -395,9 +395,10 @@ public class Python3IDE_v1_9 extends JPanel {
 
         panel.add(editorContainer, BorderLayout.CENTER);
 
-        // Toolbar - aligned with tree toolbar (3px gaps)
-        JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.LEFT, 3, 3));
+        // Toolbar - aligned with tree toolbar (3px gaps between buttons, padding around panel)
+        JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 3));
         toolbar.setBackground(ModernTheme.PANEL_BACKGROUND);
+        toolbar.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));  // Add vertical padding (Issue 3 - v1.17.1)
         toolbar.add(executeButton);
         toolbar.add(clearButton);
         toolbar.add(saveButton);
@@ -1983,6 +1984,9 @@ public class Python3IDE_v1_9 extends JPanel {
             // Force update of all scrollbar UI delegates
             updateScrollPaneTheme(this, isDarkTheme);
 
+            // Force update of all JSplitPane dividers (Issue 8 - v1.17.1)
+            updateSplitPaneDividers(this, isDarkTheme);
+
             currentTheme = themeName;
 
             // Save preference
@@ -2000,6 +2004,8 @@ public class Python3IDE_v1_9 extends JPanel {
 
     /**
      * Applies dark theme styling to popup dialogs (JOptionPane).
+     *
+     * v1.17.1: Enhanced with ComboBox and additional component theming
      */
     private void applyDarkDialogTheme() {
         UIManager.put("OptionPane.background", ModernTheme.PANEL_BACKGROUND);
@@ -2008,13 +2014,21 @@ public class Python3IDE_v1_9 extends JPanel {
         UIManager.put("TextField.background", ModernTheme.BACKGROUND_DARKER);
         UIManager.put("TextField.foreground", ModernTheme.FOREGROUND_PRIMARY);
         UIManager.put("TextField.caretForeground", ModernTheme.FOREGROUND_PRIMARY);
+        UIManager.put("TextField.inactiveForeground", ModernTheme.FOREGROUND_SECONDARY);
         UIManager.put("Label.foreground", ModernTheme.FOREGROUND_PRIMARY);
+        UIManager.put("Label.disabledForeground", ModernTheme.FOREGROUND_SECONDARY);
         UIManager.put("Button.background", ModernTheme.BACKGROUND_DARK);
         UIManager.put("Button.foreground", ModernTheme.FOREGROUND_PRIMARY);
+        UIManager.put("ComboBox.background", ModernTheme.BACKGROUND_DARKER);
+        UIManager.put("ComboBox.foreground", ModernTheme.FOREGROUND_PRIMARY);
+        UIManager.put("ComboBox.selectionBackground", ModernTheme.INFO);
+        UIManager.put("ComboBox.selectionForeground", ModernTheme.FOREGROUND_PRIMARY);
     }
 
     /**
      * Applies light theme styling to popup dialogs (JOptionPane).
+     *
+     * v1.17.1: Enhanced with ComboBox and additional component theming
      */
     private void applyLightDialogTheme() {
         UIManager.put("OptionPane.background", Color.WHITE);
@@ -2023,9 +2037,15 @@ public class Python3IDE_v1_9 extends JPanel {
         UIManager.put("TextField.background", Color.WHITE);
         UIManager.put("TextField.foreground", Color.BLACK);
         UIManager.put("TextField.caretForeground", Color.BLACK);
+        UIManager.put("TextField.inactiveForeground", new Color(128, 128, 128));
         UIManager.put("Label.foreground", Color.BLACK);
+        UIManager.put("Label.disabledForeground", new Color(128, 128, 128));
         UIManager.put("Button.background", new Color(238, 238, 238));
         UIManager.put("Button.foreground", Color.BLACK);
+        UIManager.put("ComboBox.background", Color.WHITE);
+        UIManager.put("ComboBox.foreground", Color.BLACK);
+        UIManager.put("ComboBox.selectionBackground", new Color(184, 207, 229));
+        UIManager.put("ComboBox.selectionForeground", Color.BLACK);
     }
 
     /**
@@ -2122,6 +2142,47 @@ public class Python3IDE_v1_9 extends JPanel {
         if (comp instanceof Container) {
             for (Component child : ((Container) comp).getComponents()) {
                 updateScrollPaneTheme(child, isDarkTheme);
+            }
+        }
+    }
+
+    /**
+     * Recursively updates all JSplitPane dividers to match the current theme.
+     * Forces dividers to pick up the theme colors by updating their background colors.
+     *
+     * @param comp the component to traverse
+     * @param isDarkTheme true if dark theme, false if light theme
+     *
+     * v1.17.1: Fix for Issue 8 - ensure dividers match theme
+     */
+    private void updateSplitPaneDividers(Component comp, boolean isDarkTheme) {
+        if (comp instanceof JSplitPane) {
+            JSplitPane splitPane = (JSplitPane) comp;
+
+            // Update divider colors
+            if (isDarkTheme) {
+                splitPane.setDividerSize(8);
+                splitPane.setBorder(null);
+                // Access the divider UI component
+                if (splitPane.getUI() instanceof BasicSplitPaneUI) {
+                    ((BasicSplitPaneUI) splitPane.getUI()).getDivider().setBackground(ModernTheme.BACKGROUND_DARKER);
+                }
+            } else {
+                splitPane.setDividerSize(8);
+                splitPane.setBorder(null);
+                // Access the divider UI component
+                if (splitPane.getUI() instanceof BasicSplitPaneUI) {
+                    ((BasicSplitPaneUI) splitPane.getUI()).getDivider().setBackground(new Color(200, 200, 200));
+                }
+            }
+
+            splitPane.updateUI();
+        }
+
+        // Recursively traverse child components
+        if (comp instanceof Container) {
+            for (Component child : ((Container) comp).getComponents()) {
+                updateSplitPaneDividers(child, isDarkTheme);
             }
         }
     }

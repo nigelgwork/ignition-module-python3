@@ -829,7 +829,9 @@ public final class Python3RestEndpoints {
     /**
      * Handle GET /version - Get Python version
      *
-     * Response: {"version": "...", "available": true/false}
+     * Response: {"version": "...", "pythonVersion": "...", "available": true/false}
+     *
+     * v1.17.1: Fix - ensure pythonVersion field is always present
      */
     private static JsonObject handleGetVersion(RequestContext req, HttpServletResponse res) {
         LOGGER.debug("REST API: /version called");
@@ -837,6 +839,14 @@ public final class Python3RestEndpoints {
         try {
             Map<String, Object> versionInfo = scriptModule.getVersion();
             JsonObject response = mapToJson(versionInfo);
+
+            // Ensure pythonVersion field exists for client compatibility (v1.17.1)
+            if (response.has("python_version") && !response.has("pythonVersion")) {
+                response.addProperty("pythonVersion", response.get("python_version").getAsString());
+            }
+            if (response.has("version") && !response.has("pythonVersion")) {
+                response.addProperty("pythonVersion", response.get("version").getAsString());
+            }
 
             LOGGER.debug("REST API: /version completed successfully");
             return response;
