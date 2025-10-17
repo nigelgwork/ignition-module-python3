@@ -6,9 +6,9 @@
 
 ## 📦 What's in this Repository
 
-This repository contains three main resources for Ignition module development:
+This repository contains a production-ready **Python 3 Integration module** for Ignition 8.3+.
 
-### 1. **Python 3 Integration Module** (v2.0.22) ⭐
+### **Python 3 Integration Module** (v2.0.22) ⭐
 
 A production-ready Ignition module with Designer IDE for Python 3 development.
 
@@ -32,47 +32,6 @@ cd python3-integration
 
 ---
 
-### 2. **Ignition SDK Knowledge Base** 📚
-
-Comprehensive guides for developing Ignition 8.3+ modules.
-
-👉 **[Browse SDK Documentation](docs/README.md)**
-
-**Topics Covered:**
-- **00** - Claude Code Instructions (AI development workflows)
-- **01** - SDK Overview & Getting Started
-- **02** - Module Architecture & Structure
-- **03** - Build Systems (Gradle/Maven)
-- **04** - Perspective Component Development
-- **05** - Vision Component Development
-- **06** - OPC-UA Device Driver Development
-- **07** - Scripting Functions & RPC Communication
-- **08** - Quick Reference & Cheat Sheet
-
-**Best for:** Learning module development concepts, understanding SDK architecture, troubleshooting module issues.
-
----
-
-### 3. **Official SDK Examples** 🔨
-
-17 example modules from Inductive Automation demonstrating various module types.
-
-👉 **[Explore SDK Examples](examples/README.md)**
-
-**Example Types:**
-- Perspective Components (minimal & full)
-- Vision Components
-- Scripting Functions & RPC
-- OPC-UA Device Drivers
-- Gateway Network Functions
-- Report Components & Datasources
-- Event Stream Handlers
-- And more...
-
-**Best for:** Reference implementations, copying patterns, understanding SDK APIs in practice.
-
----
-
 ## 🚀 Latest Release: v2.0.22 (Theme System Completion)
 
 **New in v2.0.22:**
@@ -92,70 +51,6 @@ Comprehensive guides for developing Ignition 8.3+ modules.
 
 ---
 
-## 📚 Documentation Structure
-
-```
-/
-├── python3-integration/       # THE WORKING MODULE ⭐
-│   ├── README.md             # Comprehensive module documentation
-│   ├── docs/                 # Module-specific guides
-│   │   ├── V2_ARCHITECTURE_GUIDE.md
-│   │   ├── V2_STATUS_SUMMARY.md
-│   │   ├── V2_FEATURE_COMPARISON_AND_ROADMAP.md
-│   │   ├── TESTING_GUIDE.md
-│   │   └── VERSION_UPDATE_WORKFLOW.md
-│   ├── common/               # Common scope (shared code)
-│   ├── gateway/              # Gateway scope (Python bridge, REST API)
-│   ├── designer/             # Designer scope (Python 3 IDE)
-│   └── build.gradle.kts      # Module build configuration
-│
-├── docs/                     # SDK KNOWLEDGE BASE 📚
-│   ├── 00-CLAUDE-CODE-INSTRUCTIONS.md
-│   ├── 01-SDK-Overview-Getting-Started.md
-│   ├── 02-Module-Architecture-Structure.md
-│   ├── 03-Build-Systems-Gradle-Maven.md
-│   ├── 04-Perspective-Component-Development.md
-│   ├── 05-Vision-Component-Development.md
-│   ├── 06-OPC-UA-Device-Driver-Development.md
-│   ├── 07-Scripting-Functions-RPC-Communication.md
-│   └── 08-Quick-Reference-Cheat-Sheet.md
-│
-├── examples/                 # SDK EXAMPLES 🔨
-│   ├── perspective-component/
-│   ├── scripting-function/
-│   ├── opc-ua-device/
-│   └── ... (14 more examples)
-│
-├── scripts/                  # Testing utilities
-├── archive/                  # Historical v1.x planning docs
-├── CLAUDE.md                # Development guidance for AI
-└── UPGRADE_GUIDE.md         # Upgrade instructions
-```
-
-### 📖 Understanding the Two Docs Folders
-
-**Note:** This repository has TWO separate documentation directories with different purposes:
-
-#### [`/python3-integration/docs/`](python3-integration/docs/) - **Module-Specific** ⭐
-Documentation for THIS specific module (Python 3 Integration v2.0.22):
-- V2 Architecture Guide
-- Version Update Workflow
-- Testing Guide
-- Feature Comparison & Roadmap
-
-**Use this for:** Working with the Python 3 Integration module specifically.
-
-#### [`/docs/`](docs/) - **General SDK Learning** 📚
-General educational guides for ANY Ignition 8.3+ module development:
-- SDK Overview & Getting Started
-- Module Architecture & Structure
-- Build Systems (Gradle/Maven)
-- Component Development
-
-**Use this for:** Learning Ignition SDK development concepts in general.
-
----
-
 ## 🔧 Quick Links
 
 ### For Module Users
@@ -170,10 +65,10 @@ General educational guides for ANY Ignition 8.3+ module development:
 - **Development Guide**: [CLAUDE.md](CLAUDE.md)
 - **Version Workflow**: [python3-integration/docs/VERSION_UPDATE_WORKFLOW.md](python3-integration/docs/VERSION_UPDATE_WORKFLOW.md)
 
-### For SDK Learning
-- **Getting Started**: [docs/01-SDK-Overview-Getting-Started.md](docs/01-SDK-Overview-Getting-Started.md)
-- **Module Architecture**: [docs/02-Module-Architecture-Structure.md](docs/02-Module-Architecture-Structure.md)
-- **Scripting Functions**: [docs/07-Scripting-Functions-RPC-Communication.md](docs/07-Scripting-Functions-RPC-Communication.md)
+### For Ignition SDK Learning
+- **Official SDK Docs**: https://www.sdk-docs.inductiveautomation.com/
+- **SDK Examples Repository**: https://github.com/inductiveautomation/ignition-sdk-examples
+- **Module Development Forum**: https://forum.inductiveautomation.com/c/module-development/7
 
 ---
 
@@ -219,9 +114,7 @@ See [VERSION_UPDATE_WORKFLOW.md](python3-integration/docs/VERSION_UPDATE_WORKFLO
 
 **Python 3 Integration Module** developed by Gaskony with assistance from Claude Code (Anthropic).
 
-**SDK Documentation** compiled from official Ignition SDK resources and community knowledge.
-
-**SDK Examples** provided by Inductive Automation.
+Built using the Ignition 8.3 SDK from Inductive Automation.
 
 ---
 

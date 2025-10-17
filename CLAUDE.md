@@ -130,9 +130,7 @@ git push
 
 ## Repository Purpose
 
-This is a **Python 3 Integration module** for Ignition 8.3 SDK. The repository contains both:
-1. **Active module implementation** (`python3-integration/` directory) - a working Python 3 integration module
-2. **SDK documentation and examples** for reference
+This is a **Python 3 Integration module** for Ignition 8.3 SDK. The repository focuses exclusively on the working Python 3 Integration module implementation.
 
 ## Repository Structure
 
@@ -145,85 +143,48 @@ ignition-module-python3/
 ├── UPGRADE_GUIDE.md                 # Upgrade instructions
 ├── .gitignore                       # Git ignore rules
 │
-├── python3-integration/             # ⭐ WORKING MODULE (v2.0.22)
-│   ├── build.gradle.kts            # Root build configuration
-│   ├── settings.gradle.kts         # Gradle settings
-│   ├── version.properties          # Current version: 2.0.22
-│   ├── README.md                   # Module documentation (comprehensive)
-│   │
-│   ├── common/                     # Common scope (shared code)
-│   ├── gateway/                    # Gateway scope (Python bridge, REST API)
-│   │   ├── build.gradle.kts
-│   │   └── src/main/java/.../gateway/
-│   │       ├── GatewayHook.java
-│   │       ├── Python3ProcessPool.java
-│   │       ├── Python3Executor.java
-│   │       ├── Python3ScriptModule.java
-│   │       ├── Python3RestEndpoints.java
-│   │       └── resources/python_bridge.py
-│   │
-│   ├── designer/                   # Designer scope (Python 3 IDE - v2.0.0+)
-│   │   ├── build.gradle.kts
-│   │   └── src/main/java/.../designer/
-│   │       ├── DesignerHook.java
-│   │       ├── Python3IDE_v2.java         # Main IDE class (refactored v2.0.0)
-│   │       ├── managers/                  # Business logic layer
-│   │       │   ├── GatewayConnectionManager.java
-│   │       │   ├── ScriptManager.java
-│   │       │   └── ThemeManager.java
-│   │       └── ui/                        # Presentation layer
-│   │           ├── EditorPanel.java
-│   │           ├── ScriptTreePanel.java
-│   │           ├── MetadataPanel.java
-│   │           └── DiagnosticsPanel.java
-│   │
-│   └── docs/                        # Module-specific documentation
-│       ├── V2_ARCHITECTURE_GUIDE.md
-│       ├── V2_STATUS_SUMMARY.md
-│       ├── V2_FEATURE_COMPARISON_AND_ROADMAP.md
-│       ├── V2_MIGRATION_GUIDE.md
-│       ├── TESTING_GUIDE.md
-│       └── VERSION_UPDATE_WORKFLOW.md
-│
-├── docs/                            # 📚 SDK KNOWLEDGE BASE
-│   ├── README.md                    # SDK docs index
-│   ├── 00-CLAUDE-CODE-INSTRUCTIONS.md
-│   ├── 01-SDK-Overview-Getting-Started.md
-│   ├── 02-Module-Architecture-Structure.md
-│   ├── 03-Build-Systems-Gradle-Maven.md
-│   ├── 04-Perspective-Component-Development.md
-│   ├── 05-Vision-Component-Development.md
-│   ├── 06-OPC-UA-Device-Driver-Development.md
-│   ├── 07-Scripting-Functions-RPC-Communication.md
-│   └── 08-Quick-Reference-Cheat-Sheet.md
-│
-├── examples/                        # 🔨 SDK EXAMPLES (17 modules)
-│   ├── README.md                    # Examples index
-│   ├── scripting-function/          # Most relevant for this module
-│   ├── perspective-component/
-│   ├── opc-ua-device/
-│   └── ... (14 more examples)
-│
-├── scripts/                         # Testing utilities
-│   ├── TESTING.md
-│   └── MANUAL_TESTING_GUIDE.md
-│
-├── archive/                         # Historical v1.x planning docs
-│   └── v1-planning-docs/
-│       ├── CHANGELOG.md
-│       ├── ROADMAP_STATUS.md
-│       ├── REFACTORING_PLAN.md
-│       └── ... (stale v1.x documentation)
-│
-├── Dockerfile.test                  # Docker test environment
-├── docker-compose.yml               # Test infrastructure
-└── config/                          # Test configuration
+└── python3-integration/             # ⭐ THE MODULE (v2.0.22)
+    ├── build.gradle.kts            # Root build configuration
+    ├── settings.gradle.kts         # Gradle settings
+    ├── version.properties          # Current version: 2.0.22
+    ├── README.md                   # Module documentation (comprehensive)
+    │
+    ├── common/                     # Common scope (shared code)
+    ├── gateway/                    # Gateway scope (Python bridge, REST API)
+    │   ├── build.gradle.kts
+    │   └── src/main/java/.../gateway/
+    │       ├── GatewayHook.java
+    │       ├── Python3ProcessPool.java
+    │       ├── Python3Executor.java
+    │       ├── Python3ScriptModule.java
+    │       ├── Python3RestEndpoints.java
+    │       └── resources/python_bridge.py
+    │
+    ├── designer/                   # Designer scope (Python 3 IDE - v2.0.0+)
+    │   ├── build.gradle.kts
+    │   └── src/main/java/.../designer/
+    │       ├── DesignerHook.java
+    │       ├── Python3IDE.java            # Main IDE class (refactored v2.0.0)
+    │       ├── managers/                  # Business logic layer
+    │       │   ├── GatewayConnectionManager.java
+    │       │   ├── ScriptManager.java
+    │       │   └── ThemeManager.java
+    │       └── ui/                        # Presentation layer
+    │           ├── EditorPanel.java
+    │           ├── ScriptTreePanel.java
+    │           ├── MetadataPanel.java
+    │           └── DiagnosticsPanel.java
+    │
+    └── docs/                        # Module-specific v2.0 documentation
+        ├── V2_ARCHITECTURE_GUIDE.md
+        ├── V2_STATUS_SUMMARY.md
+        ├── V2_FEATURE_COMPARISON_AND_ROADMAP.md
+        ├── V2_MIGRATION_GUIDE.md
+        ├── TESTING_GUIDE.md
+        └── VERSION_UPDATE_WORKFLOW.md
 ```
 
-**Note:** Repository reorganized Oct 2024 to separate:
-1. Working module (python3-integration/ - v2.0.22)
-2. SDK learning resources (docs/, examples/)
-3. Historical planning docs (archive/)
+**Note:** Repository cleaned up Dec 2024 to focus exclusively on the Python 3 Integration module. General SDK documentation and examples removed (available from official sources - see External SDK Resources section below).
 
 ## Working with the Active Module
 
@@ -292,24 +253,28 @@ When modifying module functionality, focus on these files:
 - **Python3RestEndpoints.java** - REST API endpoints (Ignition 8.3 OpenAPI compliant)
 - **python_bridge.py** - Python-side command processing (execute, evaluate, call_module)
 
-### SDK Documentation Reference
+### External SDK Resources
 
-The complete Ignition SDK documentation is in `docs/knowledge-base/`:
+When learning Ignition SDK patterns or troubleshooting module development issues, reference these official resources:
 
-1. **00-CLAUDE-CODE-INSTRUCTIONS.md** - Specific workflows for Claude Code
-2. **01-SDK-Overview-Getting-Started.md** - SDK fundamentals, prerequisites
-3. **02-Module-Architecture-Structure.md** - Module scopes, hooks, lifecycle
-4. **07-Scripting-Functions-RPC-Communication.md** - Most relevant for this module
+**Official Documentation:**
+- **SDK Documentation**: https://www.sdk-docs.inductiveautomation.com/
+  - Getting Started, Module Architecture, Scopes, Hooks, Lifecycle
+  - Scripting Functions, RPC Communication, REST APIs
+  - Perspective Components, Vision Components, OPC-UA Drivers
 
-### Official Examples Reference
+**Example Code:**
+- **Official SDK Examples**: https://github.com/inductiveautomation/ignition-sdk-examples
+  - 17+ example modules with complete source code
+  - scripting-function/ - Most similar pattern to this module
+  - perspective-component/ - UI component examples
+  - opc-ua-device/ - Device driver examples
 
-The `examples/` directory contains reference implementations:
-
-```bash
-# Most relevant examples for this module
-ls -la examples/scripting-function/        # Scripting function implementation pattern
-ls -la examples/perspective-component-minimal/  # Gradle build configuration reference
-```
+**Community Resources:**
+- **Forum**: https://forum.inductiveautomation.com/c/module-development/7
+  - Module development discussions, troubleshooting, best practices
+- **Gradle Plugin**: https://github.com/inductiveautomation/ignition-module-tools
+  - Build tool documentation and examples
 
 ## Module Development Patterns
 
@@ -573,16 +538,20 @@ InputStream is = getClass().getResourceAsStream("/python_bridge.py");
 
 **Current Approach is Correct** for this open-source development project.
 
-## Repository Resources
+## Module Documentation Resources
 
+**In This Repository:**
 - **Active module code**: `python3-integration/` (v2.0.22)
 - **V2 Architecture Guide**: `python3-integration/docs/V2_ARCHITECTURE_GUIDE.md` ⭐
 - **V2 Status Summary**: `python3-integration/docs/V2_STATUS_SUMMARY.md`
 - **V2 Feature Comparison**: `python3-integration/docs/V2_FEATURE_COMPARISON_AND_ROADMAP.md`
 - **Testing Guide**: `python3-integration/docs/TESTING_GUIDE.md`
 - **Version Workflow**: `python3-integration/docs/VERSION_UPDATE_WORKFLOW.md`
-- **SDK Documentation**: `docs/` (00-08 guides for Ignition SDK)
-- **SDK Examples**: `examples/scripting-function/` (most similar pattern)
+
+**External Resources:**
+- **Official SDK Docs**: https://www.sdk-docs.inductiveautomation.com/
+- **SDK Examples**: https://github.com/inductiveautomation/ignition-sdk-examples
+- **Module Development Forum**: https://forum.inductiveautomation.com/c/module-development/7
 
 ## Python 3 IDE (v2.0.0+ - IMPLEMENTED)
 
