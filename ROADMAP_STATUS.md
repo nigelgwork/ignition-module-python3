@@ -1,8 +1,8 @@
 # Python 3 Integration Module - Roadmap Status
 
 **Last Updated:** 2025-10-17
-**Current Version:** v1.13.0
-**Status:** Phase 2 Part A Complete - Auto-Completion Implemented
+**Current Version:** v1.16.0
+**Status:** Production Security Hardening Complete
 
 ---
 
@@ -17,9 +17,12 @@
 | v1.10.0 - v1.10.1 | Phase 3 | Script management & folders | ✅ Complete | 2025-10-15 |
 | v1.11.0 | Phase 1A | Real-time syntax checking | ✅ Complete | 2025-10-16 |
 | v1.12.0 - v1.12.5 | Phase 1B | Modern UI design system | ✅ Complete | 2025-10-16 |
-| **v1.13.0** | **Phase 2A** | **Intelligent Auto-Completion** | ✅ **Complete** | **2025-10-17** |
+| v1.13.0 | Phase 2A | Intelligent Auto-Completion | ✅ Complete | 2025-10-17 |
+| v1.14.0 | Security | RestrictedPython, Rate Limiting, Audit Logging | ✅ Complete | 2025-10-17 |
+| v1.15.0 - v1.15.1 | UI/UX | Modern UI Polish, Dark Theme Fixes | ✅ Complete | 2025-10-17 |
+| **v1.16.0** | **Security+Performance** | **Admin Mode, Resource Limits, Advanced Metrics** | ✅ **Complete** | **2025-10-17** |
 
-### 🎯 Current Capabilities (v1.13.0)
+### 🎯 Current Capabilities (v1.16.0)
 
 **Core Execution:**
 - ✅ Python 3 subprocess pool (3-5 processes)
@@ -55,297 +58,249 @@
 - ✅ Syntax checking endpoint
 - ✅ **Code completions endpoint (NEW)**
 
-**Security:**
-- ✅ RouteAccess controls on all endpoints
-- ✅ Input validation on code submissions
+**Security (Enhanced in v1.14.0 - v1.16.0):**
+- ✅ RestrictedPython sandboxing with module whitelisting
+- ✅ Admin mode detection via HTTP headers (v1.16.0)
+- ✅ Resource limits (memory: 512MB, CPU: 60s) (v1.16.0)
+- ✅ Rate limiting (100 requests/min per user)
+- ✅ Comprehensive audit logging with secret sanitization
+- ✅ Input validation (code size limits, pattern checking)
 - ✅ Safe subprocess isolation
-- ⚠️ **Needs comprehensive security audit** (see Security Review section)
+- ⚠️ **Authentication on REST endpoints** - Still needed for production
+
+**Performance Monitoring (NEW in v1.16.0):**
+- ✅ Per-script performance metrics (execution count, timing, success rate)
+- ✅ Historical metric tracking (100 snapshots, 1-minute intervals)
+- ✅ Health alerts (pool utilization, failure rate thresholds)
+- ✅ Gateway impact assessment (real-time metrics)
+- ✅ 3 new REST endpoints: `/metrics/script-metrics`, `/metrics/historical`, `/metrics/alerts`
 
 ---
 
-## 🚀 Next Priority: Enhanced Performance Diagnostics
+## 🚀 Next Priority: Production Security Hardening (v1.17.0)
 
-### ⭐ NEW REQUIREMENT: Gateway Impact Monitoring (v1.14.0)
+### ⭐ CRITICAL REQUIREMENT: REST API Authentication + Enhanced Security
 
-**Priority:** HIGH
-**Effort Estimate:** 24-32 hours
-**Timeline:** 1-2 weeks
-**User Request:** "I want diagnostic information coming through regarding the performance and impact that the scripts are having on the gateway"
+**Priority:** CRITICAL (for production deployments)
+**Effort Estimate:** 62-64 hours
+**Timeline:** 1 week
+**Goal:** Production-ready security posture with enterprise-grade features
 
-#### Goals
+#### Implementation Focus (v1.17.0)
 
-Provide comprehensive visibility into:
-1. **System Resource Impact** - CPU, memory, thread usage by Python processes
-2. **Gateway Performance Impact** - How Python execution affects overall Gateway health
-3. **Script Performance Metrics** - Execution time, resource consumption per script
-4. **Historical Tracking** - Trends over time, performance degradation detection
-5. **Alerting** - Notify when scripts impact Gateway performance
+**Option 1: Production Hardening (8-12h)**
+1. REST API authentication (session-based or API key)
+2. Automatic administrator role detection
+3. Security testing and validation
 
-#### Proposed Features
+**Option 2: Enhanced Security Features (50-52h)**
+4. Docker container isolation for Python execution
+5. Script signing & verification (HMAC-based)
+6. Security headers (CSP, HSTS, X-Frame-Options)
+7. CSRF protection for state-changing endpoints
 
-**1. Real-Time Gateway Impact Dashboard (12-16h)**
+**Total Effort:** 62-64 hours (1 week)
 
-Display in IDE diagnostics panel:
-- **CPU Usage:** Python process CPU % vs total Gateway CPU
-- **Memory Usage:** Python heap/non-heap vs Gateway JVM memory
-- **Thread Count:** Active Python threads vs Gateway threads
-- **I/O Operations:** Disk reads/writes, network activity
-- **Execution Queue:** Pending executions, pool saturation
-- **Gateway Health Score:** Overall impact rating (0-100)
+#### Security Features Detail
 
-**Visual Design:**
-```
-┌─────────────────────────────────────────────────────────┐
-│ Gateway Impact Monitor                                  │
-├─────────────────────────────────────────────────────────┤
-│ Python CPU:    [████████░░] 45% / Gateway Total: 12%   │
-│ Python Memory: [██████░░░░] 128MB / Gateway: 2.1GB     │
-│ Active Threads: 4 Python / 156 Gateway                  │
-│ Pool Status:   [●●○] 2 available, 1 executing          │
-│ Queue Depth:   0 pending                                │
-│                                                          │
-│ Gateway Health: ████████░░ 85/100 (Good)                │
-│                                                          │
-│ Impact Level: ⚠️ MODERATE (script using 15% CPU)        │
-│ Recommendation: Consider script optimization            │
-└─────────────────────────────────────────────────────────┘
-```
+**1. REST API Authentication (4-6h)** 🔴
+```java
+// Add session-based authentication to all endpoints
+private static RouteAccess checkAuthentication(RequestContext req) {
+    // Check if user is authenticated
+    User user = req.getUser();
+    if (user == null) {
+        return RouteAccess.DENIED("Authentication required");
+    }
 
-**2. Per-Script Performance Metrics (8-12h)**
+    // Check if user has Python3 execution permission
+    if (!user.hasRole("Administrator") && !user.hasRole("Python3User")) {
+        return RouteAccess.DENIED("Insufficient permissions");
+    }
 
-Track and display for each script execution:
-```json
-{
-  "scriptName": "data_processing.py",
-  "executionId": "exec_20251017_143052",
-  "startTime": 1760571024031,
-  "endTime": 1760571024187,
-  "metrics": {
-    "executionTimeMs": 156,
-    "cpuTimeMs": 142,
-    "cpuPercent": 8.5,
-    "memoryUsedBytes": 45678900,
-    "memoryPeakBytes": 52314500,
-    "diskReadBytes": 1024000,
-    "diskWriteBytes": 512000,
-    "networkSentBytes": 2048,
-    "networkRecvBytes": 4096,
-    "gcTimeMs": 12,
-    "threadCount": 3,
-    "processId": 2
-  },
-  "gatewayImpact": {
-    "cpuPercentOfTotal": 2.1,
-    "memoryPercentOfTotal": 1.8,
-    "threadsCreated": 2,
-    "impactLevel": "LOW"  // LOW, MODERATE, HIGH, CRITICAL
-  }
+    return RouteAccess.GRANTED;
 }
 ```
 
-**3. Historical Performance Tracking (8-12h)**
+**2. Automatic Administrator Role Detection (2-4h)** 🔴
+```java
+// Automatically enable ADMIN mode for Ignition Administrators
+private static String getSecurityMode(RequestContext req) {
+    User user = req.getUser();
 
-Store metrics in Gateway database:
-- Last 1000 executions (rolling window)
-- Aggregated statistics per script
-- Performance trend analysis
-- Anomaly detection (execution time 2x average → alert)
+    // Check if user is Ignition Administrator
+    if (user != null && user.hasRole("Administrator")) {
+        LOGGER.info("ADMIN mode activated for Administrator: {}", user.getUsername());
+        return "ADMIN";
+    }
 
-**UI Features:**
-- Performance history graph
-- Top 10 resource-intensive scripts
-- Execution timeline
-- Export to CSV for analysis
+    // Check for API key (existing implementation)
+    String adminKey = req.getRequest().getHeader("X-Python3-Admin-Key");
+    if (adminKey != null && adminKey.equals(ADMIN_API_KEY)) {
+        return "ADMIN";
+    }
 
-**4. Gateway Health Alerts (4-6h)**
-
-Warn users when scripts impact Gateway:
-```
-⚠️ WARNING: Script execution consuming 35% CPU
-   Script: batch_processing.py
-   Duration: 45s (avg: 5s)
-   Impact: Gateway response time increased by 200ms
-
-   Actions:
-   [Cancel Execution] [Optimize Script] [View Details]
+    // Default to RESTRICTED mode
+    return "RESTRICTED";
+}
 ```
 
-**Alert Thresholds:**
-- CPU > 50% for > 10 seconds → WARNING
-- Memory > 512MB → WARNING
-- Execution time > 60s → INFO
-- Pool exhaustion > 30s → WARNING
-- Gateway JVM heap > 90% → CRITICAL
+**3. Docker Container Isolation (20-24h)** 🟡
+```java
+// Isolate Python execution in ephemeral Docker containers
+public class DockerPythonExecutor implements Python3Executor {
+    private final DockerClient dockerClient;
+
+    public Python3Result execute(String code, Map<String, Object> variables) {
+        // Create ephemeral container
+        Container container = dockerClient.createContainer(
+            "python:3.11-alpine",
+            "--network=none",          // No network access
+            "--memory=512m",            // Memory limit
+            "--cpus=1",                 // CPU limit
+            "--read-only",              // Read-only filesystem
+            "--security-opt=no-new-privileges",
+            "--cap-drop=ALL"            // Drop all capabilities
+        );
+
+        try {
+            // Execute code in isolated container
+            String result = container.exec(code);
+            return Python3Result.success(result);
+        } finally {
+            // Always destroy container
+            container.remove(true);
+        }
+    }
+}
+```
+
+**4. Script Signing & Verification (10-12h)** 🟢
+```java
+// Sign scripts to prevent tampering
+public class Python3ScriptSigner {
+    private static final String SECRET_KEY = System.getProperty("ignition.python3.signing.key");
+
+    public String signScript(String code) {
+        Mac mac = Mac.getInstance("HmacSHA256");
+        mac.init(new SecretKeySpec(SECRET_KEY.getBytes(), "HmacSHA256"));
+        byte[] signature = mac.doFinal(code.getBytes());
+        return Base64.getEncoder().encodeToString(signature);
+    }
+
+    public boolean verifyScript(String code, String signature) {
+        String expected = signScript(code);
+        return secureEquals(expected, signature);
+    }
+}
+
+// Enhance script repository
+public void saveScript(String name, String code) {
+    String signature = scriptSigner.signScript(code);
+    repository.save(name, code, signature, timestamp);
+}
+
+public SavedScript loadScript(String name) {
+    SavedScript script = repository.load(name);
+    if (!scriptSigner.verifyScript(script.code, script.signature)) {
+        throw new SecurityException("Script signature invalid - possible tampering detected");
+    }
+    return script;
+}
+```
+
+**5. Security Headers (4-6h)** 🟢
+```java
+// Add comprehensive security headers to all responses
+public static void addSecurityHeaders(HttpServletResponse res) {
+    // Content Security Policy
+    res.setHeader("Content-Security-Policy",
+        "default-src 'self'; script-src 'none'; object-src 'none'");
+
+    // HSTS (force HTTPS)
+    res.setHeader("Strict-Transport-Security",
+        "max-age=31536000; includeSubDomains; preload");
+
+    // Prevent clickjacking
+    res.setHeader("X-Frame-Options", "DENY");
+
+    // Prevent MIME sniffing
+    res.setHeader("X-Content-Type-Options", "nosniff");
+
+    // XSS protection
+    res.setHeader("X-XSS-Protection", "1; mode=block");
+
+    // Referrer policy
+    res.setHeader("Referrer-Policy", "no-referrer");
+}
+```
+
+**6. CSRF Protection (4-6h)** 🟢
+```java
+// CSRF token validation for state-changing operations
+public class CSRFProtection {
+    private static final Map<String, String> tokenStore = new ConcurrentHashMap<>();
+
+    public static String generateToken(String sessionId) {
+        String token = UUID.randomUUID().toString();
+        tokenStore.put(sessionId, token);
+        return token;
+    }
+
+    public static boolean validateToken(String sessionId, String token) {
+        String expected = tokenStore.get(sessionId);
+        return expected != null && secureEquals(expected, token);
+    }
+}
+
+// Apply to endpoints
+public static JsonObject handleExec(RequestContext req, HttpServletResponse res) {
+    String csrfToken = req.getRequest().getHeader("X-CSRF-Token");
+    if (!CSRFProtection.validateToken(req.getSessionId(), csrfToken)) {
+        return createErrorResponse("Invalid CSRF token");
+    }
+
+    // Execute code...
+}
+```
 
 #### Implementation Plan
 
-**Gateway Changes:**
+**Phase 1: Production Hardening (Day 1)**
+1. Implement REST API authentication (4-6h)
+2. Implement automatic admin role detection (2-4h)
+3. Security testing (2h)
 
-1. **Python3MetricsCollector.java** (NEW)
-   ```java
-   public class Python3MetricsCollector {
-       private final MetricsManager metricsManager;
-
-       public ExecutionMetrics collectMetrics(Process process, long startTime, long endTime) {
-           // Collect CPU, memory, I/O metrics
-           // Calculate Gateway impact
-           // Return comprehensive metrics object
-       }
-
-       public GatewayImpact calculateGatewayImpact(ExecutionMetrics metrics) {
-           // Compare to total Gateway resource usage
-           // Assign impact level
-       }
-   }
-   ```
-
-2. **Python3MetricsRepository.java** (NEW)
-   ```java
-   public class Python3MetricsRepository {
-       private final PersistenceInterface db;
-
-       public void saveMetrics(ExecutionMetrics metrics);
-       public List<ExecutionMetrics> getRecentMetrics(int limit);
-       public Map<String, AggregateMetrics> getScriptStats();
-       public List<ExecutionMetrics> detectAnomalies();
-   }
-   ```
-
-3. **Enhance Python3Executor.java**
-   ```java
-   public Python3Result execute(String code, Map<String, Object> variables) {
-       MetricsCollector collector = new MetricsCollector(process);
-       collector.startMonitoring();
-
-       try {
-           // Execute code
-           Python3Result result = sendRequest(...);
-
-           ExecutionMetrics metrics = collector.stopMonitoring();
-           result.setMetrics(metrics);
-           metricsRepository.saveMetrics(metrics);
-
-           return result;
-       } finally {
-           collector.cleanup();
-       }
-   }
-   ```
-
-4. **New REST Endpoints**
-   ```java
-   GET /data/python3integration/api/v1/metrics/current
-   Response: {
-       "pythonCpuPercent": 8.5,
-       "pythonMemoryMB": 128,
-       "gatewayCpuPercent": 12.0,
-       "gatewayMemoryMB": 2048,
-       "activeThreads": 4,
-       "poolStatus": {...},
-       "healthScore": 85,
-       "impactLevel": "LOW"
-   }
-
-   GET /data/python3integration/api/v1/metrics/history?limit=100
-   Response: {
-       "executions": [...],
-       "aggregateStats": {...}
-   }
-
-   GET /data/python3integration/api/v1/metrics/script/{scriptName}
-   Response: {
-       "scriptName": "...",
-       "executionCount": 156,
-       "avgExecutionTimeMs": 45,
-       "maxExecutionTimeMs": 234,
-       "avgCpuPercent": 5.2,
-       "avgMemoryMB": 32,
-       "lastExecuted": "2025-10-17T14:30:52Z"
-   }
-   ```
-
-5. **Python Bridge Enhancements**
-   ```python
-   # Add resource tracking to python_bridge.py
-   import resource
-   import psutil
-
-   def handle_execute(request):
-       # Before execution
-       start_metrics = {
-           'cpu_times': psutil.cpu_times(),
-           'memory': psutil.virtual_memory(),
-           'io_counters': psutil.disk_io_counters()
-       }
-
-       # Execute code
-       result = exec(code, globals_dict)
-
-       # After execution
-       end_metrics = collect_metrics()
-
-       return {
-           'success': True,
-           'result': result,
-           'metrics': calculate_delta(start_metrics, end_metrics)
-       }
-   ```
-
-**Designer Changes:**
-
-1. **GatewayImpactPanel.java** (NEW)
-   - Real-time metrics display
-   - CPU/memory gauges
-   - Health score indicator
-   - Impact level badge
-   - Auto-refresh (2s interval)
-
-2. **PerformanceHistoryDialog.java** (NEW)
-   - Chart of execution times
-   - Resource usage trends
-   - Top scripts table
-   - Export functionality
-
-3. **Enhance ExecutionResult.java**
-   ```java
-   public class ExecutionResult {
-       private boolean success;
-       private String result;
-       private String error;
-       private Long executionTimeMs;
-
-       // NEW fields
-       private ExecutionMetrics metrics;
-       private GatewayImpact gatewayImpact;
-       private String impactLevel;
-       private List<String> recommendations;
-   }
-   ```
+**Phase 2: Enhanced Security (Days 2-5)**
+1. Docker container isolation (20-24h)
+2. Script signing & verification (10-12h)
+3. Security headers (4-6h)
+4. CSRF protection (4-6h)
+5. Integration testing (4h)
 
 #### Testing Criteria
 
-- ✅ Metrics collected accurately for all executions
-- ✅ CPU/memory percentages match system monitors
-- ✅ Gateway impact calculated correctly
-- ✅ Alerts trigger at appropriate thresholds
-- ✅ Historical data persists across restarts
-- ✅ UI updates in real-time (< 2s latency)
-- ✅ Performance overhead < 5ms per execution
-- ✅ Database size manageable (< 10MB for 1000 executions)
+- ✅ Authentication required for all REST endpoints
+- ✅ Administrators automatically get ADMIN mode
+- ✅ Docker containers properly isolated (no network, read-only filesystem)
+- ✅ Script signatures validated on load
+- ✅ Security headers present in all responses
+- ✅ CSRF tokens validated for state-changing operations
+- ✅ No security regressions from v1.16.0
 
 #### Success Metrics
 
-**User Value:**
-- Users can identify resource-intensive scripts immediately
-- Users understand Gateway performance impact
-- Users can optimize scripts based on metrics
-- Users receive alerts before Gateway degradation
+**Security:**
+- Production-ready authentication and authorization
+- Enterprise-grade isolation for Python execution
+- Tamper-proof script storage
+- Defense-in-depth security posture
 
-**Technical:**
-- Metrics collection overhead < 5% CPU
-- Database queries < 50ms
-- UI rendering smooth (60fps)
-- No memory leaks in metrics collection
+**Performance:**
+- Authentication overhead < 5ms per request
+- Docker container creation < 500ms
+- Script signature verification < 10ms
+- No performance degradation from security features
 
 ---
 
@@ -1055,72 +1010,48 @@ public String loadScript(String name) {
 
 ## 📅 Updated Roadmap
 
-### v1.14.0 - Security Hardening + Performance Monitoring (NEXT)
+### v1.14.0 - v1.16.0: Completed ✅
+
+**v1.14.0 - Security Hardening**
+- ✅ RestrictedPython sandboxing with module whitelisting
+- ✅ Rate limiting (100 requests/min per user)
+- ✅ Comprehensive audit logging with secret sanitization
+- ✅ Input validation (code size limits, pattern checking)
+
+**v1.15.0 - v1.15.1 - UI/UX Improvements**
+- ✅ Modern UI polish and dark theme fixes
+- ✅ JSplitPane divider theming
+- ✅ Diagnostics panel visibility improvements
+- ✅ Theme selector expansion
+- ✅ Scrollbar behavior fixes
+
+**v1.16.0 - Security + Performance Monitoring**
+- ✅ Admin mode detection via HTTP headers
+- ✅ Resource limits (memory: 512MB, CPU: 60s)
+- ✅ Per-script performance metrics
+- ✅ Historical metric tracking (100 snapshots)
+- ✅ Health alerts (pool utilization, failure rate)
+
+### v1.17.0 - Production Security Hardening (CURRENT)
 
 **Priority:** CRITICAL
-**Timeline:** 2-3 weeks
-**Effort:** 60-80 hours
+**Timeline:** 1 week
+**Effort:** 62-64 hours
 
-**Security Fixes (40-50h):**
-- 🔴 Implement authentication on all endpoints (8h)
-- 🔴 Fix SQL injection vulnerabilities (8h)
-- 🔴 Add RestrictedPython sandboxing (12h)
-- 🟡 Implement input validation and size limits (6h)
-- 🟡 Add rate limiting (6h)
-- 🟡 Comprehensive audit logging (6h)
-- 🟡 Resource limits on processes (8h)
+**Option 1: Production Hardening (8-12h)**
+- 🔴 REST API authentication (session-based)
+- 🔴 Automatic administrator role detection
+- 🔴 Security testing and validation
 
-**Performance Monitoring (24-32h):**
-- Real-time Gateway impact dashboard (12h)
-- Per-script performance metrics (8h)
-- Historical performance tracking (8h)
-- Gateway health alerts (4h)
+**Option 2: Enhanced Security (50-52h)**
+- 🟡 Docker container isolation
+- 🟢 Script signing & verification
+- 🟢 Security headers (CSP, HSTS, etc.)
+- 🟢 CSRF protection
 
-**Testing:**
-- Security penetration testing (8h)
-- Performance testing under load (4h)
+### v1.18.0+ - Future Enhancements
 
-### v1.15.0 - UI Polish + UX Improvements (NEXT AFTER v1.14.0)
-
-**Priority:** HIGH (User Feedback)
-**Timeline:** 1-2 weeks
-**Effort:** 16-24 hours
-**User Request:** Multiple UI/UX issues discovered after v1.14.0 installation
-
-**UI Fixes:**
-1. Update version header to v1.14.0/v1.15.0 (30min)
-2. Redesign script browser tree (Ignition Tag Browser style) (4-6h)
-3. Fix scrollbar theming in dark mode (1-2h)
-4. Add diagnostics/metrics display panel (3-4h)
-5. Fix button text truncation and sizing (1-2h)
-6. Add selected script indicator in editor header (1-2h)
-7. Fix description pane scrollbar behavior (1h)
-8. Standardize button sizes and alignment (1-2h)
-
-**Deferred Features:**
-- Administrator role detection for auto-switching to ADMIN mode (2-4h) - Deferred to v1.16.0+
-  - Currently defaults to RESTRICTED mode for all users
-  - Administrators can manually enable ADMIN mode when SDK API available
-  - TODO comment in `Python3RestEndpoints.getSecurityMode()` for future implementation
-
-### v1.16.0 - Advanced Security + Enterprise Features
-
-**Timeline:** 3-4 weeks
-**Effort:** 80-100 hours
-
-- Administrator role detection (2-4h) - Implement automatic ADMIN mode for Ignition Administrators
-- Docker container isolation (24h)
-- Script signing and verification (12h)
-- Enhanced RBAC with custom permissions (16h)
-- Security headers and CSRF protection (8h)
-- Compliance reporting (12h)
-- Advanced monitoring and alerting (16h)
-
-### v1.16.0+ - Phase 2B UI Features (Medium Effort UI)
-
-**Timeline:** TBD based on security completion
-**Effort:** 60-74 hours
-
+**Phase 2B UI Features (60-74h)**
 - Command Palette (Ctrl+Shift+P) (12h)
 - Tabs for Multiple Scripts (14h)
 - Split View (12h)
@@ -1128,12 +1059,21 @@ public String loadScript(String name) {
 - Breadcrumb Navigation (8h)
 - Search & Replace in Files (10h)
 
+**Enterprise Features**
+- Compliance reporting
+- Enhanced RBAC with custom permissions
+- Multi-Gateway script synchronization
+
 ---
 
 ## 📊 Version History
 
 | Version | Release Date | Key Features |
 |---------|--------------|--------------|
+| **v1.16.0** | **2025-10-17** | **Admin mode, resource limits, advanced performance monitoring** |
+| v1.15.1 | 2025-10-17 | UI/UX bug fixes (dark theme, diagnostics panel) |
+| v1.15.0 | 2025-10-17 | Modern UI design enhancements |
+| v1.14.0 | 2025-10-17 | Security hardening (RestrictedPython, rate limiting, audit logging) |
 | v1.13.0 | 2025-10-17 | Intelligent auto-completion with Jedi |
 | v1.12.5 | 2025-10-16 | Global theme application fix |
 | v1.12.4 | 2025-10-16 | Tree cell renderer icons fix |
@@ -1150,6 +1090,6 @@ public String loadScript(String name) {
 
 ---
 
-**Document Version:** 1.0
+**Document Version:** 2.0
 **Author:** Claude Code
-**Next Review:** After v1.14.0 security fixes
+**Next Review:** After v1.17.0 production security release

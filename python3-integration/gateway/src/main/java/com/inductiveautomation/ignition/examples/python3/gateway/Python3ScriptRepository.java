@@ -61,6 +61,8 @@ public class Python3ScriptRepository {
      * @param version optional version string
      * @return the saved script
      * @throws IOException if save fails
+     *
+     * v1.17.0: Now generates HMAC signature for tamper protection
      */
     public SavedScript saveScript(String name, String code, String description, String author, String folderPath, String version) throws IOException {
         if (name == null || name.trim().isEmpty()) {
@@ -75,6 +77,11 @@ public class Python3ScriptRepository {
         SavedScript existing = scriptIndex.get(sanitizedName);
         String createdDate = existing != null ? existing.getCreatedDate() : now;
 
+        // Generate HMAC signature for tamper protection (v1.17.0)
+        String signature = Python3ScriptSigner.signScript(code);
+        LOGGER.debug("Generated signature for script: {}, signature hash: {}...",
+                name, signature.substring(0, Math.min(16, signature.length())));
+
         // Create script object
         SavedScript script = new SavedScript(
                 sanitizedName,
@@ -85,7 +92,8 @@ public class Python3ScriptRepository {
                 createdDate,
                 now,
                 folderPath != null ? folderPath : "",
-                version != null ? version : "1.0"
+                version != null ? version : "1.0",
+                signature  // v1.17.0: Store signature
         );
 
         // Save to index
@@ -94,7 +102,7 @@ public class Python3ScriptRepository {
         // Persist index
         saveIndex();
 
-        LOGGER.info("Script saved: {} in folder: {}", name, folderPath);
+        LOGGER.info("Script saved: {} in folder: {} (signed)", name, folderPath);
         return script;
     }
 
@@ -110,6 +118,9 @@ public class Python3ScriptRepository {
      *
      * @param name the script name
      * @return the saved script, or null if not found
+     * @throws SecurityException if script signature verification fails (tampered)
+     *
+     * v1.17.0: Now verifies HMAC signature to detect tampering
      */
     public SavedScript loadScript(String name) {
         String sanitizedName = sanitizeName(name);
@@ -117,6 +128,26 @@ public class Python3ScriptRepository {
 
         if (script == null) {
             LOGGER.warn("Script not found: {}", name);
+            return null;
+        }
+
+        // Verify signature (v1.17.0)
+        if (script.getSignature() != null) {
+            boolean valid = Python3ScriptSigner.verifyScript(script.getCode(), script.getSignature());
+
+            if (!valid) {
+                LOGGER.error("SECURITY: Script signature verification FAILED for: {} - possible tampering detected!", name);
+                throw new SecurityException(
+                        "Script signature verification failed for: " + name +
+                        ". The script may have been tampered with. Please re-save the script."
+                );
+            }
+
+            LOGGER.debug("Script signature verified for: {}", name);
+        } else {
+            // Legacy script without signature - log warning
+            LOGGER.warn("Script loaded without signature verification (legacy): {}. " +
+                    "Re-save to add tamper protection.", name);
         }
 
         return script;
@@ -301,6 +332,8 @@ public class Python3ScriptRepository {
 
     /**
      * Represents a saved Python script.
+     *
+     * v1.17.0: Added signature field for tamper protection
      */
     public static class SavedScript {
         private final String id;
@@ -312,10 +345,11 @@ public class Python3ScriptRepository {
         private final String lastModified;
         private final String folderPath;
         private final String version;
+        private final String signature;  // v1.17.0: HMAC signature for tamper detection
 
         public SavedScript(String id, String name, String code, String description,
                           String author, String createdDate, String lastModified,
-                          String folderPath, String version) {
+                          String folderPath, String version, String signature) {
             this.id = id;
             this.name = name;
             this.code = code;
@@ -325,6 +359,15 @@ public class Python3ScriptRepository {
             this.lastModified = lastModified;
             this.folderPath = folderPath;
             this.version = version;
+            this.signature = signature;  // Can be null for backward compatibility
+        }
+
+        // Constructor for backward compatibility (without signature)
+        public SavedScript(String id, String name, String code, String description,
+                          String author, String createdDate, String lastModified,
+                          String folderPath, String version) {
+            this(id, name, code, description, author, createdDate, lastModified,
+                 folderPath, version, null);
         }
 
         public String getId() {
@@ -361,6 +404,10 @@ public class Python3ScriptRepository {
 
         public String getVersion() {
             return version;
+        }
+
+        public String getSignature() {
+            return signature;
         }
     }
 

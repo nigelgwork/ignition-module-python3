@@ -2,11 +2,12 @@
 
 A production-ready Ignition module that enables Python 3.11 scripting in Ignition 8.3+, bridging the gap between Ignition's Jython 2.7 and modern Python 3.
 
-## Current Version: 1.16.0
+## Current Version: 1.17.0
 
 **Latest Features:**
-- 🔒 **Security Hardening** - Admin mode detection, resource limits, sandboxing (ENHANCED in 1.16.0)
-- 📊 **Performance Monitoring** - Per-script metrics, historical tracking, health alerts (ENHANCED in 1.16.0)
+- 🔒 **Production Security** - Script signing, security headers, CSRF protection (NEW in 1.17.0)
+- 🔒 **Security Hardening** - Admin mode detection, resource limits, sandboxing (1.16.0)
+- 📊 **Performance Monitoring** - Per-script metrics, historical tracking, health alerts (1.16.0)
 - ✨ **Saved Scripts** - Build a library of reusable Python scripts
 - 🎨 **Designer IDE** - Visual code editor with saved script management
 - 🔄 **REST API** - Remote execution and script management
@@ -18,7 +19,7 @@ A production-ready Ignition module that enables Python 3.11 scripting in Ignitio
 
 ### Installation
 
-1. Download: [Python3Integration-1.16.0.modl](/modules/ignition-module-python3/python3-integration/build/Python3Integration-1.16.0.modl)
+1. Download: [Python3Integration-1.17.0.modl](/modules/ignition-module-python3/python3-integration/build/Python3Integration-1.17.0.modl)
 2. Install: Config → System → Modules → Install or Upgrade a Module
 3. Upload the .modl file
 4. Restart Gateway
@@ -44,9 +45,38 @@ A production-ready Ignition module that enables Python 3.11 scripting in Ignitio
 | **Variable Passing** | Share data between Jython and Python 3 |
 | **Package Support** | Install any package via pip |
 
+### 🔒 Production Security (NEW in 1.17.0)
+
+**Script Signing & Verification:**
+- HMAC-SHA256 signatures on all saved scripts
+- Automatic tamper detection on script load
+- Throws SecurityException if signature verification fails
+- Configurable signing key via `-Dignition.python3.signing.key=<your-key>`
+- Auto-generated key fallback for development
+
+**Security Headers:**
+- Content-Security-Policy (CSP) - prevents XSS attacks
+- HTTP Strict Transport Security (HSTS) - forces HTTPS
+- X-Frame-Options: DENY - prevents clickjacking
+- X-Content-Type-Options: nosniff - prevents MIME sniffing
+- Referrer-Policy: no-referrer - prevents information leakage
+- Permissions-Policy - disables unnecessary browser features
+
+**CSRF Protection Infrastructure:**
+- Token generation and validation methods
+- Session-based token management
+- Constant-time comparison to prevent timing attacks
+- Ready for Gateway-level authentication integration
+
+**Authentication Model:**
+- Gateway-level security (API keys, network restrictions)
+- SDK limitations documented for future enhancements
+- Reverse proxy authentication support
+- HTTPS/SSL enforcement recommended
+
 ### 🔒 Security Hardening (Enhanced in 1.16.0)
 
-**Admin Mode Detection (NEW in 1.16.0):**
+**Admin Mode Detection (1.16.0):**
 - **RESTRICTED mode** (default): Only safe modules allowed (math, json, datetime, etc.)
 - **ADMIN mode**: Full access to advanced modules (os, subprocess, requests, pandas, numpy, etc.)
 - HTTP header-based authentication via `X-Python3-Admin-Key`
@@ -267,6 +297,21 @@ wrapper.java.additional.302=-Dignition.python3.max.cpu.seconds=60
 
 Defaults: 512MB memory, 60 seconds CPU time
 
+### Script Signing Key (NEW in 1.17.0)
+
+Configure custom signing key for production deployments:
+
+```properties
+wrapper.java.additional.303=-Dignition.python3.signing.key=<your-64-character-hex-key>
+```
+
+**Generate key:**
+```bash
+openssl rand -hex 32
+```
+
+Default: Auto-generated from Gateway installation path and hostname
+
 ### Python Path (Optional)
 
 To use system Python instead of embedded:
@@ -293,6 +338,31 @@ cd <ignition-install>/data/python3-integration/python/python/bin
 Installed packages are available to all Python processes immediately.
 
 ## Upgrading
+
+### From 1.16.x to 1.17.0
+
+**Important:** This upgrade adds production-ready security enhancements.
+
+**Recommended Process:**
+1. Install v1.17.0 over existing version
+2. Restart Gateway
+3. Restart Designer clients (if using Designer IDE)
+4. (Optional) Configure custom signing key for production
+
+**Key Changes:**
+- **Security:** HMAC-SHA256 script signing & verification
+- **Security:** Comprehensive security headers (CSP, HSTS, X-Frame-Options, etc.)
+- **Security:** CSRF protection infrastructure
+- **Security:** Constant-time string comparison for API keys
+- **Documentation:** Authentication model clarified (Gateway-level security)
+
+**Configuration (Optional):**
+```properties
+# Custom signing key for production
+wrapper.java.additional.303=-Dignition.python3.signing.key=<your-64-char-hex-key>
+```
+
+**Note:** Existing saved scripts will continue to work. On first save after upgrade, they will be signed automatically. Legacy scripts without signatures will load with a warning in Gateway logs.
 
 ### From 1.15.x to 1.16.0
 
@@ -447,7 +517,7 @@ cd python3-integration
 ./gradlew clean build --no-daemon
 ```
 
-Output: `build/Python3Integration-1.16.0.modl`
+Output: `build/Python3Integration-1.17.0.modl`
 
 ### Testing
 

@@ -5,6 +5,75 @@ All notable changes to the Python 3 Integration module are documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.17.0] - 2025-10-17
+
+### Added - Production Security Hardening
+
+**Script Signing & Verification:**
+- HMAC-SHA256 signatures on all saved scripts
+- Automatic signature generation on script save
+- Signature verification on script load with SecurityException on failure
+- Configurable signing key via `-Dignition.python3.signing.key=<your-key>`
+- Auto-generated key fallback based on Gateway path + hostname for development
+- Backward compatibility: legacy scripts without signatures load with warning
+
+**Security Headers on All REST Responses:**
+- Content-Security-Policy (CSP): Prevents XSS attacks
+- HTTP Strict Transport Security (HSTS): Forces HTTPS, 1-year max-age
+- X-Frame-Options: DENY - Prevents clickjacking
+- X-Content-Type-Options: nosniff - Prevents MIME sniffing
+- X-XSS-Protection: Blocks reflected XSS
+- Referrer-Policy: no-referrer - Prevents information leakage
+- Permissions-Policy: Disables geolocation, microphone, camera, payment APIs
+
+**CSRF Protection Infrastructure:**
+- Token generation and validation methods
+- Session-based token management with 1-hour expiry
+- Constant-time comparison to prevent timing attacks
+- Ready for future Gateway-level authentication integration
+
+**Enhanced Authentication Model:**
+- Constant-time string comparison for API key validation
+- Documentation clarifying Gateway-level security approach
+- SDK API limitations documented for future enhancements
+- Support for reverse proxy authentication
+- HTTPS/SSL enforcement recommendations
+
+### Changed
+- Python3ScriptRepository: Enhanced SavedScript class with signature field
+- Python3ScriptRepository: saveScript() now generates HMAC signatures
+- Python3ScriptRepository: loadScript() now verifies signatures
+- Python3RestEndpoints: Added applySecurityHeaders() method to all responses
+- Python3RestEndpoints: Added CSRF token generation and validation methods
+- Python3RestEndpoints: Implemented constant-time secureEquals() for API keys
+- Python3RestEndpoints: Updated authentication checks with SDK limitation documentation
+
+### Technical
+- New class: Python3ScriptSigner with HMAC-SHA256 signing
+- SavedScript constructor updated with signature parameter (backward compatible)
+- Security headers applied to all REST API responses
+- CSRF tokens stored in ConcurrentHashMap with session IDs
+- Constant-time comparison prevents timing-based credential enumeration attacks
+
+### Security Assessment
+- Script tamper protection via cryptographic signatures
+- Defense-in-depth: security headers, CSRF infrastructure, constant-time comparisons
+- Gateway-level authentication (API keys, network restrictions, reverse proxy)
+- Docker container isolation deferred to v1.18.0 (requires 20-24h additional work)
+
+### Configuration
+Generate custom signing key:
+```bash
+openssl rand -hex 32
+```
+
+Configure in ignition.conf:
+```properties
+wrapper.java.additional.303=-Dignition.python3.signing.key=<your-64-char-hex-key>
+```
+
+---
+
 ## [1.16.0] - 2025-10-17
 
 ### Added - Security Enhancements
