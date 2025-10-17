@@ -24,6 +24,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### 2. Version Increment
 Version file: `python3-integration/version.properties`
 
+**Current Version: v2.0.15** (December 2024)
+
 **Versioning Rules:**
 - **MAJOR** (x.0.0): Breaking changes, major new features, architectural changes
 - **MINOR** (1.x.0): New features, significant fixes, scope changes, API additions
@@ -33,6 +35,34 @@ Version file: `python3-integration/version.properties`
 - Added new feature (folders, find/replace) → **MINOR** (2.0.9 → 2.1.0)
 - Fixed UI bugs (scrollbars, themes) → **PATCH** (2.0.8 → 2.0.9)
 - Rewrote entire architecture (v1 → v2 refactor) → **MAJOR** (1.17.2 → 2.0.0)
+
+**Version Locations to Update:**
+When incrementing version, update ALL of these files:
+- [ ] `python3-integration/version.properties` - Primary version source (REQUIRED)
+- [ ] `python3-integration/designer/src/main/java/.../DesignerHook.java` - Fallback version (line 183)
+- [ ] `CLAUDE.md` - Current version references (lines 104, 113, 543)
+- [ ] `python3-integration/README.md` - Module documentation version
+- [ ] CHANGELOG entry (if applicable)
+
+**Release Checklist:**
+- [ ] All tests passing (`./gradlew clean build`)
+- [ ] Zone.Identifier files deleted
+- [ ] Code cleanup complete (no commented code, proper formatting)
+- [ ] Documentation updated (README, version references)
+- [ ] Version bumped in all locations above
+- [ ] Git commit with proper format
+- [ ] Git push to GitHub
+- [ ] Build artifacts verified (*.modl file in build/libs/)
+
+**Version History:**
+- v2.0.15 (Dec 2024) - Complete theme system fixes, Python version detection rebuild
+- v2.0.14 (Dec 2024) - Theme refinements, file chooser consistency, enhanced logging
+- v2.0.13 (Dec 2024) - Code consolidation (removed v2, renamed v1_9 to canonical)
+- v2.0.12 (Dec 2024) - Theme-aware dialogs (DarkDialog)
+- v2.0.0-2.0.11 - Various improvements and refactoring
+- v1.17.2 (2024) - Last v1.x release before v2.0.0 refactor
+
+See git commit history for complete changelog.
 
 ### 3. Build Module
 ```bash
@@ -101,19 +131,19 @@ This is a **Python 3 Integration module** for Ignition 8.3 SDK. The repository c
 
 ## Repository Structure
 
-**Current Version: v2.0.9** (Oct 2025)
+**Current Version: v2.0.15** (December 2024)
 
 ```
 ignition-module-python3/
-├── README.md                        # Repository landing page (updated Oct 2025)
+├── README.md                        # Repository landing page
 ├── CLAUDE.md                        # This file - AI guidance
 ├── UPGRADE_GUIDE.md                 # Upgrade instructions
 ├── .gitignore                       # Git ignore rules
 │
-├── python3-integration/             # ⭐ WORKING MODULE (v2.0.9)
+├── python3-integration/             # ⭐ WORKING MODULE (v2.0.15)
 │   ├── build.gradle.kts            # Root build configuration
 │   ├── settings.gradle.kts         # Gradle settings
-│   ├── version.properties          # Current version: 2.0.9
+│   ├── version.properties          # Current version: 2.0.15
 │   ├── README.md                   # Module documentation (comprehensive)
 │   │
 │   ├── common/                     # Common scope (shared code)
@@ -185,8 +215,8 @@ ignition-module-python3/
 └── config/                          # Test configuration
 ```
 
-**Note:** Repository reorganized Oct 2025 to separate:
-1. Working module (python3-integration/ - v2.0.9)
+**Note:** Repository reorganized Oct 2024 to separate:
+1. Working module (python3-integration/ - v2.0.15)
 2. SDK learning resources (docs/, examples/)
 3. Historical planning docs (archive/)
 
@@ -540,7 +570,7 @@ InputStream is = getClass().getResourceAsStream("/python_bridge.py");
 
 ## Repository Resources
 
-- **Active module code**: `python3-integration/` (v2.0.9)
+- **Active module code**: `python3-integration/` (v2.0.15)
 - **V2 Architecture Guide**: `python3-integration/docs/V2_ARCHITECTURE_GUIDE.md` ⭐
 - **V2 Status Summary**: `python3-integration/docs/V2_STATUS_SUMMARY.md`
 - **V2 Feature Comparison**: `python3-integration/docs/V2_FEATURE_COMPARISON_AND_ROADMAP.md`
@@ -551,11 +581,11 @@ InputStream is = getClass().getResourceAsStream("/python_bridge.py");
 
 ## Python 3 IDE (v2.0.0+ - IMPLEMENTED)
 
-**STATUS**: ✅ Fully implemented and refactored in v2.0.0 (Oct 2025)
+**STATUS**: ✅ Fully implemented and refactored in v2.0.0 (Oct 2024)
 
 The Python 3 IDE is a **Designer-scoped feature** that provides an IDE-type interface for Python 3 development:
 
-### Implemented Features (v2.0.9)
+### Implemented Features (v2.0.15)
 
 **Core IDE:**
 - ✅ Code editor with Python syntax highlighting (RSyntaxTextArea)
