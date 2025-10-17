@@ -814,6 +814,8 @@ public class Python3IDE extends JPanel {
 
     /**
      * Refreshes diagnostics.
+     *
+     * v2.0.18: Also refresh diagnostics panel (manual refresh after auto-polling removal)
      */
     private void refreshDiagnostics() {
         if (restClient == null) {
@@ -838,6 +840,11 @@ public class Python3IDE extends JPanel {
         };
 
         worker.execute();
+
+        // v2.0.18: Manually refresh diagnostics panel (no auto-refresh timer anymore)
+        if (diagnosticsPanel != null) {
+            diagnosticsPanel.refreshMetrics();
+        }
     }
 
     /**

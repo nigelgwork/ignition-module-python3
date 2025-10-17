@@ -98,9 +98,10 @@ public class DiagnosticsPanel extends JPanel {
         // Initially show "Not connected"
         clear();
 
-        // Auto-refresh timer (5 seconds)
-        refreshTimer = new Timer(5000, e -> refreshMetrics());
-        refreshTimer.setInitialDelay(1000);  // First refresh after 1 second
+        // v2.0.18: Removed auto-refresh timer to stop log spam
+        // Diagnostics now only refresh manually (on demand or after execution)
+        // refreshTimer = new Timer(5000, e -> refreshMetrics());
+        // refreshTimer.setInitialDelay(1000);
     }
 
     /**
@@ -112,20 +113,20 @@ public class DiagnosticsPanel extends JPanel {
         this.restClient = restClient;
 
         if (restClient != null) {
-            // Start auto-refresh
-            refreshTimer.start();
+            // v2.0.18: Only refresh once on connection, no auto-refresh timer
             refreshMetrics();
         } else {
-            // Stop auto-refresh and clear display
-            refreshTimer.stop();
+            // Clear display when disconnected
             clear();
         }
     }
 
     /**
      * Refreshes metrics from the Gateway.
+     *
+     * v2.0.18: Made public for manual refresh (e.g., after code execution)
      */
-    private void refreshMetrics() {
+    public void refreshMetrics() {
         if (restClient == null) {
             clear();
             return;
@@ -368,12 +369,12 @@ public class DiagnosticsPanel extends JPanel {
     }
 
     /**
-     * Stops the auto-refresh timer.
+     * Cleanup method.
      * Call this when the panel is no longer visible.
+     *
+     * v2.0.18: No timer to stop anymore (auto-refresh removed)
      */
     public void dispose() {
-        if (refreshTimer != null) {
-            refreshTimer.stop();
-        }
+        // No cleanup needed - auto-refresh timer removed in v2.0.18
     }
 }
