@@ -1,6 +1,6 @@
 # Python 3 Integration for Ignition
 
-**Current Version: v2.0.9** | [Module README](python3-integration/README.md) | [Architecture Docs](python3-integration/docs/)
+**Current Version: v2.0.22** | [Module README](python3-integration/README.md) | [Architecture Docs](python3-integration/docs/)
 
 ---
 
@@ -8,7 +8,7 @@
 
 This repository contains three main resources for Ignition module development:
 
-### 1. **Python 3 Integration Module** (v2.0.9) ⭐
+### 1. **Python 3 Integration Module** (v2.0.22) ⭐
 
 A production-ready Ignition module with Designer IDE for Python 3 development.
 
@@ -73,15 +73,20 @@ Comprehensive guides for developing Ignition 8.3+ modules.
 
 ---
 
-## 🚀 Latest Release: v2.0.9 (UX Fixes)
+## 🚀 Latest Release: v2.0.22 (Theme System Completion)
 
-**New in v2.0.9:**
-- ✅ **Fixed Scrollbars** - Only appear when needed (AS_NEEDED policy)
-- ✅ **Fixed Theme Selector** - No more text cutoff (150px width)
-- ✅ **Larger Description Panel** - 50% increase for better usability
-- ✅ **Python Version Display** - Shows actual version instead of "Unknown"
-- ✅ **Dark Theme Dividers** - All panel dividers match dark theme
-- ✅ **Dark Theme Dialogs** - All popups follow consistent dark theme
+**New in v2.0.22:**
+- ✅ **Split Pane Divider Theming** - All dividers now respect current theme (dark/light)
+- ✅ **Fixed Light Theme** - Split pane dividers properly display in light mode
+- ✅ **Consistent Theme Colors** - Dividers use ModernTheme constants
+- ✅ **Dynamic Theme Switching** - Dividers update when switching themes
+
+**Recent Improvements (v2.0.17-v2.0.21):**
+- ✅ **Python Version Detection** - Real-time version display from Gateway
+- ✅ **Diagnostics Panel** - Manual refresh, no log spam
+- ✅ **Context Menu Fix** - Proper text visibility in dark theme
+- ✅ **Execution Logging** - Comprehensive INFO-level logs
+- ✅ **Security Mode Fix** - Changed default from RESTRICTED to ADMIN for usability
 
 [View Full Changelog](python3-integration/README.md#changelog)
 
@@ -132,7 +137,7 @@ Comprehensive guides for developing Ignition 8.3+ modules.
 **Note:** This repository has TWO separate documentation directories with different purposes:
 
 #### [`/python3-integration/docs/`](python3-integration/docs/) - **Module-Specific** ⭐
-Documentation for THIS specific module (Python 3 Integration v2.0.9):
+Documentation for THIS specific module (Python 3 Integration v2.0.22):
 - V2 Architecture Guide
 - Version Update Workflow
 - Testing Guide

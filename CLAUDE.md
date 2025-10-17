@@ -24,7 +24,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### 2. Version Increment
 Version file: `python3-integration/version.properties`
 
-**Current Version: v2.0.15** (December 2024)
+**Current Version: v2.0.22** (December 2024)
 
 **Versioning Rules:**
 - **MAJOR** (x.0.0): Breaking changes, major new features, architectural changes
@@ -40,9 +40,10 @@ Version file: `python3-integration/version.properties`
 When incrementing version, update ALL of these files:
 - [ ] `python3-integration/version.properties` - Primary version source (REQUIRED)
 - [ ] `python3-integration/designer/src/main/java/.../DesignerHook.java` - Fallback version (line 183)
-- [ ] `CLAUDE.md` - Current version references (lines 104, 113, 543)
-- [ ] `python3-integration/README.md` - Module documentation version
-- [ ] CHANGELOG entry (if applicable)
+- [ ] `README.md` (repository root) - Main README version references (lines 3, 11, 76, 135)
+- [ ] `python3-integration/README.md` - Module README version references (lines 3, 136, 471, 514) + Changelog entry
+- [ ] `CLAUDE.md` - Current version references (lines 27, 112, 121, 551, 566)
+- [ ] Update Changelog sections in both README files
 
 **Release Checklist:**
 - [ ] All tests passing (`./gradlew clean build`)
@@ -92,18 +93,22 @@ git push
 1. **Clean**: Delete Zone.Identifier files
 2. **Tidy**: Code cleanup and documentation updates
 3. **Version**: Increment version.properties
-4. **Build**: Run ./gradlew clean build
-5. **Commit**: Add all changes
-6. **Push**: Push to GitHub
+4. **Update READMEs**: Update BOTH README.md files with new version and changelog
+   - `/README.md` (repository root) - Update version references and latest release section
+   - `/python3-integration/README.md` (module) - Update version references and add changelog entry
+5. **Build**: Run ./gradlew clean build
+6. **Commit**: Add all changes (code + READMEs + version.properties)
+7. **Push**: Push to GitHub
 
-**Remember:** NEVER build without incrementing version, tidying code, and pushing to git!
+**Remember:** NEVER build without incrementing version, updating BOTH READMEs, and pushing to git!
 
 ## ⚠️ CRITICAL: Pre-Push Requirements (User Request)
 
 **BEFORE EVERY PUSH TO GITHUB, YOU MUST:**
 
-1. **Update ALL Documentation**:
-   - README.md - ensure version numbers match current version
+1. **Update ALL Documentation** (ESPECIALLY README FILES):
+   - `/README.md` (repository root) - Update version (lines 3, 11, 76, 135) and latest release section
+   - `/python3-integration/README.md` (module) - Update version (lines 3, 136, 471, 514) and add changelog entry
    - ARCHITECTURE.md - update if architecture changed
    - CHANGELOG.md - add release notes if exists
    - Any other .md files that reference version numbers or features
@@ -131,19 +136,19 @@ This is a **Python 3 Integration module** for Ignition 8.3 SDK. The repository c
 
 ## Repository Structure
 
-**Current Version: v2.0.15** (December 2024)
+**Current Version: v2.0.22** (December 2024)
 
 ```
 ignition-module-python3/
-├── README.md                        # Repository landing page
+├── README.md                        # Repository landing page (update with each release)
 ├── CLAUDE.md                        # This file - AI guidance
 ├── UPGRADE_GUIDE.md                 # Upgrade instructions
 ├── .gitignore                       # Git ignore rules
 │
-├── python3-integration/             # ⭐ WORKING MODULE (v2.0.15)
+├── python3-integration/             # ⭐ WORKING MODULE (v2.0.22)
 │   ├── build.gradle.kts            # Root build configuration
 │   ├── settings.gradle.kts         # Gradle settings
-│   ├── version.properties          # Current version: 2.0.15
+│   ├── version.properties          # Current version: 2.0.22
 │   ├── README.md                   # Module documentation (comprehensive)
 │   │
 │   ├── common/                     # Common scope (shared code)
@@ -216,7 +221,7 @@ ignition-module-python3/
 ```
 
 **Note:** Repository reorganized Oct 2024 to separate:
-1. Working module (python3-integration/ - v2.0.15)
+1. Working module (python3-integration/ - v2.0.22)
 2. SDK learning resources (docs/, examples/)
 3. Historical planning docs (archive/)
 
@@ -570,7 +575,7 @@ InputStream is = getClass().getResourceAsStream("/python_bridge.py");
 
 ## Repository Resources
 
-- **Active module code**: `python3-integration/` (v2.0.15)
+- **Active module code**: `python3-integration/` (v2.0.22)
 - **V2 Architecture Guide**: `python3-integration/docs/V2_ARCHITECTURE_GUIDE.md` ⭐
 - **V2 Status Summary**: `python3-integration/docs/V2_STATUS_SUMMARY.md`
 - **V2 Feature Comparison**: `python3-integration/docs/V2_FEATURE_COMPARISON_AND_ROADMAP.md`
@@ -585,7 +590,7 @@ InputStream is = getClass().getResourceAsStream("/python_bridge.py");
 
 The Python 3 IDE is a **Designer-scoped feature** that provides an IDE-type interface for Python 3 development:
 
-### Implemented Features (v2.0.15)
+### Implemented Features (v2.0.22)
 
 **Core IDE:**
 - ✅ Code editor with Python syntax highlighting (RSyntaxTextArea)

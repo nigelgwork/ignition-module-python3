@@ -1,6 +1,6 @@
 # Python 3 Integration Module for Ignition
 
-**Current Version: v2.0.9** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
+**Current Version: v2.0.22** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
 
 This module enables Python 3 scripting functions in Ignition 8.3+, allowing you to use modern Python 3 features and libraries alongside Ignition's built-in Jython 2.7 environment.
 
@@ -133,7 +133,7 @@ cd python3-integration
 
 ## Usage
 
-### Designer IDE (v2.0.9 - Current)
+### Designer IDE (v2.0.22 - Current)
 
 The Designer IDE provides an interactive development environment for testing Python 3 code directly in the Ignition Designer.
 
@@ -468,7 +468,7 @@ python3-integration/
 │   └── V2_STATUS_SUMMARY.md             # Status summary
 ├── build.gradle.kts        # Root build file
 ├── settings.gradle.kts     # Gradle settings
-├── version.properties      # Module version (v2.0.9)
+├── version.properties      # Module version (v2.0.22)
 └── README.md               # This file
 ```
 
@@ -511,7 +511,7 @@ Apache 2.0
 
 ## Roadmap
 
-**Current Release: v2.0.9** - UX Fixes complete
+**Current Release: v2.0.22** - Theme System Completion
 
 **Completed:**
 - [x] Designer integration (Python 3 script editor) - **v1.7.0**
@@ -520,6 +520,8 @@ Apache 2.0
 - [x] Modular architecture refactor - **v2.0.0**
 - [x] Enhanced diagnostics - **v2.0.8**
 - [x] UX fixes (scrollbars, dividers, dialogs) - **v2.0.9**
+- [x] Python version detection - **v2.0.17**
+- [x] Theme-aware split pane dividers - **v2.0.22**
 
 **Planned (v2.0.10+):**
 - [ ] Clear Output button
@@ -549,6 +551,41 @@ Built using the Ignition SDK:
 - https://www.sdk-docs.inductiveautomation.com/
 
 ## Changelog
+
+### 2.0.22 (Theme System Completion)
+- **FIXED**: JSplitPane dividers now respect current theme on creation (dark/light)
+- **FIXED**: mainSplit divider (sidebar | editor) uses theme-aware colors
+- **FIXED**: sidebarSplit divider (tree | metadata) uses theme-aware colors
+- **FIXED**: bottomSplit divider (execution results | diagnostics) uses theme-aware colors
+- **IMPROVED**: All dividers use ModernTheme.BACKGROUND_DARKER (dark) or Color(200, 200, 200) (light)
+- **IMPROVED**: Split panes made instance variables for proper theme updates
+- **IMPROVED**: Consistent theme experience across all UI components
+
+### 2.0.21 (Security Mode Fix - CRITICAL)
+- **FIXED**: Changed default security mode from RESTRICTED to ADMIN for execution
+- **FIXED**: RESTRICTED mode was blocking exec(), eval(), compile(), import sys
+- **IMPROVED**: Designer IDE now works without admin API key (development tool)
+
+### 2.0.20 (Execution Logging)
+- **NEW**: Comprehensive INFO-level logging throughout execution flow
+- **NEW**: Python3ExecutionWorker logs execution start, code, completion
+- **NEW**: Python3RestClient logs HTTP requests/responses
+- **IMPROVED**: Execution debugging now visible in INFO logs
+
+### 2.0.19 (Context Menu Text Fix)
+- **FIXED**: Right-click context menu text now visible in dark theme
+- **FIXED**: stylePopupMenu() now called AFTER menu items are added
+- **IMPROVED**: Proper theme styling for Load, Export, Rename, Delete menu items
+
+### 2.0.18 (Diagnostics Spam Fix)
+- **FIXED**: Removed auto-refresh timer from DiagnosticsPanel (was polling every 5 seconds)
+- **IMPROVED**: Diagnostics now refresh manually (on connection, after execution)
+- **IMPROVED**: No more log spam from Python version polling
+
+### 2.0.17 (Python Version Detection)
+- **NEW**: Real-time Python version detection from Gateway
+- **NEW**: Version display in diagnostics panel
+- **FIXED**: Python version REST endpoint security mode (ADMIN for development)
 
 ### 2.0.9 (UX Fixes)
 - **FIXED**: Scrollbars now only appear when needed (AS_NEEDED policy applied to all scroll panes)
