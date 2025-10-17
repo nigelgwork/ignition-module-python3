@@ -82,6 +82,8 @@ This document provides:
 |---------|---------|---------|----------|----------------|--------|
 | **UI Features** |
 | Clear Output Button | ✅ | ❌ | HIGH | v2.0.9 | 1 hour |
+| Remove Blue Border from Clear Button | ❌ | ❌ | HIGH | v2.0.23 | 0.5 hour |
+| Fix Panel Dividers Light Color (Dark Theme) | ❌ | ❌ | HIGH | v2.0.23 | 1 hour |
 | Save As Button (separate) | ✅ | ❌ | MEDIUM | v2.0.10 | 2 hours |
 | New Script Button | ✅ | ❌ | HIGH | v2.0.9 | 2 hours |
 | Current Script Label | ✅ | ❌ | MEDIUM | v2.0.10 | 1 hour |

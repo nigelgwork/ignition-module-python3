@@ -1,59 +1,54 @@
-# Python 3 Integration Module - Documentation Index
+# Python 3 Integration Module - Documentation
 
-> **⭐ These are module-specific guides for the Python 3 Integration module.**
->
-> **Looking for general SDK learning resources?**
-> See **[`/docs/`](../../docs/)** for Ignition SDK development guides (applicable to any module).
-
----
-
-**Current Version**: v2.0.9
+**Current Version**: v2.0.22
 **Last Updated**: 2025-10-17
 
-Quick reference to all Python 3 Integration module documentation.
+Documentation for the Python 3 Integration module for Ignition 8.3+.
 
 ---
 
-## 📋 Essential Documents
+## 📋 Essential Documentation
 
-### V2 Architecture (Current)
-- **[V2_ARCHITECTURE_GUIDE.md](V2_ARCHITECTURE_GUIDE.md)** - v2.0.0+ modular architecture
-- **[V2_STATUS_SUMMARY.md](V2_STATUS_SUMMARY.md)** - Current status and completion percentages
-- **[V2_FEATURE_COMPARISON_AND_ROADMAP.md](V2_FEATURE_COMPARISON_AND_ROADMAP.md)** - v1 vs v2 comparison, roadmap
-- **[V2_MIGRATION_GUIDE.md](V2_MIGRATION_GUIDE.md)** - Migrating from v1.x to v2.0+
+### V2 Architecture (Current - v2.0.0+)
+- **[V2_ARCHITECTURE_GUIDE.md](V2_ARCHITECTURE_GUIDE.md)** - Complete v2.0.0+ modular architecture overview
+- **[V2_STATUS_SUMMARY.md](V2_STATUS_SUMMARY.md)** - Current implementation status and completion metrics
+- **[V2_FEATURE_COMPARISON_AND_ROADMAP.md](V2_FEATURE_COMPARISON_AND_ROADMAP.md)** - v1 vs v2 comparison with detailed roadmap
+- **[V2_MIGRATION_GUIDE.md](V2_MIGRATION_GUIDE.md)** - Migrating from v1.x to v2.0+ (for developers)
 
 ### Development Workflow
 - **[VERSION_UPDATE_WORKFLOW.md](VERSION_UPDATE_WORKFLOW.md)** - **MANDATORY** version release checklist
-- **[TESTING_GUIDE.md](TESTING_GUIDE.md)** - How to test the module
-- **[DEVELOPER_EXTENSION_GUIDE.md](DEVELOPER_EXTENSION_GUIDE.md)** - Extending the module
+- **[TESTING_GUIDE.md](TESTING_GUIDE.md)** - How to test the module (manual and automated)
 
 ---
 
-## 🏗️ Architecture & Design
+## 🏗️ v2.0 Architecture Overview
 
-### Core Architecture
-- **[ARCHITECTURE.md](ARCHITECTURE.md)** - Gateway/Python bridge architecture
-- **[EMBEDDING-PYTHON.md](EMBEDDING-PYTHON.md)** - Self-contained Python distribution
-- **[EXAMPLES.md](EXAMPLES.md)** - Code examples and usage patterns
+**Refactored in v2.0.0** from 2,676-line monolith to modular design:
+
+### Module Structure
+```
+designer/src/main/java/.../designer/
+├── Python3IDE.java             # Main IDE class (490 lines, was 2,676)
+├── managers/                   # Business logic layer
+│   ├── GatewayConnectionManager.java
+│   ├── ScriptManager.java
+│   └── ThemeManager.java
+└── ui/                         # Presentation layer
+    ├── EditorPanel.java
+    ├── ScriptTreePanel.java
+    ├── MetadataPanel.java
+    └── DiagnosticsPanel.java
+```
+
+**Benefits:**
+- 82% reduction in main class size (2,676 → 490 lines)
+- Clear separation of concerns (Managers + UI Panels + Orchestration)
+- Each file 95-490 lines (highly maintainable)
+- Easy to test, extend, and debug
 
 ---
 
-## 🔧 Build & Deployment
-
-### Building
-- **[IGNITION_MODULE_BUILD_GUIDE.md](IGNITION_MODULE_BUILD_GUIDE.md)** - Complete build instructions
-- **[MODULE_BUILD_TROUBLESHOOTING.md](MODULE_BUILD_TROUBLESHOOTING.md)** - Common issues and fixes
-- **[QUICK_START_TEMPLATE.md](QUICK_START_TEMPLATE.md)** - Module development template
-
-### Deployment & Signing
-- **[SIGNING.md](SIGNING.md)** - Module signing with certificates
-- **[CERTIFICATE_TRUST_INSTRUCTIONS.md](CERTIFICATE_TRUST_INSTRUCTIONS.md)** - Trust self-signed certificates
-- **[SELF-CONTAINED-SETUP.md](SELF-CONTAINED-SETUP.md)** - Self-contained Python setup
-- **[CI_Setup_Prompts.md](CI_Setup_Prompts.md)** - GitHub Actions CI/CD setup
-
----
-
-## 📊 Current Module Status (v2.0.9)
+## 📊 Current Module Status (v2.0.22)
 
 ### ✅ Implemented Features
 - Modern Designer IDE with VS Code-inspired dark theme
@@ -63,23 +58,21 @@ Quick reference to all Python 3 Integration module documentation.
 - Enhanced diagnostics panel with real-time metrics
 - Theme support (Dark, Light, VS Code Dark+)
 - REST API for remote execution
-- Modular architecture (v2.0.0 refactor)
+- Theme-aware split pane dividers (v2.0.22)
 
-### 🎯 Next Priorities (Sprint Plan)
-- Essential buttons (New, Delete, Rename - shortcut buttons)
-- Save improvements (Ctrl+S, auto-save indicator)
-- Keyboard shortcuts (Delete, Rename, F2)
-- Font size controls
+### 🎯 Next Priorities
+See [V2_FEATURE_COMPARISON_AND_ROADMAP.md](V2_FEATURE_COMPARISON_AND_ROADMAP.md) for the complete roadmap.
+
+**Immediate Next Steps:**
+- Clear Output button
+- New Script button
+- Keyboard shortcuts (Ctrl+Enter, Ctrl+S)
 - Context menu (right-click operations)
-- Move scripts between folders (drag-and-drop)
-- Real-time syntax checking
-- Basic auto-completion
 
 ---
 
-## 📚 Key Technical Details
+## 🔗 REST API Endpoints (v2.0.22)
 
-### REST API Endpoints (v2.0.9)
 ```
 POST /data/python3integration/api/v1/exec              - Execute code
 POST /data/python3integration/api/v1/eval              - Evaluate expression
@@ -94,26 +87,12 @@ GET  /data/python3integration/api/v1/scripts/{name}    - Load script
 DELETE /data/python3integration/api/v1/scripts/{name}  - Delete script
 ```
 
-### Module Structure (v2.0.0+)
-```
-designer/src/main/java/.../designer/
-├── Python3IDE_v2.java          # Main IDE class (490 lines, was 2,676)
-├── managers/                   # Business logic layer
-│   ├── GatewayConnectionManager.java
-│   ├── ScriptManager.java
-│   └── ThemeManager.java
-└── ui/                         # Presentation layer
-    ├── EditorPanel.java
-    ├── ScriptTreePanel.java
-    ├── MetadataPanel.java
-    └── DiagnosticsPanel.java
-```
-
 ---
 
-## 🔗 External Resources
+## 📚 External Resources
 
 - **Ignition SDK Documentation**: https://www.sdk-docs.inductiveautomation.com/
+- **SDK Examples**: https://github.com/inductiveautomation/ignition-sdk-examples
 - **RSyntaxTextArea API**: https://bobbylight.github.io/RSyntaxTextArea/
 - **Ignition Forum**: https://forum.inductiveautomation.com/
 
@@ -121,19 +100,19 @@ designer/src/main/java/.../designer/
 
 ## 📞 Quick Reference
 
-**For Users**:
+**For Users:**
 - Open IDE: Tools → Python 3 IDE
-- Execute code: Ctrl+Enter
-- Save script: Ctrl+S
-- Find text: Ctrl+F
+- Execute code: Ctrl+Enter (coming soon)
+- Save script: Save button (Ctrl+S coming soon)
+- Find text: Find toolbar
 
-**For Developers**:
-- Build: `./gradlew clean build --no-daemon`
-- Version: `python3-integration/version.properties`
-- Main IDE: `designer/src/main/java/.../Python3IDE_v2.java`
-- Gateway API: `gateway/src/main/java/.../Python3RestEndpoints.java`
-- Version workflow: `docs/VERSION_UPDATE_WORKFLOW.md`
+**For Developers:**
+- **Build**: `./gradlew clean build --no-daemon`
+- **Version**: `python3-integration/version.properties`
+- **Main IDE**: `designer/src/main/java/.../Python3IDE.java`
+- **Gateway API**: `gateway/src/main/java/.../Python3RestEndpoints.java`
+- **Version workflow**: [VERSION_UPDATE_WORKFLOW.md](VERSION_UPDATE_WORKFLOW.md)
 
 ---
 
-**Last Updated**: 2025-10-17 | **Version**: v2.0.9
+**Last Updated**: 2025-10-17 | **Version**: v2.0.22
