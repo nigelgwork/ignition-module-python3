@@ -1,19 +1,25 @@
-# Python3IDE v1.17.2 → v2.0.8 Feature Comparison & Roadmap
+# Python3IDE v1.17.2 → v2.0.23 Feature Comparison & Roadmap
 
-**Generated:** 2025-10-17
+**Generated:** 2025-10-18 (Updated)
 **Author:** Claude Code
-**Current Version:** v2.0.8
+**Current Version:** v2.0.23
 
 ---
 
 ## Executive Summary
 
 **v1.17.2** (before refactor): Full-featured Python IDE in single 2,676-line file
-**v2.0.8** (current): Refactored architecture with core features implemented
+**v2.0.23** (current): Refactored architecture with enhanced features and diagnostics
+
+**Progress Since Original Roadmap (v2.0.8 → v2.0.23):**
+- 15 versions released with continuous improvements
+- Enhanced diagnostics, theme fixes, and stability improvements
+- Repository cleanup and documentation consolidation
+- Security enhancements and performance optimizations
 
 This document provides:
-1. Complete feature comparison between v1.17.2 and v2.0.8
-2. Detailed roadmap for achieving feature parity
+1. Complete feature comparison between v1.17.2 and v2.0.23
+2. Detailed roadmap for achieving feature parity + new features
 3. Work plan with time estimates
 4. Priority matrix for implementation
 
@@ -21,7 +27,7 @@ This document provides:
 
 ## Feature Comparison Matrix
 
-### ✅ **Implemented in v2.0.8**
+### ✅ **Implemented in v2.0.23**
 
 | Feature | v1.17.2 | v2.0.8 | Version Added | Notes |
 |---------|---------|---------|---------------|-------|
@@ -76,16 +82,15 @@ This document provides:
 
 ---
 
-### ⏳ **Missing from v2.0.8** (TODO)
+### ⏳ **Missing from v2.0.23** (TODO)
 
 | Feature | v1.17.2 | v2.0.8 | Priority | Target Version | Effort |
 |---------|---------|---------|----------|----------------|--------|
 | **UI Features** |
-| Clear Output Button | ✅ | ❌ | HIGH | v2.0.9 | 1 hour |
-| Remove Blue Border from Clear Button | ❌ | ❌ | HIGH | v2.0.23 | 0.5 hour |
-| Fix Panel Dividers Light Color (Dark Theme) | ❌ | ❌ | HIGH | v2.0.23 | 1 hour |
-| Save As Button (separate) | ✅ | ❌ | MEDIUM | v2.0.10 | 2 hours |
-| New Script Button | ✅ | ❌ | HIGH | v2.0.9 | 2 hours |
+| Clear Output Button | ✅ | ❌ | HIGH | v2.0.24 | 1 hour |
+| New Script Button | ✅ | ❌ | HIGH | v2.0.24 | 2 hours |
+| Save As Button (separate) | ✅ | ❌ | MEDIUM | v2.0.27 | 2 hours |
+| **Script Autocomplete (getAvailableScripts)** | ❌ | ❌ | **MEDIUM** | **v2.0.24** | **2-4 hours** |
 | Current Script Label | ✅ | ❌ | MEDIUM | v2.0.10 | 1 hour |
 | Dirty State Indicator (*) | ✅ | ❌ | MEDIUM | v2.0.10 | 3 hours |
 | **Keyboard Shortcuts** |
@@ -130,8 +135,8 @@ This document provides:
 
 Focus on high-impact, low-effort features to improve daily usability.
 
-#### v2.0.9: Essential UI Controls (1 day)
-**Effort: 3 hours**
+#### v2.0.24: Essential UI Controls + Script Autocomplete (1 day)
+**Effort: 5-7 hours**
 
 - ✅ Clear Output Button
   - Add to toolbar next to Run button
@@ -143,13 +148,110 @@ Focus on high-impact, low-effort features to improve daily usability.
   - Auto-opens in editor
   - Sets folder path based on tree selection
 
+- ✅ **Script Autocomplete - getAvailableScripts()** ⭐ NEW FEATURE
+  - Add `getAvailableScripts()` method to Python3ScriptModule.java
+  - Returns List<Map<String, Object>> with script metadata
+  - Includes: name, description, path (folder/name), author, version, lastModified
+  - Add to Python3RpcFunctions.java interface
+  - Add documentation to Python3ScriptModule.properties
+  - Add REST API endpoint: `GET /api/v1/scripts/available`
+  - Update Python 3 IDE autocomplete integration
+
+**User Experience:**
+```python
+# Get available scripts programmatically:
+scripts = system.python3.getAvailableScripts()
+# Returns: [{"name": "CalculateTax", "description": "...", "path": "Finance/CalculateTax"}, ...]
+
+# Then call with autocomplete-friendly path:
+result = system.python3.callScript("Finance/CalculateTax", args=[order_total])
+```
+
 **Benefits:**
 - Cleaner workflow (don't need to execute blank code to clear)
 - Faster script creation (no need to Save with empty name first)
+- **Script discovery API enables custom autocomplete UIs**
+- **Foundation for future dynamic script registration**
 
 ---
 
-#### v2.0.10: Save Improvements (1 day)
+#### v2.0.25: Keyboard Shortcuts (1 day)
+**Effort: 9 hours**
+
+Essential keyboard shortcuts for power users:
+
+- ✅ Ctrl+Enter: Execute code
+- ✅ Ctrl+S: Save current script
+- ✅ Ctrl+Shift+S: Save As
+- ✅ Ctrl+N: New Script
+- ✅ Ctrl+F: Focus find field (already in toolbar)
+- ✅ Ctrl+H: Focus replace field (already in toolbar)
+
+**Implementation:**
+```java
+private void setupKeyboardShortcuts() {
+    InputMap inputMap = editorPanel.getCodeEditor().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
+    ActionMap actionMap = editorPanel.getCodeEditor().getActionMap();
+
+    // Ctrl+Enter: Execute
+    inputMap.put(KeyStroke.getKeyStroke("control ENTER"), "execute");
+    actionMap.put("execute", new AbstractAction() {
+        public void actionPerformed(ActionEvent e) { executeCode(); }
+    });
+
+    // ... rest of shortcuts
+}
+```
+
+**Benefits:**
+- Faster workflow (no mouse needed)
+- Standard IDE shortcuts (familiar to developers)
+- Execute without clicking Run button
+
+---
+
+#### v2.0.26: Context Menu (1 day)
+**Effort: 11 hours**
+
+Right-click context menu on script tree:
+
+**For Scripts:**
+- Load
+- Export...
+- Rename...
+- Delete
+
+**For Folders:**
+- New Script Here
+- New Subfolder
+- Rename... (non-root only)
+
+**Implementation:**
+```java
+private void setupContextMenu() {
+    treePanel.getTree().addMouseListener(new MouseAdapter() {
+        public void mousePressed(MouseEvent e) {
+            if (e.isPopupTrigger()) {
+                showContextMenu(e);
+            }
+        }
+        public void mouseReleased(MouseEvent e) {
+            if (e.isPopupTrigger()) {
+                showContextMenu(e);
+            }
+        }
+    });
+}
+```
+
+**Benefits:**
+- Faster access to common operations
+- Standard tree UI pattern
+- Discoverability (users find features via right-click)
+
+---
+
+#### v2.0.27: Save Improvements (1 day)
 **Effort: 9 hours**
 
 - ✅ Save As Button (separate from Save)
