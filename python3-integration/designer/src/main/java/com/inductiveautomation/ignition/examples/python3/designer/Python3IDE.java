@@ -95,6 +95,11 @@ public class Python3IDE extends JPanel {
     // Output tabs (v2.0.15 - made instance var for theme updates)
     private JTabbedPane outputTabs;
 
+    // Split panes (v2.0.22 - made instance vars for theme updates)
+    private JSplitPane mainSplit;
+    private JSplitPane sidebarSplit;
+    private JSplitPane bottomSplit;
+
     // Theme and Settings
     private String currentTheme;
     private int fontSize;
@@ -297,18 +302,19 @@ public class Python3IDE extends JPanel {
         add(gatewayPanel, BorderLayout.NORTH);
 
         // Create main split pane (sidebar | editor)
-        JSplitPane mainSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
+        mainSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
         mainSplit.setDividerLocation(250);
         mainSplit.setBackground(ModernTheme.BACKGROUND_DARK);
         mainSplit.setBorder(null);
         mainSplit.setDividerSize(4);  // Reduced from 8 to 4 for cleaner look
 
-        // Fix divider color for dark theme using custom UI (Issue 1 - v1.15.1)
+        // Fix divider color to respect current theme (v2.0.22 - fixed hardcoded dark color)
+        final boolean isDark = useDarkTheme;
         mainSplit.setUI(new BasicSplitPaneUI() {
             @Override
             public BasicSplitPaneDivider createDefaultDivider() {
                 BasicSplitPaneDivider divider = new BasicSplitPaneDivider(this);
-                divider.setBackground(new Color(60, 63, 65));
+                divider.setBackground(isDark ? ModernTheme.BACKGROUND_DARKER : new Color(200, 200, 200));
                 divider.setBorder(null);
                 return divider;
             }
@@ -383,7 +389,7 @@ public class Python3IDE extends JPanel {
         bottomPanel.add(metadataPanel, BorderLayout.CENTER);
 
         // Split tree and bottom panel (metadata only)
-        JSplitPane sidebarSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
+        sidebarSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
         sidebarSplit.setTopComponent(treePanel);
         sidebarSplit.setBottomComponent(bottomPanel);
         sidebarSplit.setDividerLocation(400);  // More space for tree since diagnostics moved (v1.17.2)
@@ -392,12 +398,13 @@ public class Python3IDE extends JPanel {
         sidebarSplit.setBorder(null);
         sidebarSplit.setDividerSize(4);  // Reduced from 8 to 4 for cleaner look
 
-        // Fix divider color for dark theme using custom UI (Issue 1 - v1.15.1)
+        // Fix divider color to respect current theme (v2.0.22 - fixed hardcoded dark color)
+        final boolean isDark = useDarkTheme;
         sidebarSplit.setUI(new BasicSplitPaneUI() {
             @Override
             public BasicSplitPaneDivider createDefaultDivider() {
                 BasicSplitPaneDivider divider = new BasicSplitPaneDivider(this);
-                divider.setBackground(new Color(60, 63, 65));
+                divider.setBackground(isDark ? ModernTheme.BACKGROUND_DARKER : new Color(200, 200, 200));
                 divider.setBorder(null);
                 return divider;
             }
@@ -473,7 +480,7 @@ public class Python3IDE extends JPanel {
         outputPanel.add(outputTabs, BorderLayout.CENTER);
 
         // Split execution results (left 75%) and diagnostics (right 25%) - v1.17.2
-        JSplitPane bottomSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
+        bottomSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
         bottomSplit.setLeftComponent(outputPanel);
         bottomSplit.setRightComponent(diagnosticsPanel);
         bottomSplit.setResizeWeight(0.75);  // 75% for execution results, 25% for diagnostics
@@ -482,12 +489,13 @@ public class Python3IDE extends JPanel {
         bottomSplit.setDividerSize(4);  // Reduced from 8 to 4 for cleaner look
         bottomSplit.setPreferredSize(new Dimension(600, 200));
 
-        // Fix divider color for dark theme using custom UI (v1.17.2)
+        // Fix divider color to respect current theme (v2.0.22 - fixed hardcoded dark color)
+        final boolean isDark = useDarkTheme;
         bottomSplit.setUI(new BasicSplitPaneUI() {
             @Override
             public BasicSplitPaneDivider createDefaultDivider() {
                 BasicSplitPaneDivider divider = new BasicSplitPaneDivider(this);
-                divider.setBackground(new Color(60, 63, 65));
+                divider.setBackground(isDark ? ModernTheme.BACKGROUND_DARKER : new Color(200, 200, 200));
                 divider.setBorder(null);
                 return divider;
             }
