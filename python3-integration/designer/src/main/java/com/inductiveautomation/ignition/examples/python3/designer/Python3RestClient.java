@@ -81,7 +81,7 @@ public class Python3RestClient {
      * @throws IOException if the HTTP request fails
      */
     public ExecutionResult executeCode(String code, Map<String, Object> variables) throws IOException {
-        LOGGER.debug("Executing Python code via REST API");
+        LOGGER.info("Executing Python code via REST API (code length: {} chars)", code.length());
 
         // Build JSON request body
         JsonObject requestBody = new JsonObject();
@@ -97,7 +97,9 @@ public class Python3RestClient {
         requestBody.add("variables", varsJson);
 
         // Make POST request to /exec endpoint
+        LOGGER.info("Sending POST request to /exec endpoint");
         String response = post("/exec", requestBody.toString());
+        LOGGER.info("Received response from /exec endpoint (length: {} chars)", response.length());
 
         // Parse response
         return parseExecutionResult(response);
@@ -373,10 +375,13 @@ public class Python3RestClient {
                 .build();
 
         try {
-            LOGGER.debug("POST request to: {}", url);
+            LOGGER.info("POST request to: {}", url);
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
 
+            LOGGER.info("POST response status: {} from {}", response.statusCode(), url);
+
             if (response.statusCode() != 200) {
+                LOGGER.error("POST request failed with status {}: {}", response.statusCode(), response.body());
                 throw new IOException("HTTP " + response.statusCode() + ": " + response.body());
             }
 
@@ -396,6 +401,7 @@ public class Python3RestClient {
      */
     private ExecutionResult parseExecutionResult(String jsonResponse) {
         try {
+            LOGGER.info("Parsing execution result from JSON response");
             JsonObject json = JsonParser.parseString(jsonResponse).getAsJsonObject();
 
             boolean success = json.has("success") && json.get("success").getAsBoolean();
@@ -404,10 +410,15 @@ public class Python3RestClient {
             Long executionTimeMs = json.has("executionTimeMs") ? json.get("executionTimeMs").getAsLong() : null;
             Long timestamp = json.has("timestamp") ? json.get("timestamp").getAsLong() : null;
 
+            LOGGER.info("Parsed execution result: success={}, hasResult={}, hasError={}", success, result != null, error != null);
+            if (error != null) {
+                LOGGER.warn("Execution error: {}", error);
+            }
+
             return new ExecutionResult(success, result, error, executionTimeMs, timestamp);
 
         } catch (Exception e) {
-            LOGGER.error("Failed to parse execution result", e);
+            LOGGER.error("Failed to parse execution result from JSON: {}", jsonResponse, e);
             return new ExecutionResult(false, "Failed to parse response: " + e.getMessage());
         }
     }

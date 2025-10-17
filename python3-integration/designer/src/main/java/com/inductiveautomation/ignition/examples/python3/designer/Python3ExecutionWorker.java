@@ -97,7 +97,8 @@ public class Python3ExecutionWorker extends SwingWorker<ExecutionResult, Void> {
      */
     @Override
     protected ExecutionResult doInBackground() throws Exception {
-        LOGGER.debug("Executing Python code in background thread");
+        LOGGER.info("Executing Python code in background thread (evaluation={})", isEvaluation);
+        LOGGER.info("Code to execute: {}", code.length() > 100 ? code.substring(0, 100) + "..." : code);
 
         try {
             if (isEvaluation) {
@@ -118,7 +119,7 @@ public class Python3ExecutionWorker extends SwingWorker<ExecutionResult, Void> {
     @Override
     protected void done() {
         if (isCancelled()) {
-            LOGGER.debug("Python execution was cancelled");
+            LOGGER.info("Python execution was cancelled");
             if (onError != null) {
                 onError.accept(new InterruptedException("Execution cancelled by user"));
             }
@@ -128,7 +129,11 @@ public class Python3ExecutionWorker extends SwingWorker<ExecutionResult, Void> {
         try {
             ExecutionResult result = get();
 
-            LOGGER.debug("Python execution completed: {}", result);
+            if (result.isSuccess()) {
+                LOGGER.info("Python execution completed successfully");
+            } else {
+                LOGGER.warn("Python execution completed with error: {}", result.getError());
+            }
 
             if (onSuccess != null) {
                 onSuccess.accept(result);
