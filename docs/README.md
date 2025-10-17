@@ -1,6 +1,13 @@
 # Ignition SDK Knowledge Base
 
-This directory contains comprehensive guides for developing Ignition 8.3+ SDK modules.
+> **📚 These are GENERAL educational guides for Ignition SDK development.**
+>
+> **Looking for Python 3 Integration module documentation?**
+> See **[`/python3-integration/docs/`](../python3-integration/docs/)** for module-specific guides.
+
+---
+
+This directory contains comprehensive guides for developing Ignition 8.3+ SDK modules in general.
 
 ## Documents
 

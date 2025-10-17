@@ -127,6 +127,28 @@ Comprehensive guides for developing Ignition 8.3+ modules.
 └── UPGRADE_GUIDE.md         # Upgrade instructions
 ```
 
+### 📖 Understanding the Two Docs Folders
+
+**Note:** This repository has TWO separate documentation directories with different purposes:
+
+#### [`/python3-integration/docs/`](python3-integration/docs/) - **Module-Specific** ⭐
+Documentation for THIS specific module (Python 3 Integration v2.0.9):
+- V2 Architecture Guide
+- Version Update Workflow
+- Testing Guide
+- Feature Comparison & Roadmap
+
+**Use this for:** Working with the Python 3 Integration module specifically.
+
+#### [`/docs/`](docs/) - **General SDK Learning** 📚
+General educational guides for ANY Ignition 8.3+ module development:
+- SDK Overview & Getting Started
+- Module Architecture & Structure
+- Build Systems (Gradle/Maven)
+- Component Development
+
+**Use this for:** Learning Ignition SDK development concepts in general.
+
 ---
 
 ## 🔧 Quick Links

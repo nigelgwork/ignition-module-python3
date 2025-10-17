@@ -1,9 +1,16 @@
 # Python 3 Integration Module - Documentation Index
 
+> **⭐ These are module-specific guides for the Python 3 Integration module.**
+>
+> **Looking for general SDK learning resources?**
+> See **[`/docs/`](../../docs/)** for Ignition SDK development guides (applicable to any module).
+
+---
+
 **Current Version**: v2.0.9
 **Last Updated**: 2025-10-17
 
-Quick reference to all module documentation.
+Quick reference to all Python 3 Integration module documentation.
 
 ---
 

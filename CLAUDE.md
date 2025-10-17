@@ -506,6 +506,38 @@ InputStream is = getClass().getResourceAsStream("/python_bridge.py");
 - **Version** carefully: SNAPSHOT vs release versions
 - **Document** configuration properties
 
+### Certificate Management
+
+**Decision: Certificates are KEPT in git** (not regenerated each time)
+
+**Rationale:**
+1. **CI/CD Compatibility** - GitHub Actions workflows work out-of-box without extra setup
+2. **Consistency** - Same certificate signature across all environments (dev, test, prod)
+3. **Reproducible Builds** - Same inputs produce same outputs, verifiable
+4. **Simplicity** - Clone and build works immediately, no extra steps required
+5. **Minimal Size** - Only 4.9KB total (certificate.der + keystore.jks + gaskony-cert.pem)
+
+**Files in Repository:**
+- `python3-integration/certificate.der` (883 bytes) - Public certificate
+- `python3-integration/keystore.jks` (2.7KB) - Private keystore
+- `python3-integration/gaskony-cert.pem` (1.3KB) - PEM format certificate
+- `python3-integration/sign.props` - Signing configuration with development passwords
+
+**Security Notes:**
+- These are **development-only self-signed certificates**
+- Passwords (`gaskony2024`) are public in repository
+- Intended for testing and development environments only
+- For production distribution, generate new certificates with private keys
+
+**Alternative (Not Recommended):**
+- Regenerating certificates each build creates inconsistency
+- Different environments get different signatures
+- CI/CD breaks without extra configuration
+- Script (`generate-signing-certs.sh`) creates `gradle.properties` but build uses `sign.props` (mismatch)
+- No practical security benefit for open-source development module
+
+**Current Approach is Correct** for this open-source development project.
+
 ## Repository Resources
 
 - **Active module code**: `python3-integration/` (v2.0.9)
