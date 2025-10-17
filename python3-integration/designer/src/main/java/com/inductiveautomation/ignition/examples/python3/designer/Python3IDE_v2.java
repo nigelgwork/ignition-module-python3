@@ -14,6 +14,7 @@ import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
+import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -22,9 +23,13 @@ import javax.swing.JSplitPane;
 import javax.swing.JTextField;
 import javax.swing.SwingWorker;
 import javax.swing.border.TitledBorder;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.plaf.basic.BasicSplitPaneUI;
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.List;
 
@@ -76,6 +81,8 @@ public class Python3IDE_v2 extends JPanel {
     private JButton deleteButton;
     private JButton newFolderButton;
     private JButton renameButton;
+    private JButton exportButton;
+    private JButton importButton;
     private JProgressBar progressBar;
     private JComboBox<String> themeSelector;
 
@@ -143,6 +150,14 @@ public class Python3IDE_v2 extends JPanel {
         renameButton.setFont(ModernTheme.FONT_REGULAR);
         renameButton.setEnabled(false);
 
+        exportButton = new JButton("📤 Export");
+        exportButton.setFont(ModernTheme.FONT_REGULAR);
+        exportButton.setEnabled(false);
+
+        importButton = new JButton("📥 Import");
+        importButton.setFont(ModernTheme.FONT_REGULAR);
+        importButton.setEnabled(false);
+
         progressBar = new JProgressBar();
         progressBar.setVisible(false);
 
@@ -207,6 +222,8 @@ public class Python3IDE_v2 extends JPanel {
         leftPanel.add(deleteButton);
         leftPanel.add(newFolderButton);
         leftPanel.add(renameButton);
+        leftPanel.add(exportButton);
+        leftPanel.add(importButton);
         leftPanel.add(progressBar);
 
         // Right: Theme
@@ -262,6 +279,8 @@ public class Python3IDE_v2 extends JPanel {
         deleteButton.addActionListener(e -> deleteScript());
         newFolderButton.addActionListener(e -> createFolder());
         renameButton.addActionListener(e -> renameItem());
+        exportButton.addActionListener(e -> exportScript());
+        importButton.addActionListener(e -> importScript());
 
         themeSelector.addActionListener(e -> {
             String selected = (String) themeSelector.getSelectedItem();
@@ -299,6 +318,8 @@ public class Python3IDE_v2 extends JPanel {
             deleteButton.setEnabled(true);
             newFolderButton.setEnabled(true);
             renameButton.setEnabled(true);
+            exportButton.setEnabled(true);
+            importButton.setEnabled(true);
 
             refreshScriptTree();
             refreshDiagnostics();
@@ -474,6 +495,56 @@ public class Python3IDE_v2 extends JPanel {
             } catch (Exception e) {
                 LOGGER.error("Failed to rename script", e);
                 statusBar.setStatus("Rename failed: " + e.getMessage(), ModernStatusBar.MessageType.ERROR);
+            }
+        }
+    }
+
+    private void exportScript() {
+        String code = editorPanel.getCode();
+        if (code == null || code.trim().isEmpty()) {
+            statusBar.setStatus("No code to export", ModernStatusBar.MessageType.WARNING);
+            return;
+        }
+
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Export Script");
+        fileChooser.setFileFilter(new FileNameExtensionFilter("Python Files (*.py)", "py"));
+
+        int result = fileChooser.showSaveDialog(this);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            File file = fileChooser.getSelectedFile();
+
+            // Add .py extension if not present
+            if (!file.getName().endsWith(".py")) {
+                file = new File(file.getAbsolutePath() + ".py");
+            }
+
+            try {
+                Files.write(file.toPath(), code.getBytes());
+                statusBar.setStatus("Exported to: " + file.getName(), ModernStatusBar.MessageType.SUCCESS);
+            } catch (IOException e) {
+                LOGGER.error("Failed to export script", e);
+                statusBar.setStatus("Export failed: " + e.getMessage(), ModernStatusBar.MessageType.ERROR);
+            }
+        }
+    }
+
+    private void importScript() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Import Script");
+        fileChooser.setFileFilter(new FileNameExtensionFilter("Python Files (*.py)", "py"));
+
+        int result = fileChooser.showOpenDialog(this);
+        if (result == JFileChooser.APPROVE_OPTION) {
+            File file = fileChooser.getSelectedFile();
+
+            try {
+                String code = new String(Files.readAllBytes(file.toPath()));
+                editorPanel.setCode(code);
+                statusBar.setStatus("Imported from: " + file.getName(), ModernStatusBar.MessageType.SUCCESS);
+            } catch (IOException e) {
+                LOGGER.error("Failed to import script", e);
+                statusBar.setStatus("Import failed: " + e.getMessage(), ModernStatusBar.MessageType.ERROR);
             }
         }
     }
