@@ -149,7 +149,7 @@ public class Python3IDE_v1_9 extends JPanel {
         codeEditor.setPaintTabLines(true);
         codeEditor.setTabSize(4);
         codeEditor.setFont(new Font("Monospaced", Font.PLAIN, fontSize));
-        codeEditor.setText("# Python 3.11 Code Editor\n# Enhanced with syntax highlighting\n\nresult = 2 + 2\nprint(f\"Result: {result}\")");
+        codeEditor.setText("# Python 3.11 Code Editor");
 
         // Enable parser notifications for real-time error checking
         codeEditor.setMarkOccurrences(true);
@@ -1268,57 +1268,37 @@ public class Python3IDE_v1_9 extends JPanel {
     }
 
     /**
-     * Shows the save script dialog.
+     * Shows the save script dialog using custom dark-themed dialog.
+     *
+     * v2.0.11: Replaced JOptionPane with DarkDialog for proper dark theme support
      */
     private void showSaveDialog() {
-        // Apply dark theme to dialogs BEFORE showing them
-        applyDialogDarkTheme();
+        // Prepare fields with current values
+        Map<String, String> fields = new java.util.LinkedHashMap<>();
+        fields.put("Script Name", currentScript != null ? currentScript.getName() : "");
+        fields.put("Author", currentScript != null ? currentScript.getAuthor() : "Unknown");
+        fields.put("Version", currentScript != null ? currentScript.getVersion() : "1.0");
+        fields.put("Folder Path", currentScript != null ? currentScript.getFolderPath() : "");
+        fields.put("Description", currentScript != null ? currentScript.getDescription() : "");
 
-        JTextField nameField = new JTextField(currentScript != null ? currentScript.getName() : "", 20);
-        JTextField authorField = new JTextField(currentScript != null ? currentScript.getAuthor() : "Unknown", 20);
-        JTextField versionField = new JTextField(currentScript != null ? currentScript.getVersion() : "1.0", 10);
-        JTextField folderField = new JTextField(currentScript != null ? currentScript.getFolderPath() : "", 20);
-        JTextField descField = new JTextField(currentScript != null ? currentScript.getDescription() : "", 30);
+        // Show custom dark dialog
+        Map<String, String> result = DarkDialog.showMultiInput(this, "Save Script", fields);
 
-        JPanel panel = new JPanel(new GridLayout(5, 2, 5, 5));
-        panel.add(new JLabel("Script Name:"));
-        panel.add(nameField);
-        panel.add(new JLabel("Author:"));
-        panel.add(authorField);
-        panel.add(new JLabel("Version:"));
-        panel.add(versionField);
-        panel.add(new JLabel("Folder Path:"));
-        panel.add(folderField);
-        panel.add(new JLabel("Description:"));
-        panel.add(descField);
-
-        // Apply dark theme to panel components
-        setComponentsDark(panel);
-
-        int result = JOptionPane.showConfirmDialog(
-                this,
-                panel,
-                "Save Script",
-                JOptionPane.OK_CANCEL_OPTION,
-                JOptionPane.PLAIN_MESSAGE
-        );
-
-        if (result != JOptionPane.OK_OPTION) {
-            return;
+        if (result == null) {
+            return;  // User cancelled
         }
 
-        String name = nameField.getText().trim();
-        String author = authorField.getText().trim();
-        String version = versionField.getText().trim();
-        String folder = folderField.getText().trim();
-        String description = descField.getText().trim();
+        String name = result.get("Script Name").trim();
+        String author = result.get("Author").trim();
+        String version = result.get("Version").trim();
+        String folder = result.get("Folder Path").trim();
+        String description = result.get("Description").trim();
 
         if (name.isEmpty()) {
-            JOptionPane.showMessageDialog(
+            DarkDialog.showMessage(
                     this,
                     "Script name cannot be empty",
-                    "Invalid Name",
-                    JOptionPane.WARNING_MESSAGE
+                    "Invalid Name"
             );
             return;
         }
