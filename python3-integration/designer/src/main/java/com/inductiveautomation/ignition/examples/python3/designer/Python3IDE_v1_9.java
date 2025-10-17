@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
+import javax.swing.plaf.basic.BasicSplitPaneUI;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
@@ -137,6 +138,7 @@ public class Python3IDE_v1_9 extends JPanel {
         themeSelector.setFont(ModernTheme.FONT_REGULAR);
         themeSelector.setBackground(ModernTheme.PANEL_BACKGROUND);
         themeSelector.setForeground(ModernTheme.FOREGROUND_PRIMARY);
+        themeSelector.setPreferredSize(new Dimension(150, 28));  // Expanded width to avoid text cutoff (Issue 3 - v1.15.1)
 
         // Code editor with RSyntaxTextArea
         codeEditor = new RSyntaxTextArea(20, 80);
@@ -242,11 +244,11 @@ public class Python3IDE_v1_9 extends JPanel {
                         TitledBorder.DEFAULT_POSITION,
                         ModernTheme.FONT_REGULAR,
                         ModernTheme.FOREGROUND_PRIMARY),
-                BorderFactory.createEmptyBorder(5, 5, 5, 5)
+                BorderFactory.createEmptyBorder(3, 5, 3, 5)  // Reduced top/bottom padding for 25% height reduction (Issue 5 - v1.15.1)
         ));
 
         // Left side: URL and Connect button
-        JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 3));
+        JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 1));  // Reduced vertical gap for 25% height reduction (Issue 5 - v1.15.1)
         leftPanel.setBackground(ModernTheme.PANEL_BACKGROUND);
         JLabel urlLabel = new JLabel("URL:");
         urlLabel.setForeground(ModernTheme.FOREGROUND_PRIMARY);
@@ -256,7 +258,7 @@ public class Python3IDE_v1_9 extends JPanel {
         gatewayPanel.add(leftPanel, BorderLayout.WEST);
 
         // Right side: Theme selector
-        JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 3));
+        JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 1));  // Reduced vertical gap for 25% height reduction (Issue 5 - v1.15.1)
         rightPanel.setBackground(ModernTheme.PANEL_BACKGROUND);
         JLabel themeLabel = new JLabel("Theme:");
         themeLabel.setForeground(ModernTheme.FOREGROUND_PRIMARY);
@@ -273,6 +275,9 @@ public class Python3IDE_v1_9 extends JPanel {
         mainSplit.setBackground(ModernTheme.BACKGROUND_DARK);
         mainSplit.setBorder(null);
         mainSplit.setDividerSize(8);
+
+        // Fix divider color for dark theme (Issue 1 - v1.15.1)
+        ((BasicSplitPaneUI) mainSplit.getUI()).getDivider().setBackground(ModernTheme.BACKGROUND_DARKER);
 
         // Left sidebar: Script browser + metadata
         JPanel sidebar = createSidebar();
@@ -298,6 +303,8 @@ public class Python3IDE_v1_9 extends JPanel {
 
         // Script tree
         JScrollPane treeScroll = new JScrollPane(scriptTree);
+        treeScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);  // Hide when not needed (Issue 4 - v1.15.1)
+        treeScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         treeScroll.setBorder(BorderFactory.createCompoundBorder(
                 new TitledBorder(BorderFactory.createLineBorder(ModernTheme.BORDER_DEFAULT),
                         "Script Browser",
@@ -345,10 +352,14 @@ public class Python3IDE_v1_9 extends JPanel {
         JSplitPane sidebarSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
         sidebarSplit.setTopComponent(treePanel);
         sidebarSplit.setBottomComponent(bottomPanel);
-        sidebarSplit.setDividerLocation(400);
+        sidebarSplit.setDividerLocation(300);  // Reduced from 400 to make diagnostics visible (Issue 2 - v1.15.1)
+        sidebarSplit.setResizeWeight(0.5);  // Equal split on resize
         sidebarSplit.setBackground(ModernTheme.BACKGROUND_DARK);
         sidebarSplit.setBorder(null);
         sidebarSplit.setDividerSize(8);
+
+        // Fix divider color for dark theme (Issue 1 - v1.15.1)
+        ((BasicSplitPaneUI) sidebarSplit.getUI()).getDivider().setBackground(ModernTheme.BACKGROUND_DARKER);
 
         sidebar.add(sidebarSplit, BorderLayout.CENTER);
 
@@ -403,11 +414,15 @@ public class Python3IDE_v1_9 extends JPanel {
         outputTabs.setForeground(ModernTheme.FOREGROUND_PRIMARY);
 
         JScrollPane outputScroll = new JScrollPane(outputArea);
+        outputScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);  // Hide when not needed (Issue 4 - v1.15.1)
+        outputScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         outputScroll.setBackground(ModernTheme.BACKGROUND_DARKER);
         outputScroll.getViewport().setBackground(ModernTheme.BACKGROUND_DARKER);
         outputTabs.addTab("Output", outputScroll);
 
         JScrollPane errorScroll = new JScrollPane(errorArea);
+        errorScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);  // Hide when not needed (Issue 4 - v1.15.1)
+        errorScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         errorScroll.setBackground(ModernTheme.BACKGROUND_DARKER);
         errorScroll.getViewport().setBackground(ModernTheme.BACKGROUND_DARKER);
         outputTabs.addTab("Errors", errorScroll);
