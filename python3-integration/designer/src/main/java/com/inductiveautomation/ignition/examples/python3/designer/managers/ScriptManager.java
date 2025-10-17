@@ -66,6 +66,37 @@ public class ScriptManager {
     }
 
     /**
+     * Renames a script by loading, deleting old, and saving with new name.
+     */
+    public void renameScript(String oldName, String newName) throws IOException {
+        if (restClient == null) {
+            throw new IllegalStateException("Not connected to Gateway");
+        }
+
+        // Load the script
+        SavedScript script = restClient.loadScript(oldName);
+
+        // Delete the old script
+        restClient.deleteScript(oldName);
+
+        // Save with new name
+        restClient.saveScript(
+                newName,
+                script.getCode(),
+                script.getDescription(),
+                script.getAuthor(),
+                script.getFolderPath(),
+                script.getVersion()
+        );
+
+        if (currentScript != null && oldName.equals(currentScript.getName())) {
+            currentScript = null;
+        }
+
+        LOGGER.info("Script renamed: {} → {}", oldName, newName);
+    }
+
+    /**
      * Lists all scripts.
      */
     public List<ScriptMetadata> listScripts() throws IOException {

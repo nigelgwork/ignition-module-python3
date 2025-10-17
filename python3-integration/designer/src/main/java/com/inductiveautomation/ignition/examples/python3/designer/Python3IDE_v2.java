@@ -74,6 +74,8 @@ public class Python3IDE_v2 extends JPanel {
     private JButton saveButton;
     private JButton loadButton;
     private JButton deleteButton;
+    private JButton newFolderButton;
+    private JButton renameButton;
     private JProgressBar progressBar;
     private JComboBox<String> themeSelector;
 
@@ -132,6 +134,14 @@ public class Python3IDE_v2 extends JPanel {
         deleteButton = new JButton("🗑️ Delete");
         deleteButton.setFont(ModernTheme.FONT_REGULAR);
         deleteButton.setEnabled(false);
+
+        newFolderButton = new JButton("📁 New Folder");
+        newFolderButton.setFont(ModernTheme.FONT_REGULAR);
+        newFolderButton.setEnabled(false);
+
+        renameButton = new JButton("✏️ Rename");
+        renameButton.setFont(ModernTheme.FONT_REGULAR);
+        renameButton.setEnabled(false);
 
         progressBar = new JProgressBar();
         progressBar.setVisible(false);
@@ -195,6 +205,8 @@ public class Python3IDE_v2 extends JPanel {
         leftPanel.add(saveButton);
         leftPanel.add(loadButton);
         leftPanel.add(deleteButton);
+        leftPanel.add(newFolderButton);
+        leftPanel.add(renameButton);
         leftPanel.add(progressBar);
 
         // Right: Theme
@@ -248,6 +260,8 @@ public class Python3IDE_v2 extends JPanel {
         saveButton.addActionListener(e -> saveScript());
         loadButton.addActionListener(e -> loadSelectedScript());
         deleteButton.addActionListener(e -> deleteScript());
+        newFolderButton.addActionListener(e -> createFolder());
+        renameButton.addActionListener(e -> renameItem());
 
         themeSelector.addActionListener(e -> {
             String selected = (String) themeSelector.getSelectedItem();
@@ -283,6 +297,8 @@ public class Python3IDE_v2 extends JPanel {
             saveButton.setEnabled(true);
             loadButton.setEnabled(true);
             deleteButton.setEnabled(true);
+            newFolderButton.setEnabled(true);
+            renameButton.setEnabled(true);
 
             refreshScriptTree();
             refreshDiagnostics();
@@ -407,6 +423,57 @@ public class Python3IDE_v2 extends JPanel {
             } catch (Exception e) {
                 LOGGER.error("Failed to delete script", e);
                 statusBar.setStatus("Delete failed: " + e.getMessage(), ModernStatusBar.MessageType.ERROR);
+            }
+        }
+    }
+
+    private void createFolder() {
+        if (!connectionManager.isConnected() || scriptManager == null) {
+            return;
+        }
+
+        String folderPath = JOptionPane.showInputDialog(this, "Enter folder path (use / for subfolders):");
+        if (folderPath != null && !folderPath.trim().isEmpty()) {
+            try {
+                // Create a marker script to represent the folder
+                String markerName = ".folder_" + System.currentTimeMillis();
+                scriptManager.saveScript(
+                        markerName,
+                        "# Folder marker",
+                        "Folder marker",
+                        "System",
+                        folderPath.trim(),
+                        "1.0"
+                );
+                statusBar.setStatus("Created folder: " + folderPath, ModernStatusBar.MessageType.SUCCESS);
+                refreshScriptTree();
+            } catch (Exception e) {
+                LOGGER.error("Failed to create folder", e);
+                statusBar.setStatus("Folder creation failed", ModernStatusBar.MessageType.ERROR);
+            }
+        }
+    }
+
+    private void renameItem() {
+        if (!connectionManager.isConnected() || scriptManager == null) {
+            return;
+        }
+
+        String selectedScript = treePanel.getSelectedScriptName();
+        if (selectedScript == null || selectedScript.isEmpty()) {
+            statusBar.setStatus("No script selected", ModernStatusBar.MessageType.WARNING);
+            return;
+        }
+
+        String newName = JOptionPane.showInputDialog(this, "Enter new name:", selectedScript);
+        if (newName != null && !newName.trim().isEmpty() && !newName.equals(selectedScript)) {
+            try {
+                scriptManager.renameScript(selectedScript, newName.trim());
+                statusBar.setStatus("Renamed: " + selectedScript + " → " + newName, ModernStatusBar.MessageType.SUCCESS);
+                refreshScriptTree();
+            } catch (Exception e) {
+                LOGGER.error("Failed to rename script", e);
+                statusBar.setStatus("Rename failed: " + e.getMessage(), ModernStatusBar.MessageType.ERROR);
             }
         }
     }
