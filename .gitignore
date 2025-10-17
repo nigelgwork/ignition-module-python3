@@ -180,6 +180,11 @@ docker-compose.override.yml
 # Claude Code specific
 # ============================================================================
 .claude/
+.claude/settings.local.json
+
+# NOTE: sign.props contains development passwords and IS committed for convenience
+# NOTE: Certificate files (*.jks, *.der, *.pem) are committed for self-signed builds
+# For production use, generate new certificates and keep sign.props private
 
 # ============================================================================
 # Keep certain files

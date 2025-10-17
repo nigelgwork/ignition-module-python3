@@ -1,136 +1,82 @@
 # Python 3 Integration Module - Documentation Index
 
-**Current Version**: v1.10.1
-**Last Updated**: 2025-10-16
+**Current Version**: v2.0.9
+**Last Updated**: 2025-10-17
 
-This document provides a quick reference to all documentation in this module.
-
----
-
-## 📋 Quick Start
-
-- **[TESTING_GUIDE.md](TESTING_GUIDE.md)** - How to test the module after building
-- **[Quick Start Template](guides/QUICK_START_TEMPLATE.md)** - Ignition module development template
+Quick reference to all module documentation.
 
 ---
 
-## 🚀 Roadmap & Plans
+## 📋 Essential Documents
 
-### **Active Development**
-- **[PYTHON_IDE_PLAN.md](PYTHON_IDE_PLAN.md)** ⭐ **PRIMARY ROADMAP**
-  - **Status**: Phase 1 (v1.11.0) starting next
-  - **Phase 1**: Real-time syntax checking + UI Quick Wins (41-45h)
-  - **Phase 2**: Auto-completion + Medium Effort UI (78-98h)
-  - **Phase 3**: High Effort UI (82-120h)
+### V2 Architecture (Current)
+- **[V2_ARCHITECTURE_GUIDE.md](V2_ARCHITECTURE_GUIDE.md)** - v2.0.0+ modular architecture
+- **[V2_STATUS_SUMMARY.md](V2_STATUS_SUMMARY.md)** - Current status and completion percentages
+- **[V2_FEATURE_COMPARISON_AND_ROADMAP.md](V2_FEATURE_COMPARISON_AND_ROADMAP.md)** - v1 vs v2 comparison, roadmap
+- **[V2_MIGRATION_GUIDE.md](V2_MIGRATION_GUIDE.md)** - Migrating from v1.x to v2.0+
 
-- **[UX_IMPROVEMENTS_PLAN.md](UX_IMPROVEMENTS_PLAN.md)** ⭐ **UX REFERENCE**
-  - Complete guide to 20+ UX improvements
-  - Organized by effort level (Quick Wins, Medium, High)
-  - VS Code / Cursor / Warp-inspired designs
-  - Implementation examples and patterns
-
-### **Completed**
-- ✅ Phase 1 (v1.9.0): Designer UI with Python IDE
-- ✅ Phase 2 (v1.9.0): Enhanced diagnostics
-- ✅ Phase 3 (v1.10.0): Script management
-- ✅ v1.10.1: Folder management, validation, UI improvements
+### Development Workflow
+- **[VERSION_UPDATE_WORKFLOW.md](VERSION_UPDATE_WORKFLOW.md)** - **MANDATORY** version release checklist
+- **[TESTING_GUIDE.md](TESTING_GUIDE.md)** - How to test the module
+- **[DEVELOPER_EXTENSION_GUIDE.md](DEVELOPER_EXTENSION_GUIDE.md)** - Extending the module
 
 ---
 
-## 🏗️ Architecture
+## 🏗️ Architecture & Design
 
-- **[ARCHITECTURE.md](architecture/ARCHITECTURE.md)** - System architecture and component design
-- **[EMBEDDING-PYTHON.md](architecture/EMBEDDING-PYTHON.md)** - Self-contained Python distribution guide
-- **[EXAMPLES.md](architecture/EXAMPLES.md)** - Code examples and usage patterns
-
-**Key Concepts**:
-- **Python3ProcessPool**: 3-5 warm Python processes for concurrent execution
-- **REST API**: Designer → Gateway communication (no RPC)
-- **RSyntaxTextArea**: Professional code editor component
-- **Gateway Execution**: All Python runs on Gateway, not Designer
+### Core Architecture
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** - Gateway/Python bridge architecture
+- **[EMBEDDING-PYTHON.md](EMBEDDING-PYTHON.md)** - Self-contained Python distribution
+- **[EXAMPLES.md](EXAMPLES.md)** - Code examples and usage patterns
 
 ---
 
 ## 🔧 Build & Deployment
 
 ### Building
-- **[IGNITION_MODULE_BUILD_GUIDE.md](guides/IGNITION_MODULE_BUILD_GUIDE.md)** - Complete build instructions
-- **[MODULE_BUILD_TROUBLESHOOTING.md](guides/MODULE_BUILD_TROUBLESHOOTING.md)** - Common issues and fixes
+- **[IGNITION_MODULE_BUILD_GUIDE.md](IGNITION_MODULE_BUILD_GUIDE.md)** - Complete build instructions
+- **[MODULE_BUILD_TROUBLESHOOTING.md](MODULE_BUILD_TROUBLESHOOTING.md)** - Common issues and fixes
+- **[QUICK_START_TEMPLATE.md](QUICK_START_TEMPLATE.md)** - Module development template
 
-### Deployment
-- **[SIGNING.md](deployment/SIGNING.md)** - Module signing with certificates
+### Deployment & Signing
+- **[SIGNING.md](SIGNING.md)** - Module signing with certificates
 - **[CERTIFICATE_TRUST_INSTRUCTIONS.md](CERTIFICATE_TRUST_INSTRUCTIONS.md)** - Trust self-signed certificates
-- **[SELF-CONTAINED-SETUP.md](deployment/SELF-CONTAINED-SETUP.md)** - Self-contained Python setup
-- **[CI_Setup_Prompts.md](deployment/CI_Setup_Prompts.md)** - GitHub Actions CI/CD setup
+- **[SELF-CONTAINED-SETUP.md](SELF-CONTAINED-SETUP.md)** - Self-contained Python setup
+- **[CI_Setup_Prompts.md](CI_Setup_Prompts.md)** - GitHub Actions CI/CD setup
 
 ---
 
-## 🔍 Investigation & Notes
+## 📊 Current Module Status (v2.0.9)
 
-- **[MODULE_UPGRADE_INVESTIGATION.md](MODULE_UPGRADE_INVESTIGATION.md)** - Module upgrade behavior research
+### ✅ Implemented Features
+- Modern Designer IDE with VS Code-inspired dark theme
+- Script management (save, load, delete, rename, organize in folders)
+- Find/Replace toolbar
+- Import/Export scripts to .py files
+- Enhanced diagnostics panel with real-time metrics
+- Theme support (Dark, Light, VS Code Dark+)
+- REST API for remote execution
+- Modular architecture (v2.0.0 refactor)
 
----
-
-## 📊 Documentation Organization
-
-```
-docs/
-├── README.md                          # This file (index)
-├── PYTHON_IDE_PLAN.md                 # ⭐ Primary roadmap
-├── UX_IMPROVEMENTS_PLAN.md            # ⭐ UX design guide
-├── TESTING_GUIDE.md                   # Testing instructions
-├── CERTIFICATE_TRUST_INSTRUCTIONS.md  # Certificate setup
-├── MODULE_UPGRADE_INVESTIGATION.md    # Upgrade notes
-│
-├── architecture/                      # System design
-│   ├── ARCHITECTURE.md
-│   ├── EMBEDDING-PYTHON.md
-│   └── EXAMPLES.md
-│
-├── deployment/                        # Deployment guides
-│   ├── CI_Setup_Prompts.md
-│   ├── SELF-CONTAINED-SETUP.md
-│   └── SIGNING.md
-│
-└── guides/                            # How-to guides
-    ├── IGNITION_MODULE_BUILD_GUIDE.md
-    ├── MODULE_BUILD_TROUBLESHOOTING.md
-    └── QUICK_START_TEMPLATE.md
-```
-
----
-
-## 🎯 Current Focus
-
-**Next Implementation**: **Phase 1 (v1.11.0)** - Real-time Syntax Checking + UI Quick Wins
-
-**Timeline**: ~41-45 hours / 5-6 weeks
-
-**Components**:
-1. Real-time syntax checking (12-16h)
-   - Red squiggles for errors
-   - Hover for messages
-   - Debounced checking
-   - Gateway REST endpoint
-
-2. UI Quick Wins (29h)
-   - Modern color palette (6h)
-   - Rounded corners (4h)
-   - Better buttons (6h)
-   - Enhanced status bar (4h)
-   - Better tree styling (6h)
-   - Icon improvements (3h)
+### 🎯 Next Priorities (Sprint Plan)
+- Essential buttons (New, Delete, Rename - shortcut buttons)
+- Save improvements (Ctrl+S, auto-save indicator)
+- Keyboard shortcuts (Delete, Rename, F2)
+- Font size controls
+- Context menu (right-click operations)
+- Move scripts between folders (drag-and-drop)
+- Real-time syntax checking
+- Basic auto-completion
 
 ---
 
 ## 📚 Key Technical Details
 
-### REST API Endpoints (v1.10.1)
+### REST API Endpoints (v2.0.9)
 ```
 POST /data/python3integration/api/v1/exec              - Execute code
 POST /data/python3integration/api/v1/eval              - Evaluate expression
 POST /data/python3integration/api/v1/call-module       - Call Python function
-POST /data/python3integration/api/v1/call-script       - Call saved script
 GET  /data/python3integration/api/v1/version           - Python version
 GET  /data/python3integration/api/v1/pool-stats        - Pool statistics
 GET  /data/python3integration/api/v1/health            - Health check
@@ -141,25 +87,28 @@ GET  /data/python3integration/api/v1/scripts/{name}    - Load script
 DELETE /data/python3integration/api/v1/scripts/{name}  - Delete script
 ```
 
-### Scripting Functions (v1.10.1)
-```python
-system.python3.exec(code, variables={})          # Execute statements
-system.python3.eval(expression, variables={})    # Evaluate expression
-system.python3.callModule(module, func, args)    # Call module function
-system.python3.callScript(path, args, kwargs)    # Call saved script
-system.python3.isAvailable()                     # Check availability
-system.python3.getVersion()                      # Get Python version
-system.python3.getPoolStats()                    # Get pool statistics
+### Module Structure (v2.0.0+)
+```
+designer/src/main/java/.../designer/
+├── Python3IDE_v2.java          # Main IDE class (490 lines, was 2,676)
+├── managers/                   # Business logic layer
+│   ├── GatewayConnectionManager.java
+│   ├── ScriptManager.java
+│   └── ThemeManager.java
+└── ui/                         # Presentation layer
+    ├── EditorPanel.java
+    ├── ScriptTreePanel.java
+    ├── MetadataPanel.java
+    └── DiagnosticsPanel.java
 ```
 
 ---
 
 ## 🔗 External Resources
 
-- **Ignition SDK Documentation**: https://docs.inductiveautomation.com/display/SE/Ignition+SDK+Programmers+Guide
+- **Ignition SDK Documentation**: https://www.sdk-docs.inductiveautomation.com/
 - **RSyntaxTextArea API**: https://bobbylight.github.io/RSyntaxTextArea/
-- **Python Jedi (completion)**: https://jedi.readthedocs.io/
-- **Pyflakes (linting)**: https://github.com/PyCQA/pyflakes
+- **Ignition Forum**: https://forum.inductiveautomation.com/
 
 ---
 
@@ -169,14 +118,15 @@ system.python3.getPoolStats()                    # Get pool statistics
 - Open IDE: Tools → Python 3 IDE
 - Execute code: Ctrl+Enter
 - Save script: Ctrl+S
-- New script: Ctrl+N
+- Find text: Ctrl+F
 
 **For Developers**:
-- Build: `./gradlew clean build`
+- Build: `./gradlew clean build --no-daemon`
 - Version: `python3-integration/version.properties`
-- Main IDE: `designer/src/main/java/.../Python3IDE_v1_9.java`
+- Main IDE: `designer/src/main/java/.../Python3IDE_v2.java`
 - Gateway API: `gateway/src/main/java/.../Python3RestEndpoints.java`
+- Version workflow: `docs/VERSION_UPDATE_WORKFLOW.md`
 
 ---
 
-**Last Updated**: 2025-10-16 | **Next Review**: After v1.11.0 release
+**Last Updated**: 2025-10-17 | **Version**: v2.0.9
