@@ -1,6 +1,6 @@
 # Python 3 Integration Module for Ignition
 
-**Current Version: v2.0.22** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
+**Current Version: v2.0.23** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
 
 This module enables Python 3 scripting functions in Ignition 8.3+, allowing you to use modern Python 3 features and libraries alongside Ignition's built-in Jython 2.7 environment.
 
@@ -133,7 +133,7 @@ cd python3-integration
 
 ## Usage
 
-### Designer IDE (v2.0.22 - Current)
+### Designer IDE (v2.0.23 - Current)
 
 The Designer IDE provides an interactive development environment for testing Python 3 code directly in the Ignition Designer.
 
@@ -468,7 +468,7 @@ python3-integration/
 │   └── V2_STATUS_SUMMARY.md             # Status summary
 ├── build.gradle.kts        # Root build file
 ├── settings.gradle.kts     # Gradle settings
-├── version.properties      # Module version (v2.0.22)
+├── version.properties      # Module version (v2.0.23)
 └── README.md               # This file
 ```
 
@@ -511,7 +511,7 @@ Apache 2.0
 
 ## Roadmap
 
-**Current Release: v2.0.22** - Theme System Completion
+**Current Release: v2.0.23** - Repository Consolidation
 
 **Completed:**
 - [x] Designer integration (Python 3 script editor) - **v1.7.0**
@@ -551,6 +551,15 @@ Built using the Ignition SDK:
 - https://www.sdk-docs.inductiveautomation.com/
 
 ## Changelog
+
+### 2.0.23 (Repository Consolidation)
+- **CLEANUP**: Removed 11 redundant documentation files (5,300+ lines)
+- **CLEANUP**: Deleted outdated UPGRADE_GUIDE.md (referenced v1.7.x versions)
+- **IMPROVED**: Kept only essential v2.0 documentation (7 files, 2,900 lines)
+- **IMPROVED**: Root README simplified by 38% (124 → 77 lines)
+- **IMPROVED**: Documentation now focused and navigation-oriented
+- **ROADMAP**: Added 2 HIGH priority UI fixes (blue border, panel dividers)
+- **DOCS**: Updated both README files to v2.0.23
 
 ### 2.0.22 (Theme System Completion)
 - **FIXED**: JSplitPane dividers now respect current theme on creation (dark/light)

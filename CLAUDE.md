@@ -24,7 +24,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### 2. Version Increment
 Version file: `python3-integration/version.properties`
 
-**Current Version: v2.0.22** (December 2024)
+**Current Version: v2.0.23** (December 2024)
 
 **Versioning Rules:**
 - **MAJOR** (x.0.0): Breaking changes, major new features, architectural changes
@@ -134,19 +134,18 @@ This is a **Python 3 Integration module** for Ignition 8.3 SDK. The repository f
 
 ## Repository Structure
 
-**Current Version: v2.0.22** (December 2024)
+**Current Version: v2.0.23** (December 2024)
 
 ```
 ignition-module-python3/
 ├── README.md                        # Repository landing page (update with each release)
 ├── CLAUDE.md                        # This file - AI guidance
-├── UPGRADE_GUIDE.md                 # Upgrade instructions
 ├── .gitignore                       # Git ignore rules
 │
-└── python3-integration/             # ⭐ THE MODULE (v2.0.22)
+└── python3-integration/             # ⭐ THE MODULE (v2.0.23)
     ├── build.gradle.kts            # Root build configuration
     ├── settings.gradle.kts         # Gradle settings
-    ├── version.properties          # Current version: 2.0.22
+    ├── version.properties          # Current version: 2.0.23
     ├── README.md                   # Module documentation (comprehensive)
     │
     ├── common/                     # Common scope (shared code)
@@ -541,7 +540,7 @@ InputStream is = getClass().getResourceAsStream("/python_bridge.py");
 ## Module Documentation Resources
 
 **In This Repository:**
-- **Active module code**: `python3-integration/` (v2.0.22)
+- **Active module code**: `python3-integration/` (v2.0.23)
 - **V2 Architecture Guide**: `python3-integration/docs/V2_ARCHITECTURE_GUIDE.md` ⭐
 - **V2 Status Summary**: `python3-integration/docs/V2_STATUS_SUMMARY.md`
 - **V2 Feature Comparison**: `python3-integration/docs/V2_FEATURE_COMPARISON_AND_ROADMAP.md`
@@ -559,7 +558,7 @@ InputStream is = getClass().getResourceAsStream("/python_bridge.py");
 
 The Python 3 IDE is a **Designer-scoped feature** that provides an IDE-type interface for Python 3 development:
 
-### Implemented Features (v2.0.22)
+### Implemented Features (v2.0.23)
 
 **Core IDE:**
 - ✅ Code editor with Python syntax highlighting (RSyntaxTextArea)

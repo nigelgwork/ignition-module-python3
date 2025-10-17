@@ -1,6 +1,6 @@
 # Python 3 Integration for Ignition
 
-**Current Version: v2.0.22** | [Full Documentation →](python3-integration/README.md)
+**Current Version: v2.0.23** | [Full Documentation →](python3-integration/README.md)
 
 A production-ready Ignition module that enables Python 3 scripting alongside Jython 2.7, with a modern Designer IDE.
 
@@ -31,7 +31,6 @@ cd python3-integration
 - **Module Documentation**: [python3-integration/README.md](python3-integration/README.md) - Complete user guide
 - **Architecture**: [python3-integration/docs/V2_ARCHITECTURE_GUIDE.md](python3-integration/docs/V2_ARCHITECTURE_GUIDE.md)
 - **Development Guide**: [CLAUDE.md](CLAUDE.md) - For contributors
-- **Upgrade Guide**: [UPGRADE_GUIDE.md](UPGRADE_GUIDE.md)
 
 ---
 
