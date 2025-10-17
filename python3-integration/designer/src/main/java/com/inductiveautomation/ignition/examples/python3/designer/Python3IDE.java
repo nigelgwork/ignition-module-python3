@@ -835,32 +835,51 @@ public class Python3IDE extends JPanel {
 
     /**
      * Refreshes Python version display in status bar.
+     *
+     * v2.0.14: Enhanced logging to debug version detection issues
      */
     private void refreshPythonVersion() {
+        LOGGER.info("refreshPythonVersion() called");
+
         if (restClient == null) {
+            LOGGER.warn("restClient is null, cannot fetch Python version");
             statusBar.setPythonVersion("Python: --");
             return;
         }
 
+        LOGGER.info("Creating SwingWorker to fetch Python version");
+
         SwingWorker<String, Void> worker = new SwingWorker<String, Void>() {
             @Override
             protected String doInBackground() throws Exception {
-                return restClient.getPythonVersion();
+                LOGGER.info("SwingWorker.doInBackground() - Calling restClient.getPythonVersion()");
+                try {
+                    String version = restClient.getPythonVersion();
+                    LOGGER.info("Successfully got Python version: {}", version);
+                    return version;
+                } catch (Exception e) {
+                    LOGGER.error("Exception in getPythonVersion()", e);
+                    throw e;
+                }
             }
 
             @Override
             protected void done() {
                 try {
+                    LOGGER.info("SwingWorker.done() - Getting result");
                     String version = get();
+                    LOGGER.info("Setting status bar Python version to: {}", version);
                     statusBar.setPythonVersion("Python: " + version);
+                    LOGGER.info("Successfully updated status bar");
                 } catch (Exception e) {
-                    statusBar.setPythonVersion("Python: --");
-                    LOGGER.warn("Failed to get Python version", e);
+                    LOGGER.error("Failed to get Python version in done()", e);
+                    statusBar.setPythonVersion("Python: Unknown");
                 }
             }
         };
 
         worker.execute();
+        LOGGER.info("SwingWorker.execute() called");
     }
 
     /**
@@ -1486,8 +1505,8 @@ public class Python3IDE extends JPanel {
                 try {
                     SavedScript script = get();
 
-                    // Apply dark theme to file chooser dialog
-                    applyDialogDarkTheme();
+                    // Apply theme-aware styling to file chooser (v2.0.14)
+                    applyFileChooserTheme();
 
                     JFileChooser fileChooser = new JFileChooser();
                     fileChooser.setSelectedFile(new File(script.getName() + ".py"));
@@ -1768,8 +1787,8 @@ public class Python3IDE extends JPanel {
             return;
         }
 
-        // Apply dark theme to file chooser dialog
-        applyDialogDarkTheme();
+        // Apply theme-aware styling to file chooser (v2.0.14)
+        applyFileChooserTheme();
 
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setFileFilter(new javax.swing.filechooser.FileFilter() {
@@ -1855,8 +1874,8 @@ public class Python3IDE extends JPanel {
             return;
         }
 
-        // Apply dark theme to file chooser dialog
-        applyDialogDarkTheme();
+        // Apply theme-aware styling to file chooser (v2.0.14)
+        applyFileChooserTheme();
 
         JFileChooser fileChooser = new JFileChooser();
 
@@ -2048,6 +2067,28 @@ public class Python3IDE extends JPanel {
                 scriptTree.setBackground(ModernTheme.TREE_BACKGROUND);
                 scriptTree.setForeground(ModernTheme.FOREGROUND_PRIMARY);
 
+                // Update UI components for dark theme (v2.0.14)
+                gatewayUrlField.setBackground(ModernTheme.BACKGROUND_DARKER);
+                gatewayUrlField.setForeground(ModernTheme.FOREGROUND_PRIMARY);
+                gatewayUrlField.setCaretColor(ModernTheme.FOREGROUND_PRIMARY);
+
+                themeSelector.setBackground(ModernTheme.PANEL_BACKGROUND);
+                themeSelector.setForeground(ModernTheme.FOREGROUND_PRIMARY);
+
+                currentScriptLabel.setForeground(ModernTheme.FOREGROUND_SECONDARY);
+
+                // Update ModernButton instances for dark theme
+                updateButtonTheme(connectButton, ModernTheme.ACCENT_PRIMARY, ModernTheme.ACCENT_HOVER, ModernTheme.ACCENT_ACTIVE);
+                updateButtonTheme(executeButton, ModernTheme.ACCENT_PRIMARY, ModernTheme.ACCENT_HOVER, ModernTheme.ACCENT_ACTIVE);
+                updateButtonTheme(saveButton, ModernTheme.SUCCESS, ModernTheme.lighten(ModernTheme.SUCCESS, 0.1), ModernTheme.darken(ModernTheme.SUCCESS, 0.1));
+                updateButtonTheme(clearButton, ModernTheme.BUTTON_BACKGROUND, ModernTheme.BUTTON_HOVER, ModernTheme.BUTTON_ACTIVE);
+                updateButtonTheme(saveAsButton, ModernTheme.BUTTON_BACKGROUND, ModernTheme.BUTTON_HOVER, ModernTheme.BUTTON_ACTIVE);
+                updateButtonTheme(importButton, ModernTheme.BUTTON_BACKGROUND, ModernTheme.BUTTON_HOVER, ModernTheme.BUTTON_ACTIVE);
+                updateButtonTheme(exportButton, ModernTheme.BUTTON_BACKGROUND, ModernTheme.BUTTON_HOVER, ModernTheme.BUTTON_ACTIVE);
+
+                // Update all TitledBorder components for dark theme
+                updateTitledBorders(this, true);
+
                 // Panels
                 updateComponent(this, ModernTheme.BACKGROUND_DARK);
 
@@ -2072,6 +2113,38 @@ public class Python3IDE extends JPanel {
                 // Tree
                 scriptTree.setBackground(Color.WHITE);
                 scriptTree.setForeground(Color.BLACK);
+
+                // Update UI components for light theme (v2.0.14)
+                gatewayUrlField.setBackground(Color.WHITE);
+                gatewayUrlField.setForeground(Color.BLACK);
+                gatewayUrlField.setCaretColor(Color.BLACK);
+
+                themeSelector.setBackground(Color.WHITE);
+                themeSelector.setForeground(Color.BLACK);
+
+                currentScriptLabel.setForeground(new Color(100, 100, 100));  // Light gray for secondary text
+
+                // Update ModernButton instances for light theme (lighter, pastel colors)
+                Color lightPrimary = new Color(33, 118, 255);  // Lighter blue
+                Color lightPrimaryHover = new Color(23, 108, 245);
+                Color lightPrimaryActive = new Color(13, 98, 235);
+                Color lightSuccess = new Color(40, 167, 69);  // Lighter green
+                Color lightSuccessHover = new Color(30, 157, 59);
+                Color lightSuccessActive = new Color(20, 147, 49);
+                Color lightDefault = new Color(240, 240, 240);  // Light gray
+                Color lightDefaultHover = new Color(230, 230, 230);
+                Color lightDefaultActive = new Color(220, 220, 220);
+
+                updateButtonTheme(connectButton, lightPrimary, lightPrimaryHover, lightPrimaryActive);
+                updateButtonTheme(executeButton, lightPrimary, lightPrimaryHover, lightPrimaryActive);
+                updateButtonTheme(saveButton, lightSuccess, lightSuccessHover, lightSuccessActive);
+                updateButtonTheme(clearButton, lightDefault, lightDefaultHover, lightDefaultActive);
+                updateButtonTheme(saveAsButton, lightDefault, lightDefaultHover, lightDefaultActive);
+                updateButtonTheme(importButton, lightDefault, lightDefaultHover, lightDefaultActive);
+                updateButtonTheme(exportButton, lightDefault, lightDefaultHover, lightDefaultActive);
+
+                // Update all TitledBorder components for light theme
+                updateTitledBorders(this, false);
 
                 // Panels
                 updateComponent(this, Color.WHITE);
@@ -2193,10 +2266,68 @@ public class Python3IDE extends JPanel {
             menu.setBackground(ModernTheme.BACKGROUND_DARK);
             menu.setForeground(ModernTheme.FOREGROUND_PRIMARY);
             menu.setBorder(BorderFactory.createLineBorder(ModernTheme.BORDER_DEFAULT, 1));
+
+            // Style each menu item
+            for (Component comp : menu.getComponents()) {
+                if (comp instanceof JMenuItem) {
+                    JMenuItem item = (JMenuItem) comp;
+                    item.setBackground(ModernTheme.BACKGROUND_DARK);
+                    item.setForeground(ModernTheme.FOREGROUND_PRIMARY);
+                    item.setFont(ModernTheme.FONT_REGULAR);
+                }
+            }
         } else {
             menu.setBackground(Color.WHITE);
             menu.setForeground(Color.BLACK);
             menu.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200), 1));
+
+            // Style each menu item
+            for (Component comp : menu.getComponents()) {
+                if (comp instanceof JMenuItem) {
+                    JMenuItem item = (JMenuItem) comp;
+                    item.setBackground(Color.WHITE);
+                    item.setForeground(Color.BLACK);
+                    item.setFont(ModernTheme.FONT_REGULAR);
+                }
+            }
+        }
+    }
+
+    /**
+     * Applies theme-aware styling to JFileChooser via UIManager.
+     * Must be called BEFORE showing any JFileChooser.
+     *
+     * @since v2.0.14 - Made theme-aware for consistency
+     */
+    private void applyFileChooserTheme() {
+        if (useDarkTheme) {
+            // JFileChooser dark theme
+            UIManager.put("FileChooser.background", new Color(43, 43, 43));
+            UIManager.put("FileChooser.foreground", new Color(224, 224, 224));
+            UIManager.put("List.background", new Color(30, 30, 30));
+            UIManager.put("List.foreground", new Color(224, 224, 224));
+            UIManager.put("List.selectionBackground", new Color(60, 63, 65));
+            UIManager.put("List.selectionForeground", new Color(224, 224, 224));
+            UIManager.put("Table.background", new Color(30, 30, 30));
+            UIManager.put("Table.foreground", new Color(224, 224, 224));
+            UIManager.put("TextField.background", new Color(30, 30, 30));
+            UIManager.put("TextField.foreground", new Color(224, 224, 224));
+            UIManager.put("ComboBox.background", new Color(30, 30, 30));
+            UIManager.put("ComboBox.foreground", new Color(224, 224, 224));
+        } else {
+            // JFileChooser light theme (system defaults)
+            UIManager.put("FileChooser.background", Color.WHITE);
+            UIManager.put("FileChooser.foreground", Color.BLACK);
+            UIManager.put("List.background", Color.WHITE);
+            UIManager.put("List.foreground", Color.BLACK);
+            UIManager.put("List.selectionBackground", new Color(184, 207, 229));
+            UIManager.put("List.selectionForeground", Color.BLACK);
+            UIManager.put("Table.background", Color.WHITE);
+            UIManager.put("Table.foreground", Color.BLACK);
+            UIManager.put("TextField.background", Color.WHITE);
+            UIManager.put("TextField.foreground", Color.BLACK);
+            UIManager.put("ComboBox.background", Color.WHITE);
+            UIManager.put("ComboBox.foreground", Color.BLACK);
         }
     }
 
@@ -2215,16 +2346,6 @@ public class Python3IDE extends JPanel {
         UIManager.put("Button.background", new Color(60, 63, 65));
         UIManager.put("Button.foreground", new Color(224, 224, 224));
         UIManager.put("Label.foreground", new Color(224, 224, 224));
-
-        // JFileChooser dark theme
-        UIManager.put("FileChooser.background", new Color(43, 43, 43));
-        UIManager.put("FileChooser.foreground", new Color(224, 224, 224));
-        UIManager.put("List.background", new Color(30, 30, 30));
-        UIManager.put("List.foreground", new Color(224, 224, 224));
-        UIManager.put("List.selectionBackground", new Color(60, 63, 65));
-        UIManager.put("List.selectionForeground", new Color(224, 224, 224));
-        UIManager.put("Table.background", new Color(30, 30, 30));
-        UIManager.put("Table.foreground", new Color(224, 224, 224));
     }
 
     /**
@@ -2271,6 +2392,75 @@ public class Python3IDE extends JPanel {
         if (comp instanceof Container) {
             for (Component child : ((Container) comp).getComponents()) {
                 updateComponent(child, background);
+            }
+        }
+    }
+
+    /**
+     * Updates a ModernButton's color scheme.
+     * Helper method to update button colors when theme changes.
+     *
+     * @param button the button to update (must be a ModernButton)
+     * @param normal the normal background color
+     * @param hover the hover background color
+     * @param pressed the pressed background color
+     */
+    private void updateButtonTheme(JButton button, Color normal, Color hover, Color pressed) {
+        if (button instanceof ModernButton) {
+            ModernButton modernButton = (ModernButton) button;
+            modernButton.setNormalBackground(normal);
+            modernButton.setHoverBackground(hover);
+            modernButton.setPressedBackground(pressed);
+            modernButton.repaint();
+        }
+    }
+
+    /**
+     * Recursively updates all TitledBorder components to match the current theme.
+     * This updates the border color and title text color for all panels with titled borders.
+     *
+     * @param comp the component to traverse
+     * @param isDarkTheme true if dark theme, false if light theme
+     */
+    private void updateTitledBorders(Component comp, boolean isDarkTheme) {
+        if (comp instanceof JComponent) {
+            JComponent jcomp = (JComponent) comp;
+            javax.swing.border.Border border = jcomp.getBorder();
+
+            if (border instanceof javax.swing.border.CompoundBorder) {
+                javax.swing.border.CompoundBorder compoundBorder = (javax.swing.border.CompoundBorder) border;
+                javax.swing.border.Border outerBorder = compoundBorder.getOutsideBorder();
+
+                if (outerBorder instanceof TitledBorder) {
+                    TitledBorder titledBorder = (TitledBorder) outerBorder;
+
+                    // Update title text color and border line color
+                    if (isDarkTheme) {
+                        titledBorder.setTitleColor(ModernTheme.FOREGROUND_PRIMARY);
+                        titledBorder.setBorder(BorderFactory.createLineBorder(ModernTheme.BORDER_DEFAULT));
+                    } else {
+                        titledBorder.setTitleColor(Color.BLACK);
+                        titledBorder.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200)));
+                    }
+                }
+            } else if (border instanceof TitledBorder) {
+                TitledBorder titledBorder = (TitledBorder) border;
+
+                // Update title text color and border line color
+                if (isDarkTheme) {
+                    titledBorder.setTitleColor(ModernTheme.FOREGROUND_PRIMARY);
+                    titledBorder.setBorder(BorderFactory.createLineBorder(ModernTheme.BORDER_DEFAULT));
+                } else {
+                    titledBorder.setTitleColor(Color.BLACK);
+                    titledBorder.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200)));
+                }
+            }
+        }
+
+        // Recursively traverse children
+        if (comp instanceof Container) {
+            for (Component child : ((Container) comp).getComponents()) {
+                updateTitledBorders(child, isDarkTheme);
             }
         }
     }

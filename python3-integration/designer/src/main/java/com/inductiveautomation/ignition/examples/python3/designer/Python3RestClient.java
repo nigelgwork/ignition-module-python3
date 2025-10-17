@@ -188,19 +188,38 @@ public class Python3RestClient {
      *
      * @return Python version string (e.g., "3.11.2")
      * @throws IOException if the HTTP request fails
+     *
+     * v2.0.14: Enhanced logging to debug version detection issues
      */
     public String getPythonVersion() throws IOException {
-        LOGGER.debug("Getting Python version via REST API");
+        LOGGER.info("getPythonVersion() - Getting Python version via REST API");
 
-        String response = get("/version");
-        JsonObject json = JsonParser.parseString(response).getAsJsonObject();
+        try {
+            String response = get("/version");
+            LOGGER.info("getPythonVersion() - Raw response: {}", response);
 
-        if (json.has("pythonVersion")) {
-            return json.get("pythonVersion").getAsString();
-        } else if (json.has("version")) {
-            return json.get("version").getAsString();
+            JsonObject json = JsonParser.parseString(response).getAsJsonObject();
+            LOGGER.info("getPythonVersion() - Parsed JSON object, keys: {}", json.keySet());
+
+            if (json.has("pythonVersion")) {
+                String version = json.get("pythonVersion").getAsString();
+                LOGGER.info("getPythonVersion() - Found 'pythonVersion' key: {}", version);
+                return version;
+            } else if (json.has("version")) {
+                String version = json.get("version").getAsString();
+                LOGGER.info("getPythonVersion() - Found 'version' key: {}", version);
+                return version;
+            } else {
+                LOGGER.warn("getPythonVersion() - Neither 'pythonVersion' nor 'version' key found in response");
+                LOGGER.warn("getPythonVersion() - Available keys: {}", json.keySet());
+            }
+
+        } catch (Exception e) {
+            LOGGER.error("getPythonVersion() - Exception occurred", e);
+            throw e;
         }
 
+        LOGGER.warn("getPythonVersion() - Returning 'Unknown' (no version found)");
         return "Unknown";
     }
 
