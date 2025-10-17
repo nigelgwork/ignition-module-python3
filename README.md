@@ -1,15 +1,29 @@
 # Python 3 Integration for Ignition
 
+**Current Version: v2.0.9** | [Changelog](python3-integration/README.md#changelog) | [Architecture Docs](python3-integration/docs/)
+
 A production-ready Ignition module that enables Python 3.11 scripting in Ignition 8.3+, bridging the gap between Ignition's Jython 2.7 and modern Python 3.
 
-## Current Version: 1.17.0
+> **📦 Active Development:** The main module is in [`python3-integration/`](python3-integration/) directory with full documentation.
+>
+> **🎨 v2.0 Architecture:** Refactored in v2.0.0 with modular design - see [V2_ARCHITECTURE_GUIDE.md](python3-integration/docs/V2_ARCHITECTURE_GUIDE.md)
 
-**Latest Features:**
-- 🔒 **Production Security** - Script signing, security headers, CSRF protection (NEW in 1.17.0)
-- 🔒 **Security Hardening** - Admin mode detection, resource limits, sandboxing (1.16.0)
-- 📊 **Performance Monitoring** - Per-script metrics, historical tracking, health alerts (1.16.0)
-- ✨ **Saved Scripts** - Build a library of reusable Python scripts
-- 🎨 **Designer IDE** - Visual code editor with saved script management
+## Latest Release: v2.0.9 (UX Fixes)
+
+**New in v2.0.9:**
+- ✅ **Fixed Scrollbars** - Only appear when needed
+- ✅ **Fixed Theme Selector** - No more text cutoff
+- ✅ **Larger Description Panel** - 50% increase for better usability
+- ✅ **Python Version Display** - Shows actual version instead of "Unknown"
+- ✅ **Dark Theme Dividers** - All panel dividers match dark theme
+- ✅ **Dark Theme Dialogs** - All popups follow consistent dark theme
+
+**Key Features:**
+- 🎨 **Modern Designer IDE** (v1.7.0+, refactored v2.0.0) - VS Code-inspired dark theme
+- 🏗️ **Modular Architecture** (v2.0.0+) - Clean separation: Managers + UI Panels (95-490 lines per file)
+- 🔒 **Production Security** (v1.17.0) - Script signing, security headers, CSRF protection
+- 📊 **Enhanced Diagnostics** (v2.0.8) - Real-time metrics with color-coded health indicators
+- ✨ **Script Management** - Save, load, delete, rename, organize in folders
 - 🔄 **REST API** - Remote execution and script management
 - 📦 **Self-Contained** - Embedded Python 3.11, no system install needed
 - ⚡ **Process Pool** - 3-20 concurrent Python processes
@@ -19,10 +33,14 @@ A production-ready Ignition module that enables Python 3.11 scripting in Ignitio
 
 ### Installation
 
-1. Download: [Python3Integration-1.17.0.modl](/modules/ignition-module-python3/python3-integration/build/Python3Integration-1.17.0.modl)
-2. Install: Config → System → Modules → Install or Upgrade a Module
-3. Upload the .modl file
-4. Restart Gateway
+1. **Build or Download:**
+   - Build: `cd python3-integration && ./gradlew build`
+   - Output: `python3-integration/build/libs/python3-integration-signed.modl`
+2. **Install:** Config → System → Modules → Install or Upgrade a Module
+3. **Upload** the .modl file
+4. **Restart Gateway**
+
+See [`python3-integration/README.md`](python3-integration/README.md) for detailed installation and configuration instructions.
 
 ### First Script
 
@@ -517,7 +535,7 @@ cd python3-integration
 ./gradlew clean build --no-daemon
 ```
 
-Output: `build/Python3Integration-1.17.0.modl`
+Output: `build/libs/python3-integration-signed.modl` (v2.0.9)
 
 ### Testing
 

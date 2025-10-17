@@ -19,7 +19,14 @@ This document defines the **mandatory checklist** for every version release to e
 
 ### 3. Update ALL Documentation References
 
-#### README.md (CRITICAL - 8 locations)
+#### Repository Root README.md (CRITICAL - /modules/ignition-module-python3/README.md)
+- [ ] **Line 3**: Update "Current Version: vX.Y.Z" in header
+- [ ] **Line 11**: Update "Latest Release: vX.Y.Z" section header
+- [ ] **Line 13-19**: Update "New in vX.Y.Z" bullet list with latest changes
+- [ ] **Line 38**: Update build output path with current version
+- [ ] **Line 538**: Update "Output" path with current version
+
+#### Module README.md (CRITICAL - python3-integration/README.md - 8 locations)
 - [ ] **Line 3**: Update "Current Version: vX.Y.Z" in header
 - [ ] **Line 10**: Update Designer IDE version reference if applicable
 - [ ] **Line 122**: Update build output path (should be `python3-integration-signed.modl`)
@@ -121,10 +128,11 @@ EOF
 Every version release MUST update these files:
 
 1. **version.properties** - Version number
-2. **README.md** - 8+ locations (see checklist above)
-3. **Python3IDE_v2.java** - Status bar message
-4. **V2_STATUS_SUMMARY.md** - Version header, version history
-5. **Changelog** - New entry in README.md
+2. **Repository Root README.md** (`/modules/ignition-module-python3/README.md`) - 5 locations
+3. **Module README.md** (`python3-integration/README.md`) - 8+ locations
+4. **Python3IDE_v2.java** - Status bar message
+5. **V2_STATUS_SUMMARY.md** - Version header, version history
+6. **Changelog** - New entry in module README.md
 
 ---
 
