@@ -30,9 +30,9 @@ Version file: `python3-integration/version.properties`
 - **PATCH** (1.0.x): Bug fixes, documentation updates, minor tweaks
 
 **Examples:**
-- Added Designer scope support → **MINOR** (1.0.0 → 1.1.0)
-- Fixed a bug in Python executor → **PATCH** (1.1.0 → 1.1.1)
-- Rewrote entire architecture → **MAJOR** (1.1.1 → 2.0.0)
+- Added new feature (folders, find/replace) → **MINOR** (2.0.9 → 2.1.0)
+- Fixed UI bugs (scrollbars, themes) → **PATCH** (2.0.8 → 2.0.9)
+- Rewrote entire architecture (v1 → v2 refactor) → **MAJOR** (1.17.2 → 2.0.0)
 
 ### 3. Build Module
 ```bash
@@ -101,47 +101,94 @@ This is a **Python 3 Integration module** for Ignition 8.3 SDK. The repository c
 
 ## Repository Structure
 
+**Current Version: v2.0.9** (Oct 2025)
+
 ```
 ignition-module-python3/
+├── README.md                        # Repository landing page (updated Oct 2025)
 ├── CLAUDE.md                        # This file - AI guidance
-├── README.md                        # Project overview
+├── UPGRADE_GUIDE.md                 # Upgrade instructions
 ├── .gitignore                       # Git ignore rules
 │
-├── python3-integration/             # ACTIVE MODULE IMPLEMENTATION
+├── python3-integration/             # ⭐ WORKING MODULE (v2.0.9)
 │   ├── build.gradle.kts            # Root build configuration
 │   ├── settings.gradle.kts         # Gradle settings
+│   ├── version.properties          # Current version: 2.0.9
+│   ├── README.md                   # Module documentation (comprehensive)
+│   │
 │   ├── common/                     # Common scope (shared code)
-│   ├── gateway/                    # Gateway scope implementation
+│   ├── gateway/                    # Gateway scope (Python bridge, REST API)
 │   │   ├── build.gradle.kts
-│   │   └── src/main/
-│   │       ├── java/com/inductiveautomation/ignition/examples/python3/gateway/
-│   │       │   ├── GatewayHook.java              # Module lifecycle
-│   │       │   ├── Python3ProcessPool.java       # Process pool manager
-│   │       │   ├── Python3Executor.java          # Single process wrapper
-│   │       │   ├── Python3ScriptModule.java      # Scripting functions
-│   │       │   ├── Python3RestEndpoints.java     # REST API endpoints (v1.6.0+)
-│   │       │   └── PythonDistributionManager.java # Self-contained Python
-│   │       └── resources/
-│   │           └── python_bridge.py              # Python-side bridge script
-│   ├── ARCHITECTURE.md             # Detailed architecture documentation
-│   ├── README.md                   # Module-specific README
-│   └── EMBEDDING-PYTHON.md         # Self-contained Python distribution guide
+│   │   └── src/main/java/.../gateway/
+│   │       ├── GatewayHook.java
+│   │       ├── Python3ProcessPool.java
+│   │       ├── Python3Executor.java
+│   │       ├── Python3ScriptModule.java
+│   │       ├── Python3RestEndpoints.java
+│   │       └── resources/python_bridge.py
+│   │
+│   ├── designer/                   # Designer scope (Python 3 IDE - v2.0.0+)
+│   │   ├── build.gradle.kts
+│   │   └── src/main/java/.../designer/
+│   │       ├── DesignerHook.java
+│   │       ├── Python3IDE_v2.java         # Main IDE class (refactored v2.0.0)
+│   │       ├── managers/                  # Business logic layer
+│   │       │   ├── GatewayConnectionManager.java
+│   │       │   ├── ScriptManager.java
+│   │       │   └── ThemeManager.java
+│   │       └── ui/                        # Presentation layer
+│   │           ├── EditorPanel.java
+│   │           ├── ScriptTreePanel.java
+│   │           ├── MetadataPanel.java
+│   │           └── DiagnosticsPanel.java
+│   │
+│   └── docs/                        # Module-specific documentation
+│       ├── V2_ARCHITECTURE_GUIDE.md
+│       ├── V2_STATUS_SUMMARY.md
+│       ├── V2_FEATURE_COMPARISON_AND_ROADMAP.md
+│       ├── V2_MIGRATION_GUIDE.md
+│       ├── TESTING_GUIDE.md
+│       └── VERSION_UPDATE_WORKFLOW.md
 │
-├── docs/
-│   └── knowledge-base/              # Complete SDK documentation
-│       ├── 00-CLAUDE-CODE-INSTRUCTIONS.md
-│       ├── 01-SDK-Overview-Getting-Started.md
-│       ├── 02-Module-Architecture-Structure.md
-│       ├── 03-Build-Systems-Gradle-Maven.md
-│       ├── 04-Perspective-Component-Development.md
-│       ├── 05-Vision-Component-Development.md
-│       ├── 06-OPC-UA-Device-Driver-Development.md
-│       ├── 07-Scripting-Functions-RPC-Communication.md
-│       └── 08-Quick-Reference-Cheat-Sheet.md
+├── docs/                            # 📚 SDK KNOWLEDGE BASE
+│   ├── README.md                    # SDK docs index
+│   ├── 00-CLAUDE-CODE-INSTRUCTIONS.md
+│   ├── 01-SDK-Overview-Getting-Started.md
+│   ├── 02-Module-Architecture-Structure.md
+│   ├── 03-Build-Systems-Gradle-Maven.md
+│   ├── 04-Perspective-Component-Development.md
+│   ├── 05-Vision-Component-Development.md
+│   ├── 06-OPC-UA-Device-Driver-Development.md
+│   ├── 07-Scripting-Functions-RPC-Communication.md
+│   └── 08-Quick-Reference-Cheat-Sheet.md
 │
-└── examples/                        # Official Ignition SDK examples
-    └── (reference implementations from Inductive Automation)
+├── examples/                        # 🔨 SDK EXAMPLES (17 modules)
+│   ├── README.md                    # Examples index
+│   ├── scripting-function/          # Most relevant for this module
+│   ├── perspective-component/
+│   ├── opc-ua-device/
+│   └── ... (14 more examples)
+│
+├── scripts/                         # Testing utilities
+│   ├── TESTING.md
+│   └── MANUAL_TESTING_GUIDE.md
+│
+├── archive/                         # Historical v1.x planning docs
+│   └── v1-planning-docs/
+│       ├── CHANGELOG.md
+│       ├── ROADMAP_STATUS.md
+│       ├── REFACTORING_PLAN.md
+│       └── ... (stale v1.x documentation)
+│
+├── Dockerfile.test                  # Docker test environment
+├── docker-compose.yml               # Test infrastructure
+└── config/                          # Test configuration
 ```
+
+**Note:** Repository reorganized Oct 2025 to separate:
+1. Working module (python3-integration/ - v2.0.9)
+2. SDK learning resources (docs/, examples/)
+3. Historical planning docs (archive/)
 
 ## Working with the Active Module
 
@@ -151,13 +198,20 @@ The `python3-integration/` directory contains a complete, working module impleme
 
 The module uses a **subprocess process pool** approach to bridge Ignition's Jython 2.7 with Python 3:
 
+**Gateway Scope:**
 1. **GatewayHook** - Module lifecycle, initializes process pool during startup()
-2. **Python3ProcessPool** - Manages 3-5 warm Python processes, thread-safe borrowing/returning
+2. **Python3ProcessPool** - Manages 3-20 warm Python processes, thread-safe borrowing/returning
 3. **Python3Executor** - Wraps single Python subprocess, handles JSON communication via stdin/stdout
 4. **Python3ScriptModule** - Exposes scripting functions like `system.python3.exec()`, `system.python3.eval()`
-5. **python_bridge.py** - Python-side request handler running in each subprocess
+5. **Python3RestEndpoints** - REST API for remote execution (v1.6.0+, enhanced v2.0.0+)
+6. **python_bridge.py** - Python-side request handler running in each subprocess
 
-See `python3-integration/ARCHITECTURE.md` for detailed component interactions and data flow.
+**Designer Scope (v2.0.0+):**
+1. **Python3IDE_v2.java** - Main IDE orchestration class (refactored v2.0.0)
+2. **Managers/** - Business logic (GatewayConnectionManager, ScriptManager, ThemeManager)
+3. **UI/** - Presentation layer (EditorPanel, ScriptTreePanel, MetadataPanel, DiagnosticsPanel)
+
+See `python3-integration/docs/V2_ARCHITECTURE_GUIDE.md` for detailed component interactions and data flow.
 
 ### Build Commands
 
@@ -180,12 +234,16 @@ cd /modules/ignition-module-python3
 # Install in local Ignition Gateway
 # 1. Navigate to http://localhost:8088
 # 2. Config → System → Modules → Install or Upgrade a Module
-# 3. Upload: python3-integration/build/libs/python3-integration-1.0.0-SNAPSHOT.modl
+# 3. Upload: python3-integration/build/libs/python3-integration-signed.modl
 
 # Test in Script Console (once installed)
 # system.python3.example()
 # system.python3.getVersion()
 # system.python3.getPoolStats()
+
+# Test Designer IDE (v2.0.0+)
+# Open Designer → Tools → Python 3 IDE
+# Connect to Gateway, write Python 3 code, click Execute
 ```
 
 ### Key Implementation Files
@@ -450,70 +508,75 @@ InputStream is = getClass().getResourceAsStream("/python_bridge.py");
 
 ## Repository Resources
 
-- **Active module code**: `python3-integration/`
-- **Architecture deep-dive**: `python3-integration/ARCHITECTURE.md`
-- **Python IDE Plan**: `python3-integration/docs/PYTHON_IDE_PLAN.md` ⭐ NEW
-- **SDK documentation**: `docs/knowledge-base/` (read 01, 02, 07 for this module type)
-- **SDK examples**: `examples/scripting-function/` (most similar pattern)
+- **Active module code**: `python3-integration/` (v2.0.9)
+- **V2 Architecture Guide**: `python3-integration/docs/V2_ARCHITECTURE_GUIDE.md` ⭐
+- **V2 Status Summary**: `python3-integration/docs/V2_STATUS_SUMMARY.md`
+- **V2 Feature Comparison**: `python3-integration/docs/V2_FEATURE_COMPARISON_AND_ROADMAP.md`
+- **Testing Guide**: `python3-integration/docs/TESTING_GUIDE.md`
+- **Version Workflow**: `python3-integration/docs/VERSION_UPDATE_WORKFLOW.md`
+- **SDK Documentation**: `docs/` (00-08 guides for Ignition SDK)
+- **SDK Examples**: `examples/scripting-function/` (most similar pattern)
 
-## Python 3 IDE Plan (v1.7.0+ Roadmap)
+## Python 3 IDE (v2.0.0+ - IMPLEMENTED)
 
-**IMPORTANT**: There is a comprehensive plan for a Python 3 IDE feature in Designer.
+**STATUS**: ✅ Fully implemented and refactored in v2.0.0 (Oct 2025)
 
-### Vision
+The Python 3 IDE is a **Designer-scoped feature** that provides an IDE-type interface for Python 3 development:
 
-Create an **IDE-type function in Ignition Designer** where developers can:
-- Write Python 3 code with syntax highlighting
-- Execute code on Gateway (not Designer-side)
-- See real-time performance diagnostics
-- Save and organize Python scripts
-- Get immediate feedback with results and errors
+### Implemented Features (v2.0.9)
 
-### Plan Document Location
+**Core IDE:**
+- ✅ Code editor with Python syntax highlighting (RSyntaxTextArea)
+- ✅ Gateway execution via REST API (non-blocking, async)
+- ✅ Separate output/error tabs with color coding
+- ✅ Execution timing and performance metrics
+- ✅ Connection management (multi-Gateway support)
 
-**Full Plan**: `python3-integration/docs/PYTHON_IDE_PLAN.md`
+**Script Management:**
+- ✅ Save scripts with names and descriptions
+- ✅ Load scripts from tree browser
+- ✅ Delete scripts with confirmation
+- ✅ Rename scripts (v2.0.5)
+- ✅ Folder organization (create, rename folders - v2.0.5)
+- ✅ Import/Export scripts to .py files (v2.0.7)
 
-This document contains:
-- **Executive Summary**: IDE vision and use cases
-- **Technical Architecture**: UI components, communication layers
-- **Implementation Phases**: v1.7.0 through v1.8.0
-- **Timeline Estimates**: 4-6 weeks total (2-3 weeks for MVP)
-- **Success Criteria**: Clear metrics for each phase
-- **Risk Mitigation**: Strategies for known issues (Designer lockups, RPC stability)
+**Advanced Features:**
+- ✅ Find/Replace toolbar (v2.0.6)
+- ✅ Enhanced diagnostics panel (v2.0.8)
+- ✅ Theme support (Dark, Light, VS Code Dark+ - v1.11.0+)
+- ✅ Real-time Python version detection (v2.0.9)
+- ✅ Modular architecture (v2.0.0 refactor)
 
-### Implementation Phases
+**v2.0.0 Refactoring:**
+- Reduced main class from 2,676 lines → 490 lines (82% reduction)
+- Separated concerns: Managers (business logic) + UI Panels (presentation)
+- Improved maintainability: 95-490 lines per file (vs 25K tokens before)
 
-1. **Phase 1 (v1.7.0)**: Basic Designer UI with code editor, run button, output panel
-2. **Phase 2 (v1.7.1)**: Enhanced diagnostics with real-time metrics
-3. **Phase 3 (v1.7.2)**: Script management (save, load, organize)
-4. **Phase 4 (v1.8.0)**: Advanced features (auto-completion, profiling, history)
+### Architecture (v2.0.0+)
 
-### Key Features
+**Main Class:**
+- `Python3IDE_v2.java` - Orchestration, menu registration, panel assembly
 
-- **Code Editor**: ExtensionFunctionPanel with Python syntax highlighting
-- **Gateway Execution**: All code runs on Gateway via **REST API** (not RPC)
-- **Diagnostics Panel**: Execution time, pool status, Python version, memory usage
-- **Script Library**: Save, load, and organize Python scripts in folders
-- **Error Feedback**: Clear tracebacks with line number highlighting
+**Managers (Business Logic):**
+- `GatewayConnectionManager.java` - Gateway URL management, REST client lifecycle
+- `ScriptManager.java` - Script CRUD operations, file I/O
+- `ThemeManager.java` - Theme application, RSyntaxTextArea styling
 
-### Architecture Decision: REST API (Not RPC)
+**UI Panels (Presentation):**
+- `EditorPanel.java` - Code editor, Execute button, output/error display
+- `ScriptTreePanel.java` - Script browser tree, right-click menu
+- `MetadataPanel.java` - Script name, description, save button
+- `DiagnosticsPanel.java` - Execution time, pool stats, health indicators
 
-**DECIDED**: Use REST API for Designer-Gateway communication, avoiding RPC complexity.
+### Documentation
 
-**Benefits**:
-- 6-10 hours faster development
-- No Designer lockup risks (async HTTP calls)
-- Works with existing v1.6.1 REST API
-- Simpler, proven, testable
+- **Full Architecture**: `python3-integration/docs/V2_ARCHITECTURE_GUIDE.md`
+- **Feature Comparison**: `python3-integration/docs/V2_FEATURE_COMPARISON_AND_ROADMAP.md`
+- **Status Summary**: `python3-integration/docs/V2_STATUS_SUMMARY.md`
 
-### When to Reference This Plan
+### Historical Context
 
-- Before starting v1.7.0 development
-- When user asks about "Designer IDE" or "Python editor"
-- When planning Designer scope features
-- When discussing roadmap or future features
-
-**DO NOT start implementation without user approval of the plan.**
+The original IDE plan (`python3-integration/docs/PYTHON_IDE_PLAN.md`) outlined v1.7.0-v1.8.0 implementation phases. This has been fully implemented and later refactored to v2.0.0 architecture for better maintainability.
 
 ## REST API Endpoints (v1.6.0+)
 

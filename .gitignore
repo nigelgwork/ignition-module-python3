@@ -8,6 +8,10 @@ build/
 !gradle/wrapper/gradle-wrapper.jar
 .gradletasknamecache
 
+# Prevent nested build artifacts (CRITICAL)
+**/python3-integration/build/
+python3-integration/python3-integration/
+
 # ============================================================================
 # Java / JVM
 # ============================================================================
@@ -62,7 +66,12 @@ Thumbs.db
 ehthumbs.db
 Desktop.ini
 $RECYCLE.BIN/
+
+# Windows WSL metadata (CRITICAL - NEVER COMMIT)
 *:Zone.Identifier
+**/*:Zone.Identifier
+*.Zone.Identifier
+**/*.Zone.Identifier
 
 # ============================================================================
 # Linux
