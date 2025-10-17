@@ -21,6 +21,10 @@ public class DiagnosticsPanel extends JPanel {
     private final JLabel inUseLabel;
     private final JLabel impactLevelLabel;
     private final JLabel healthScoreLabel;
+    private final JLabel pythonVersionLabel;
+    private final JLabel totalExecutionsLabel;
+    private final JLabel successRateLabel;
+    private final JLabel avgExecutionTimeLabel;
 
     private Python3RestClient restClient;
     private Timer refreshTimer;
@@ -49,11 +53,18 @@ public class DiagnosticsPanel extends JPanel {
         inUseLabel = createValueLabel();
         impactLevelLabel = createValueLabel();
         healthScoreLabel = createValueLabel();
+        pythonVersionLabel = createValueLabel();
+        totalExecutionsLabel = createValueLabel();
+        successRateLabel = createValueLabel();
+        avgExecutionTimeLabel = createValueLabel();
 
         // Layout
-        JPanel fieldsPanel = new JPanel(new GridLayout(6, 2, 5, 3));
+        JPanel fieldsPanel = new JPanel(new GridLayout(10, 2, 5, 3));
         fieldsPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
         fieldsPanel.setBackground(ModernTheme.PANEL_BACKGROUND);
+
+        fieldsPanel.add(createKeyLabel("Python Version:"));
+        fieldsPanel.add(pythonVersionLabel);
 
         fieldsPanel.add(createKeyLabel("Pool Size:"));
         fieldsPanel.add(poolSizeLabel);
@@ -66,6 +77,15 @@ public class DiagnosticsPanel extends JPanel {
 
         fieldsPanel.add(createKeyLabel("In Use:"));
         fieldsPanel.add(inUseLabel);
+
+        fieldsPanel.add(createKeyLabel("Total Executions:"));
+        fieldsPanel.add(totalExecutionsLabel);
+
+        fieldsPanel.add(createKeyLabel("Success Rate:"));
+        fieldsPanel.add(successRateLabel);
+
+        fieldsPanel.add(createKeyLabel("Avg Time (ms):"));
+        fieldsPanel.add(avgExecutionTimeLabel);
 
         fieldsPanel.add(createKeyLabel("Impact Level:"));
         fieldsPanel.add(impactLevelLabel);
@@ -120,7 +140,24 @@ public class DiagnosticsPanel extends JPanel {
                 // Fetch gateway impact (from v1.14.0 endpoint)
                 GatewayImpact impact = restClient.getGatewayImpact();
 
-                return new DiagnosticsData(poolStats, impact);
+                // Fetch Python version
+                String pythonVersion = null;
+                try {
+                    pythonVersion = restClient.getPythonVersion();
+                } catch (Exception e) {
+                    LOGGER.warn("Failed to fetch Python version", e);
+                }
+
+                // Fetch diagnostics metrics
+                ExecutionMetrics metrics = null;
+                try {
+                    String diagnosticsJson = restClient.getDiagnostics();
+                    metrics = ExecutionMetrics.fromJson(diagnosticsJson);
+                } catch (Exception e) {
+                    LOGGER.warn("Failed to fetch execution metrics", e);
+                }
+
+                return new DiagnosticsData(poolStats, impact, pythonVersion, metrics);
             }
 
             @Override
@@ -152,6 +189,9 @@ public class DiagnosticsPanel extends JPanel {
         PoolStats stats = data.poolStats;
         GatewayImpact impact = data.impact;
 
+        // Python version
+        pythonVersionLabel.setText(data.pythonVersion != null ? data.pythonVersion : "—");
+
         // Pool size
         poolSizeLabel.setText(String.valueOf(stats.getTotalSize()));
 
@@ -169,6 +209,22 @@ public class DiagnosticsPanel extends JPanel {
         // Calculate pool usage percentage
         int poolUsage = stats.getTotalSize() > 0 ? (inUse * 100 / stats.getTotalSize()) : 0;
         inUseLabel.setForeground(getPoolUsageColor(poolUsage));
+
+        // Execution metrics
+        if (data.metrics != null) {
+            totalExecutionsLabel.setText(String.valueOf(data.metrics.getTotalExecutions()));
+
+            double successRate = data.metrics.getSuccessRate();
+            successRateLabel.setText(String.format("%.1f%%", successRate));
+            successRateLabel.setForeground(getSuccessRateColor(successRate));
+
+            avgExecutionTimeLabel.setText(String.format("%.1f", data.metrics.getAverageExecutionTime()));
+        } else {
+            totalExecutionsLabel.setText("—");
+            successRateLabel.setText("—");
+            successRateLabel.setForeground(ModernTheme.FOREGROUND_PRIMARY);
+            avgExecutionTimeLabel.setText("—");
+        }
 
         // Impact level
         if (impact != null) {
@@ -190,16 +246,21 @@ public class DiagnosticsPanel extends JPanel {
      * Clears all diagnostic fields.
      */
     private void clear() {
+        pythonVersionLabel.setText("—");
         poolSizeLabel.setText("—");
         healthyLabel.setText("—");
         availableLabel.setText("—");
         inUseLabel.setText("—");
+        totalExecutionsLabel.setText("—");
+        successRateLabel.setText("—");
+        avgExecutionTimeLabel.setText("—");
         impactLevelLabel.setText("—");
         healthScoreLabel.setText("—");
 
         // Reset colors
         healthyLabel.setForeground(ModernTheme.FOREGROUND_PRIMARY);
         inUseLabel.setForeground(ModernTheme.FOREGROUND_PRIMARY);
+        successRateLabel.setForeground(ModernTheme.FOREGROUND_PRIMARY);
         impactLevelLabel.setForeground(ModernTheme.FOREGROUND_PRIMARY);
         healthScoreLabel.setForeground(ModernTheme.FOREGROUND_PRIMARY);
     }
@@ -252,6 +313,19 @@ public class DiagnosticsPanel extends JPanel {
     }
 
     /**
+     * Gets color for success rate display.
+     */
+    private Color getSuccessRateColor(double rate) {
+        if (rate >= 95.0) {
+            return ModernTheme.SUCCESS;
+        } else if (rate >= 85.0) {
+            return ModernTheme.WARNING;
+        } else {
+            return ModernTheme.ERROR;
+        }
+    }
+
+    /**
      * Creates a key label (e.g., "Total Executions:", "Success Rate:").
      *
      * @param text the label text
@@ -282,10 +356,14 @@ public class DiagnosticsPanel extends JPanel {
     private static class DiagnosticsData {
         final PoolStats poolStats;
         final GatewayImpact impact;
+        final String pythonVersion;
+        final ExecutionMetrics metrics;
 
-        DiagnosticsData(PoolStats poolStats, GatewayImpact impact) {
+        DiagnosticsData(PoolStats poolStats, GatewayImpact impact, String pythonVersion, ExecutionMetrics metrics) {
             this.poolStats = poolStats;
             this.impact = impact;
+            this.pythonVersion = pythonVersion;
+            this.metrics = metrics;
         }
     }
 
