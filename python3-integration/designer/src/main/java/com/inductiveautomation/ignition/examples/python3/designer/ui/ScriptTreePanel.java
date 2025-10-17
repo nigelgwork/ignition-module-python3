@@ -19,7 +19,7 @@ import java.util.function.Consumer;
  * Panel containing script tree browser.
  * Simplified for v2.0 architecture.
  *
- * v2.0.0: Extracted from Python3IDE_v1_9.java monolith
+ * v2.0.0: Extracted from Python3IDE.java monolith
  */
 public class ScriptTreePanel extends JPanel {
 

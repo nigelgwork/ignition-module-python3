@@ -13,7 +13,7 @@ import java.util.Map;
  * Manages Gateway connection and Python code execution.
  * Simplified version working with existing Python3RestClient API.
  *
- * v2.0.0: Extracted from Python3IDE_v1_9.java monolith
+ * v2.0.0: Extracted from Python3IDE.java monolith
  */
 public class GatewayConnectionManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(GatewayConnectionManager.class);

@@ -23,7 +23,7 @@ import java.awt.FlowLayout;
  * Panel containing code editor and execution results.
  * Simplified for v2.0 architecture.
  *
- * v2.0.0: Extracted from Python3IDE_v1_9.java monolith
+ * v2.0.0: Extracted from Python3IDE.java monolith
  * v2.0.6: Added find/replace toolbar
  */
 public class EditorPanel extends JPanel {

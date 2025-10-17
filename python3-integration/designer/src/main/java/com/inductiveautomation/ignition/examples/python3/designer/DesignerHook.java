@@ -13,7 +13,7 @@ import java.io.IOException;
 import java.util.Properties;
 
 /**
- * Designer hook for the Python 3 Integration module (v1.9.0).
+ * Designer hook for the Python 3 Integration module.
  *
  * <p>This hook integrates the Python 3 IDE into the Ignition Designer by adding
  * a menu item to the Tools menu. The IDE communicates with the Gateway via REST API.</p>
@@ -24,12 +24,13 @@ import java.util.Properties;
  *   <li>shutdown() - Closes IDE window if open</li>
  * </ul>
  *
- * <p><strong>v1.9.0 Features:</strong></p>
+ * <p><strong>IDE Features:</strong></p>
  * <ul>
  *   <li>RSyntaxTextArea with Python syntax highlighting</li>
  *   <li>Left sidebar with folder tree for script organization</li>
  *   <li>Metadata panel showing script information</li>
  *   <li>Theme system (light and dark themes)</li>
+ *   <li>Theme-aware dialogs (v2.0.12+)</li>
  *   <li>Enhanced keyboard shortcuts</li>
  *   <li>Unsaved changes detection</li>
  *   <li>Export/import functionality</li>
@@ -173,13 +174,13 @@ public class DesignerHook extends AbstractDesignerModuleHook {
                 props.load(is);
                 String major = props.getProperty("version.major", "2");
                 String minor = props.getProperty("version.minor", "0");
-                String patch = props.getProperty("version.patch", "12");
+                String patch = props.getProperty("version.patch", "13");
                 return major + "." + minor + "." + patch;
             }
         } catch (IOException e) {
             LOGGER.warn("Failed to load version.properties, using fallback version", e);
         }
-        return "2.0.12";  // ALWAYS UPDATE THIS WITH NEW RELEASES
+        return "2.0.13";  // ALWAYS UPDATE THIS WITH NEW RELEASES
     }
 
     /**
@@ -198,8 +199,8 @@ public class DesignerHook extends AbstractDesignerModuleHook {
         // Create new IDE window
         SwingUtilities.invokeLater(() -> {
             try {
-                // Create IDE panel (v1.9.0 with enhanced features)
-                Python3IDE_v1_9 idePanel = new Python3IDE_v1_9(context);
+                // Create IDE panel (v2.0.12 with theme-aware dialogs)
+                Python3IDE idePanel = new Python3IDE(context);
 
                 // Create frame with dynamic version
                 String version = getModuleVersion();
@@ -214,7 +215,7 @@ public class DesignerHook extends AbstractDesignerModuleHook {
                 // Show window
                 ideFrame.setVisible(true);
 
-                LOGGER.info("Python 3 IDE v1.9.0 window opened");
+                LOGGER.info("Python 3 IDE v{} window opened", version);
 
             } catch (Exception e) {
                 LOGGER.error("Failed to open Python 3 IDE", e);

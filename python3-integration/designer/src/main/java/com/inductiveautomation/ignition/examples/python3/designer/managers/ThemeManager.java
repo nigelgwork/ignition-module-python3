@@ -23,9 +23,9 @@ import java.util.prefs.Preferences;
 
 /**
  * Manages IDE theme application.
- * Self-contained theme management extracted from Python3IDE_v1_9.
+ * Self-contained theme management extracted from Python3IDE.
  *
- * v2.0.0: Extracted from Python3IDE_v1_9.java monolith
+ * v2.0.0: Extracted from Python3IDE.java monolith
  */
 public class ThemeManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(ThemeManager.class);

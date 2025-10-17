@@ -13,7 +13,7 @@ import java.util.List;
  * Manages script operations using existing Python3RestClient API.
  * Simplified version for v2.0.0 architecture demonstration.
  *
- * v2.0.0: Extracted from Python3IDE_v1_9.java monolith
+ * v2.0.0: Extracted from Python3IDE.java monolith
  */
 public class ScriptManager {
     private static final Logger LOGGER = LoggerFactory.getLogger(ScriptManager.class);
