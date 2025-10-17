@@ -170,9 +170,12 @@ public final class Python3RestEndpoints {
             }
         }
 
-        // Default to RESTRICTED mode for security
-        LOGGER.debug("No admin credentials provided, using RESTRICTED mode");
-        return "RESTRICTED";
+        // v2.0.21: Default to ADMIN mode for practical usability
+        // The IDE and scripting tools need full Python access
+        // Security is enforced at Gateway level (authentication, API keys, network restrictions)
+        // RESTRICTED mode was too restrictive - blocked exec(), eval(), compile(), import sys, etc.
+        LOGGER.debug("No admin credentials provided, using ADMIN mode (v2.0.21 default)");
+        return "ADMIN";
     }
 
     /**
