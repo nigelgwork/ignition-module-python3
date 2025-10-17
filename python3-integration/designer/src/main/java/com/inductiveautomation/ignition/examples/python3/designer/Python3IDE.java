@@ -1452,9 +1452,6 @@ public class Python3IDE extends JPanel {
         ScriptTreeNode scriptNode = (ScriptTreeNode) node;
         JPopupMenu menu = new JPopupMenu();
 
-        // Apply theme to popup menu (v2.0.12)
-        stylePopupMenu(menu);
-
         if (scriptNode.isScript()) {
             // Script context menu
             JMenuItem loadItem = new JMenuItem("Load");
@@ -1494,6 +1491,9 @@ public class Python3IDE extends JPanel {
                 menu.add(renameFolderItem);
             }
         }
+
+        // v2.0.19: Apply theme AFTER menu items are added (was called too early before)
+        stylePopupMenu(menu);
 
         menu.show(scriptTree, e.getX(), e.getY());
     }
