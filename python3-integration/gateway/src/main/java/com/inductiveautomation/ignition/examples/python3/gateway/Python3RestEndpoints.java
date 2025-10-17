@@ -1,6 +1,5 @@
 package com.inductiveautomation.ignition.examples.python3.gateway;
 
-import com.inductiveautomation.ignition.common.gson.Gson;
 import com.inductiveautomation.ignition.common.gson.JsonArray;
 import com.inductiveautomation.ignition.common.gson.JsonElement;
 import com.inductiveautomation.ignition.common.gson.JsonObject;

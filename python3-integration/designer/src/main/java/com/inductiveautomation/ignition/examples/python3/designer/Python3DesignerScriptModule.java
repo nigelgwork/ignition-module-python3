@@ -2,7 +2,6 @@ package com.inductiveautomation.ignition.examples.python3.designer;
 
 import com.inductiveautomation.ignition.common.util.LoggerEx;
 import com.inductiveautomation.ignition.designer.model.DesignerContext;
-import com.inductiveautomation.ignition.examples.python3.Constants;
 import com.inductiveautomation.ignition.examples.python3.Python3RpcFunctions;
 
 import java.util.Collections;

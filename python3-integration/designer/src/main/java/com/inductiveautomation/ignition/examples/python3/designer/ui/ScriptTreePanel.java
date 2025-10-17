@@ -4,10 +4,12 @@ import com.inductiveautomation.ignition.examples.python3.designer.ModernTheme;
 import com.inductiveautomation.ignition.examples.python3.designer.ScriptMetadata;
 import com.inductiveautomation.ignition.examples.python3.designer.ScriptTreeNode;
 
-import javax.swing.*;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTree;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
-import java.awt.*;
+import java.awt.BorderLayout;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
