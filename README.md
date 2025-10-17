@@ -2,7 +2,7 @@
 
 A production-ready Ignition module that enables Python 3.11 scripting in Ignition 8.3+, bridging the gap between Ignition's Jython 2.7 and modern Python 3.
 
-## Current Version: 1.14.0
+## Current Version: 1.15.1
 
 **Latest Features:**
 - 🔒 **Security Hardening** - Admin mode, input validation, audit logging (NEW in 1.14.0)
@@ -18,24 +18,12 @@ A production-ready Ignition module that enables Python 3.11 scripting in Ignitio
 
 ### Installation
 
-1. Download: [Python3Integration-1.14.0.modl](/modules/ignition-module-python3/python3-integration/build/Python3Integration-1.14.0.modl)
+1. Download: [Python3Integration-1.15.1.modl](/modules/ignition-module-python3/python3-integration/build/Python3Integration-1.15.1.modl)
 2. Install: Config → System → Modules → Install or Upgrade a Module
 3. Upload the .modl file
 4. Restart Gateway
 
 ### First Script
-
-**In Ignition Script Console (Gateway):**
-```python
-# Execute Python 3 code
-result = system.python3.exec("""
-import requests
-response = requests.get('https://api.github.com')
-result = f"Status: {response.status_code}"
-""")
-
-print(result)  # Output: Status: 200
-```
 
 **In Designer IDE:**
 1. Tools → Python 3 IDE
@@ -242,6 +230,22 @@ Installed packages are available to all Python processes immediately.
 
 ## Upgrading
 
+### From 1.14.x to 1.15.1
+
+**Important:** This upgrade includes UI/UX bug fixes and improvements.
+
+**Recommended Process:**
+1. Install v1.15.1 over existing version
+2. Restart Gateway
+3. Restart Designer clients (if using Designer IDE)
+
+**Key Changes:**
+- Fixed JSplitPane divider colors in dark theme
+- Made diagnostics panel visible in IDE
+- Expanded theme selector to prevent text cutoff
+- Scrollbars now hide when not required
+- Reduced gateway connection bar height
+
 ### From 1.8.x to 1.14.0
 
 **Important:** This upgrade adds security hardening and performance monitoring.
@@ -351,7 +355,7 @@ cd python3-integration
 ./gradlew clean build --no-daemon
 ```
 
-Output: `build/Python3Integration-1.14.0.modl`
+Output: `build/Python3Integration-1.15.1.modl`
 
 ### Testing
 
