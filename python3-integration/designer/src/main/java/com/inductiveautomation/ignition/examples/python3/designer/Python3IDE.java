@@ -272,6 +272,18 @@ public class Python3IDE extends JPanel {
         leftPanel.add(connectButton);
         gatewayPanel.add(leftPanel, BorderLayout.WEST);
 
+        // Center: Action buttons (Execute, Clear, Save, etc.) - v2.0.16 UX improvement
+        JPanel centerPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 1));
+        centerPanel.setBackground(ModernTheme.PANEL_BACKGROUND);
+        centerPanel.add(executeButton);
+        centerPanel.add(clearButton);
+        centerPanel.add(saveButton);
+        centerPanel.add(saveAsButton);
+        centerPanel.add(importButton);
+        centerPanel.add(exportButton);
+        centerPanel.add(progressBar);
+        gatewayPanel.add(centerPanel, BorderLayout.CENTER);
+
         // Right side: Theme selector
         JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 1));  // Reduced vertical gap for 25% height reduction (Issue 5 - v1.15.1)
         rightPanel.setBackground(ModernTheme.PANEL_BACKGROUND);
@@ -340,8 +352,8 @@ public class Python3IDE extends JPanel {
         treeScroll.setBackground(ModernTheme.TREE_BACKGROUND);
         treeScroll.getViewport().setBackground(ModernTheme.TREE_BACKGROUND);
 
-        // Toolbar above tree
-        JPanel treeToolbar = new JPanel(new FlowLayout(FlowLayout.LEFT, 3, 2));
+        // Toolbar above tree - spread buttons to fill width nicely (v2.0.16 UX improvement)
+        JPanel treeToolbar = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 2));
         treeToolbar.setBackground(ModernTheme.PANEL_BACKGROUND);
 
         newFolderBtn = ModernButton.createSmall("+Folder");
@@ -423,21 +435,8 @@ public class Python3IDE extends JPanel {
         editorContainer.add(currentScriptLabel, BorderLayout.NORTH);
         editorContainer.add(editorScroll, BorderLayout.CENTER);
 
+        // Toolbar removed - buttons moved to top toolbar (v2.0.16 UX improvement)
         panel.add(editorContainer, BorderLayout.CENTER);
-
-        // Toolbar - aligned with tree toolbar (3px gaps between buttons, padding around panel)
-        JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 3));
-        toolbar.setBackground(ModernTheme.PANEL_BACKGROUND);
-        toolbar.setBorder(BorderFactory.createEmptyBorder(5, 0, 5, 0));  // Add vertical padding (Issue 3 - v1.17.1)
-        toolbar.add(executeButton);
-        toolbar.add(clearButton);
-        toolbar.add(saveButton);
-        toolbar.add(saveAsButton);
-        toolbar.add(importButton);
-        toolbar.add(exportButton);
-        toolbar.add(progressBar);
-
-        panel.add(toolbar, BorderLayout.NORTH);
 
         // Output tabs
         outputTabs = new JTabbedPane();
