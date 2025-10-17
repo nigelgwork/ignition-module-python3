@@ -107,31 +107,64 @@ public final class Python3RestEndpoints {
         return RouteAccess.GRANTED;
     }
 
+    // Admin API key for ADMIN mode (configured via system property)
+    // Set via: -Dignition.python3.admin.apikey=your-secret-key
+    private static final String ADMIN_API_KEY = System.getProperty("ignition.python3.admin.apikey", null);
+
     /**
-     * Determine security mode based on user role.
+     * Determine security mode based on user role or API key.
      *
-     * @return "ADMIN" if user is Ignition Administrator, "RESTRICTED" otherwise
+     * @return "ADMIN" if user has admin privileges, "RESTRICTED" otherwise
      *
-     * TODO: Implement proper Administrator role detection when SDK API is available.
-     * Options to implement:
-     * 1. Check for "Administrator" role in Ignition's security system
-     * 2. Check if user is in Administrator authority group
-     * 3. Use Ignition's SecurityContext API (when available)
+     * ADMIN mode detection (in priority order):
+     * 1. HTTP Header: X-Python3-Admin-Key matches configured admin API key
+     * 2. HTTP Header: X-Admin-Mode=true with valid admin API key
+     * 3. TODO: Check Ignition Administrator role when SDK API is available
      *
-     * For now, defaults to RESTRICTED mode for all users.
-     * To test ADMIN mode, system administrators can:
-     * - Use Ignition's API key system with elevated privileges
-     * - Configure Gateway-level permissions
+     * Configuration:
+     * - Set admin API key: -Dignition.python3.admin.apikey=your-secret-key
+     * - Then pass header: X-Python3-Admin-Key: your-secret-key
+     *
+     * Security:
+     * - Admin API key should be a long, random string (min 32 characters recommended)
+     * - Use HTTPS in production to protect API key in transit
+     * - Defaults to RESTRICTED mode if no valid admin key provided
      */
     private static String getSecurityMode(RequestContext req) {
-        // TODO: Implement proper admin detection
-        // Example (when SDK API is available):
+        // If no admin API key configured, always use RESTRICTED mode
+        if (ADMIN_API_KEY == null || ADMIN_API_KEY.isEmpty()) {
+            LOGGER.debug("Admin API key not configured, using RESTRICTED mode");
+            return "RESTRICTED";
+        }
+
+        // Check HTTP headers for admin authentication
+        HttpServletRequest httpRequest = req.getRequest();
+
+        // Method 1: X-Python3-Admin-Key header
+        String adminKey = httpRequest.getHeader("X-Python3-Admin-Key");
+        if (adminKey != null && adminKey.equals(ADMIN_API_KEY)) {
+            LOGGER.info("ADMIN mode activated via X-Python3-Admin-Key header");
+            return "ADMIN";
+        }
+
+        // Method 2: X-Admin-Mode header (requires matching API key)
+        String adminMode = httpRequest.getHeader("X-Admin-Mode");
+        String apiKey = httpRequest.getHeader("X-API-Key");
+        if ("true".equalsIgnoreCase(adminMode) && apiKey != null && apiKey.equals(ADMIN_API_KEY)) {
+            LOGGER.info("ADMIN mode activated via X-Admin-Mode header");
+            return "ADMIN";
+        }
+
+        // TODO: Method 3 - Check Ignition Administrator role (when SDK API is available)
+        // Example (when SDK exposes user context):
         // User user = req.getUser();
         // if (user != null && user.hasRole("Administrator")) {
+        //     LOGGER.info("ADMIN mode activated via Ignition Administrator role");
         //     return "ADMIN";
         // }
 
         // Default to RESTRICTED mode for security
+        LOGGER.debug("No admin credentials provided, using RESTRICTED mode");
         return "RESTRICTED";
     }
 
@@ -421,6 +454,30 @@ public final class Python3RestEndpoints {
             .method(HttpMethod.GET)
             .type(RouteGroup.TYPE_JSON)
             .accessControl(Python3RestEndpoints::checkReadPermission)  // ✅ AUTH (read-only)
+            .mount();
+
+        // GET /data/python3integration/api/v1/metrics/script-metrics - Get per-script metrics (NEW v1.16.0)
+        routes.newRoute("/api/v1/metrics/script-metrics")
+            .handler(Python3RestEndpoints::handleGetScriptMetrics)
+            .method(HttpMethod.GET)
+            .type(RouteGroup.TYPE_JSON)
+            .accessControl(Python3RestEndpoints::checkReadPermission)
+            .mount();
+
+        // GET /data/python3integration/api/v1/metrics/historical - Get historical metrics (NEW v1.16.0)
+        routes.newRoute("/api/v1/metrics/historical")
+            .handler(Python3RestEndpoints::handleGetHistoricalMetrics)
+            .method(HttpMethod.GET)
+            .type(RouteGroup.TYPE_JSON)
+            .accessControl(Python3RestEndpoints::checkReadPermission)
+            .mount();
+
+        // GET /data/python3integration/api/v1/metrics/alerts - Get active health alerts (NEW v1.16.0)
+        routes.newRoute("/api/v1/metrics/alerts")
+            .handler(Python3RestEndpoints::handleGetHealthAlerts)
+            .method(HttpMethod.GET)
+            .type(RouteGroup.TYPE_JSON)
+            .accessControl(Python3RestEndpoints::checkReadPermission)
             .mount();
 
         // Script Management Endpoints
@@ -923,6 +980,99 @@ public final class Python3RestEndpoints {
 
         } catch (Exception e) {
             LOGGER.error("REST API: /gateway-impact failed", e);
+            return createErrorResponse(e.getMessage());
+        }
+    }
+
+    /**
+     * Handle GET /metrics/script-metrics - Get per-script performance metrics (NEW v1.16.0)
+     *
+     * Response: [{"script_identifier": "...", "total_executions": ..., "success_rate": ..., ...}, ...]
+     */
+    private static JsonObject handleGetScriptMetrics(RequestContext req, HttpServletResponse res) {
+        LOGGER.debug("REST API: /metrics/script-metrics called");
+
+        try {
+            List<Map<String, Object>> scriptMetrics = metricsCollector.getScriptMetrics();
+
+            JsonObject response = new JsonObject();
+            response.addProperty("success", true);
+
+            JsonArray metricsArray = new JsonArray();
+            for (Map<String, Object> metrics : scriptMetrics) {
+                metricsArray.add(mapToJson(metrics));
+            }
+            response.add("script_metrics", metricsArray);
+            response.addProperty("count", metricsArray.size());
+
+            LOGGER.debug("REST API: /metrics/script-metrics completed successfully, {} scripts",
+                    metricsArray.size());
+            return response;
+
+        } catch (Exception e) {
+            LOGGER.error("REST API: /metrics/script-metrics failed", e);
+            return createErrorResponse(e.getMessage());
+        }
+    }
+
+    /**
+     * Handle GET /metrics/historical - Get historical metric snapshots (NEW v1.16.0)
+     *
+     * Response: [{"timestamp": ..., "total_executions": ..., "pool_utilization": ..., ...}, ...]
+     */
+    private static JsonObject handleGetHistoricalMetrics(RequestContext req, HttpServletResponse res) {
+        LOGGER.debug("REST API: /metrics/historical called");
+
+        try {
+            List<Map<String, Object>> historicalMetrics = metricsCollector.getHistoricalMetrics();
+
+            JsonObject response = new JsonObject();
+            response.addProperty("success", true);
+
+            JsonArray historyArray = new JsonArray();
+            for (Map<String, Object> snapshot : historicalMetrics) {
+                historyArray.add(mapToJson(snapshot));
+            }
+            response.add("historical_metrics", historyArray);
+            response.addProperty("count", historyArray.size());
+
+            LOGGER.debug("REST API: /metrics/historical completed successfully, {} snapshots",
+                    historyArray.size());
+            return response;
+
+        } catch (Exception e) {
+            LOGGER.error("REST API: /metrics/historical failed", e);
+            return createErrorResponse(e.getMessage());
+        }
+    }
+
+    /**
+     * Handle GET /metrics/alerts - Get active health alerts (NEW v1.16.0)
+     *
+     * Response: [{"timestamp": ..., "alert_id": "...", "message": "...", "severity": "WARNING|CRITICAL"}, ...]
+     */
+    private static JsonObject handleGetHealthAlerts(RequestContext req, HttpServletResponse res) {
+        LOGGER.debug("REST API: /metrics/alerts called");
+
+        try {
+            List<Map<String, Object>> healthAlerts = metricsCollector.getHealthAlerts();
+
+            JsonObject response = new JsonObject();
+            response.addProperty("success", true);
+
+            JsonArray alertsArray = new JsonArray();
+            for (Map<String, Object> alert : healthAlerts) {
+                alertsArray.add(mapToJson(alert));
+            }
+            response.add("alerts", alertsArray);
+            response.addProperty("count", alertsArray.size());
+
+            LOGGER.debug("REST API: /metrics/alerts completed successfully, {} active alerts",
+                    alertsArray.size());
+            return response;
+
+        } catch (Exception e) {
+            LOGGER.error("REST API: /metrics/alerts failed", e);
             return createErrorResponse(e.getMessage());
         }
     }

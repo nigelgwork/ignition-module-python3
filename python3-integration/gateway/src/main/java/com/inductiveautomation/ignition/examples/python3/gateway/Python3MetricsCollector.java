@@ -3,19 +3,29 @@ package com.inductiveautomation.ignition.examples.python3.gateway;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.security.MessageDigest;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 /**
  * Collects performance metrics for Python3 script executions.
- * Tracks execution counts, errors, timing, and Gateway impact.
+ * Tracks execution counts, errors, timing, Gateway impact, per-script metrics, and historical data.
+ *
+ * NEW in v1.16.0:
+ * - Per-script performance metrics
+ * - Historical metric snapshots (circular buffer)
+ * - Health alerts when thresholds exceeded
  */
 public class Python3MetricsCollector {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(Python3MetricsCollector.class);
+
+    // Historical tracking configuration
+    private static final int MAX_HISTORY_SNAPSHOTS = 100;  // Keep last 100 snapshots
+    private static final long SNAPSHOT_INTERVAL_MS = 60000;  // 1 minute between snapshots
 
     // Execution counters
     private final AtomicLong totalExecutions = new AtomicLong(0);
@@ -36,6 +46,16 @@ public class Python3MetricsCollector {
     // Error tracking
     private final Map<String, AtomicInteger> errorCounts = new ConcurrentHashMap<>();
 
+    // Per-script metrics (NEW in v1.16.0)
+    private final Map<String, ScriptMetrics> scriptMetrics = new ConcurrentHashMap<>();
+
+    // Historical metric snapshots (NEW in v1.16.0)
+    private final List<MetricSnapshot> metricHistory = Collections.synchronizedList(new LinkedList<>());
+    private long lastSnapshotTime = System.currentTimeMillis();
+
+    // Health alerts (NEW in v1.16.0)
+    private final List<HealthAlert> activeAlerts = Collections.synchronizedList(new ArrayList<>());
+
     // Start time for uptime calculation
     private final long startTime = System.currentTimeMillis();
 
@@ -43,6 +63,16 @@ public class Python3MetricsCollector {
      * Record a successful execution
      */
     public void recordExecution(long executionTimeMs) {
+        recordExecution(executionTimeMs, null);
+    }
+
+    /**
+     * Record a successful execution with script identifier (NEW in v1.16.0)
+     *
+     * @param executionTimeMs Execution time in milliseconds
+     * @param scriptIdentifier Script name or hash (null for anonymous scripts)
+     */
+    public void recordExecution(long executionTimeMs, String scriptIdentifier) {
         totalExecutions.incrementAndGet();
         successfulExecutions.incrementAndGet();
         totalExecutionTime.addAndGet(executionTimeMs);
@@ -51,13 +81,37 @@ public class Python3MetricsCollector {
         updateMin(minExecutionTime, executionTimeMs);
         updateMax(maxExecutionTime, executionTimeMs);
 
-        LOGGER.debug("Recorded execution: {}ms (total: {})", executionTimeMs, totalExecutions.get());
+        // Per-script tracking
+        if (scriptIdentifier != null && !scriptIdentifier.isEmpty()) {
+            scriptMetrics.computeIfAbsent(scriptIdentifier, k -> new ScriptMetrics(scriptIdentifier))
+                    .recordExecution(executionTimeMs);
+        }
+
+        // Check if snapshot needed
+        checkAndCreateSnapshot();
+
+        // Check health alerts
+        checkHealthAlerts();
+
+        LOGGER.debug("Recorded execution: {}ms (total: {}, script: {})",
+                executionTimeMs, totalExecutions.get(), scriptIdentifier != null ? scriptIdentifier : "anonymous");
     }
 
     /**
      * Record a failed execution
      */
     public void recordFailure(String errorType, long executionTimeMs) {
+        recordFailure(errorType, executionTimeMs, null);
+    }
+
+    /**
+     * Record a failed execution with script identifier (NEW in v1.16.0)
+     *
+     * @param errorType Error type/message
+     * @param executionTimeMs Execution time before failure
+     * @param scriptIdentifier Script name or hash (null for anonymous scripts)
+     */
+    public void recordFailure(String errorType, long executionTimeMs, String scriptIdentifier) {
         totalExecutions.incrementAndGet();
         failedExecutions.incrementAndGet();
         totalExecutionTime.addAndGet(executionTimeMs);
@@ -65,7 +119,17 @@ public class Python3MetricsCollector {
         // Track error types
         errorCounts.computeIfAbsent(errorType, k -> new AtomicInteger(0)).incrementAndGet();
 
-        LOGGER.debug("Recorded failure: {} ({}ms)", errorType, executionTimeMs);
+        // Per-script tracking
+        if (scriptIdentifier != null && !scriptIdentifier.isEmpty()) {
+            scriptMetrics.computeIfAbsent(scriptIdentifier, k -> new ScriptMetrics(scriptIdentifier))
+                    .recordFailure(errorType, executionTimeMs);
+        }
+
+        // Check health alerts
+        checkHealthAlerts();
+
+        LOGGER.debug("Recorded failure: {} ({}ms, script: {})",
+                errorType, executionTimeMs, scriptIdentifier != null ? scriptIdentifier : "anonymous");
     }
 
     /**
@@ -232,5 +296,269 @@ public class Python3MetricsCollector {
                 break;
             }
         } while (!atomic.compareAndSet(current, value));
+    }
+
+    /**
+     * Get per-script performance metrics (NEW in v1.16.0)
+     *
+     * @return List of script metrics, sorted by total execution count
+     */
+    public List<Map<String, Object>> getScriptMetrics() {
+        return scriptMetrics.values().stream()
+                .sorted((a, b) -> Long.compare(b.getTotalExecutions(), a.getTotalExecutions()))
+                .limit(50)  // Top 50 scripts
+                .map(ScriptMetrics::toMap)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Get historical metric snapshots (NEW in v1.16.0)
+     *
+     * @return List of metric snapshots (most recent first)
+     */
+    public List<Map<String, Object>> getHistoricalMetrics() {
+        synchronized (metricHistory) {
+            return metricHistory.stream()
+                    .map(MetricSnapshot::toMap)
+                    .collect(Collectors.toList());
+        }
+    }
+
+    /**
+     * Get active health alerts (NEW in v1.16.0)
+     *
+     * @return List of active alerts
+     */
+    public List<Map<String, Object>> getHealthAlerts() {
+        synchronized (activeAlerts) {
+            return activeAlerts.stream()
+                    .map(HealthAlert::toMap)
+                    .collect(Collectors.toList());
+        }
+    }
+
+    /**
+     * Check if periodic snapshot is needed and create it (NEW in v1.16.0)
+     */
+    private void checkAndCreateSnapshot() {
+        long now = System.currentTimeMillis();
+        if (now - lastSnapshotTime >= SNAPSHOT_INTERVAL_MS) {
+            synchronized (metricHistory) {
+                // Create snapshot
+                MetricSnapshot snapshot = new MetricSnapshot(
+                        now,
+                        totalExecutions.get(),
+                        successfulExecutions.get(),
+                        failedExecutions.get(),
+                        totalExecutionTime.get() / Math.max(1, totalExecutions.get()),
+                        activeExecutions.get(),
+                        currentPoolSize.get()
+                );
+
+                metricHistory.add(0, snapshot);  // Add to front (most recent)
+
+                // Remove old snapshots (keep only MAX_HISTORY_SNAPSHOTS)
+                while (metricHistory.size() > MAX_HISTORY_SNAPSHOTS) {
+                    metricHistory.remove(metricHistory.size() - 1);
+                }
+
+                lastSnapshotTime = now;
+                LOGGER.debug("Created metric snapshot: total_executions={}, pool_utilization={}%",
+                        totalExecutions.get(), snapshot.poolUtilization);
+            }
+        }
+    }
+
+    /**
+     * Check health thresholds and generate alerts (NEW in v1.16.0)
+     */
+    private void checkHealthAlerts() {
+        long now = System.currentTimeMillis();
+
+        // Clear stale alerts (older than 5 minutes)
+        synchronized (activeAlerts) {
+            activeAlerts.removeIf(alert -> now - alert.timestamp > 300000);
+        }
+
+        // Check pool utilization alert
+        double poolUtil = currentPoolSize.get() > 0 ?
+                (double) activeExecutions.get() / currentPoolSize.get() * 100.0 : 0.0;
+
+        if (poolUtil > 90) {
+            addAlert("POOL_UTILIZATION_CRITICAL", "Pool utilization is critically high (" +
+                    Math.round(poolUtil) + "%). Consider increasing pool size.", "CRITICAL");
+        } else if (poolUtil > 70) {
+            addAlert("POOL_UTILIZATION_HIGH", "Pool utilization is high (" +
+                    Math.round(poolUtil) + "%). Monitor for performance impact.", "WARNING");
+        }
+
+        // Check failure rate alert
+        long total = totalExecutions.get();
+        if (total > 10) {  // Only alert if we have enough data
+            double failureRate = (double) failedExecutions.get() / total * 100.0;
+            if (failureRate > 20) {
+                addAlert("FAILURE_RATE_HIGH", "Failure rate is high (" +
+                        Math.round(failureRate) + "%). Check for script errors.", "WARNING");
+            }
+        }
+    }
+
+    /**
+     * Add a health alert (avoids duplicates within 1 minute)
+     */
+    private void addAlert(String alertId, String message, String severity) {
+        long now = System.currentTimeMillis();
+
+        synchronized (activeAlerts) {
+            // Check if this alert was recently added (within 1 minute)
+            boolean alreadyActive = activeAlerts.stream()
+                    .anyMatch(alert -> alert.alertId.equals(alertId) && now - alert.timestamp < 60000);
+
+            if (!alreadyActive) {
+                activeAlerts.add(new HealthAlert(now, alertId, message, severity));
+                LOGGER.warn("Health Alert [{}]: {}", severity, message);
+            }
+        }
+    }
+
+    // Inner classes for new features (v1.16.0)
+
+    /**
+     * Tracks metrics for a specific script
+     */
+    private static class ScriptMetrics {
+        private final String scriptIdentifier;
+        private final AtomicLong totalExecutions = new AtomicLong(0);
+        private final AtomicLong successfulExecutions = new AtomicLong(0);
+        private final AtomicLong failedExecutions = new AtomicLong(0);
+        private final AtomicLong totalExecutionTime = new AtomicLong(0);
+        private final AtomicLong minExecutionTime = new AtomicLong(Long.MAX_VALUE);
+        private final AtomicLong maxExecutionTime = new AtomicLong(0);
+        private final Map<String, AtomicInteger> errorCounts = new ConcurrentHashMap<>();
+
+        ScriptMetrics(String scriptIdentifier) {
+            this.scriptIdentifier = scriptIdentifier;
+        }
+
+        void recordExecution(long executionTimeMs) {
+            totalExecutions.incrementAndGet();
+            successfulExecutions.incrementAndGet();
+            totalExecutionTime.addAndGet(executionTimeMs);
+            updateMinMax(executionTimeMs);
+        }
+
+        void recordFailure(String errorType, long executionTimeMs) {
+            totalExecutions.incrementAndGet();
+            failedExecutions.incrementAndGet();
+            totalExecutionTime.addAndGet(executionTimeMs);
+            errorCounts.computeIfAbsent(errorType, k -> new AtomicInteger(0)).incrementAndGet();
+            updateMinMax(executionTimeMs);
+        }
+
+        private void updateMinMax(long value) {
+            // Update min
+            long currentMin;
+            do {
+                currentMin = minExecutionTime.get();
+                if (value >= currentMin) break;
+            } while (!minExecutionTime.compareAndSet(currentMin, value));
+
+            // Update max
+            long currentMax;
+            do {
+                currentMax = maxExecutionTime.get();
+                if (value <= currentMax) break;
+            } while (!maxExecutionTime.compareAndSet(currentMax, value));
+        }
+
+        long getTotalExecutions() {
+            return totalExecutions.get();
+        }
+
+        Map<String, Object> toMap() {
+            Map<String, Object> map = new HashMap<>();
+            map.put("script_identifier", scriptIdentifier);
+            map.put("total_executions", totalExecutions.get());
+            map.put("successful_executions", successfulExecutions.get());
+            map.put("failed_executions", failedExecutions.get());
+            map.put("success_rate", totalExecutions.get() > 0 ?
+                    (double) successfulExecutions.get() / totalExecutions.get() * 100.0 : 100.0);
+            map.put("average_execution_time_ms", totalExecutions.get() > 0 ?
+                    totalExecutionTime.get() / totalExecutions.get() : 0);
+            map.put("min_execution_time_ms", minExecutionTime.get() == Long.MAX_VALUE ? 0 : minExecutionTime.get());
+            map.put("max_execution_time_ms", maxExecutionTime.get());
+
+            Map<String, Integer> errors = new HashMap<>();
+            errorCounts.forEach((key, value) -> errors.put(key, value.get()));
+            map.put("error_counts", errors);
+
+            return map;
+        }
+    }
+
+    /**
+     * Snapshot of metrics at a specific point in time
+     */
+    private static class MetricSnapshot {
+        final long timestamp;
+        final long totalExecutions;
+        final long successfulExecutions;
+        final long failedExecutions;
+        final long averageExecutionTimeMs;
+        final int activeExecutions;
+        final int poolSize;
+        final double poolUtilization;
+
+        MetricSnapshot(long timestamp, long totalExecutions, long successfulExecutions,
+                      long failedExecutions, long averageExecutionTimeMs,
+                      int activeExecutions, int poolSize) {
+            this.timestamp = timestamp;
+            this.totalExecutions = totalExecutions;
+            this.successfulExecutions = successfulExecutions;
+            this.failedExecutions = failedExecutions;
+            this.averageExecutionTimeMs = averageExecutionTimeMs;
+            this.activeExecutions = activeExecutions;
+            this.poolSize = poolSize;
+            this.poolUtilization = poolSize > 0 ? (double) activeExecutions / poolSize * 100.0 : 0.0;
+        }
+
+        Map<String, Object> toMap() {
+            Map<String, Object> map = new HashMap<>();
+            map.put("timestamp", timestamp);
+            map.put("total_executions", totalExecutions);
+            map.put("successful_executions", successfulExecutions);
+            map.put("failed_executions", failedExecutions);
+            map.put("average_execution_time_ms", averageExecutionTimeMs);
+            map.put("active_executions", activeExecutions);
+            map.put("pool_size", poolSize);
+            map.put("pool_utilization", Math.round(poolUtilization * 100.0) / 100.0);
+            return map;
+        }
+    }
+
+    /**
+     * Health alert when thresholds are exceeded
+     */
+    private static class HealthAlert {
+        final long timestamp;
+        final String alertId;
+        final String message;
+        final String severity;  // "WARNING", "CRITICAL"
+
+        HealthAlert(long timestamp, String alertId, String message, String severity) {
+            this.timestamp = timestamp;
+            this.alertId = alertId;
+            this.message = message;
+            this.severity = severity;
+        }
+
+        Map<String, Object> toMap() {
+            Map<String, Object> map = new HashMap<>();
+            map.put("timestamp", timestamp);
+            map.put("alert_id", alertId);
+            map.put("message", message);
+            map.put("severity", severity);
+            return map;
+        }
     }
 }

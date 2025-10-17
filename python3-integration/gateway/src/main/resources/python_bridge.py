@@ -10,7 +10,34 @@ import traceback
 import importlib
 import io
 import contextlib
+import os
 from typing import Any, Dict
+
+# Resource limits (configured via environment variables)
+# Memory limit: 512MB default (can be overridden with PYTHON3_MAX_MEMORY_MB)
+# CPU time limit: 60 seconds default (can be overridden with PYTHON3_MAX_CPU_SECONDS)
+MAX_MEMORY_MB = int(os.environ.get('PYTHON3_MAX_MEMORY_MB', '512'))
+MAX_CPU_SECONDS = int(os.environ.get('PYTHON3_MAX_CPU_SECONDS', '60'))
+
+# Apply resource limits (Unix/Linux only)
+try:
+    import resource
+
+    # Set memory limit (virtual memory)
+    max_memory_bytes = MAX_MEMORY_MB * 1024 * 1024
+    resource.setrlimit(resource.RLIMIT_AS, (max_memory_bytes, max_memory_bytes))
+    print(f"Resource limit applied: Max memory = {MAX_MEMORY_MB}MB", file=sys.stderr)
+
+    # Set CPU time limit (prevents runaway CPU-intensive scripts)
+    resource.setrlimit(resource.RLIMIT_CPU, (MAX_CPU_SECONDS, MAX_CPU_SECONDS))
+    print(f"Resource limit applied: Max CPU time = {MAX_CPU_SECONDS}s", file=sys.stderr)
+
+except ImportError:
+    # Windows doesn't have resource module - log warning
+    print("WARNING: resource module not available (Windows?). Resource limits not applied.", file=sys.stderr)
+except Exception as e:
+    # Non-fatal: log error but continue
+    print(f"WARNING: Failed to apply resource limits: {e}", file=sys.stderr)
 
 
 class SecurityException(Exception):

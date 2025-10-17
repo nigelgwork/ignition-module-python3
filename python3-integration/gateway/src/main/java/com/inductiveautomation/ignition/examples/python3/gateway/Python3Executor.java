@@ -76,7 +76,7 @@ public class Python3Executor {
     }
 
     /**
-     * Start the Python process
+     * Start the Python process with resource limits
      */
     private void startProcess() throws IOException {
         LOGGER.info("Starting Python 3 process: {}", pythonPath);
@@ -89,6 +89,17 @@ public class Python3Executor {
 
         // Set environment
         pb.environment().put("PYTHONIOENCODING", "utf-8");
+
+        // Resource limits (configurable via system properties)
+        String maxMemoryMB = System.getProperty("ignition.python3.max.memory.mb", "512");
+        String maxCpuSeconds = System.getProperty("ignition.python3.max.cpu.seconds", "60");
+
+        pb.environment().put("PYTHON3_MAX_MEMORY_MB", maxMemoryMB);
+        pb.environment().put("PYTHON3_MAX_CPU_SECONDS", maxCpuSeconds);
+
+        LOGGER.info("Python process resource limits: Max memory={}MB, Max CPU={}s",
+                maxMemoryMB, maxCpuSeconds);
+
         pb.redirectErrorStream(false);
 
         // Start process
