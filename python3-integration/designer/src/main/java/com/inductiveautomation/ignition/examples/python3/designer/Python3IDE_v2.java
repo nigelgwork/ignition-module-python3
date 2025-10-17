@@ -379,6 +379,10 @@ public class Python3IDE_v2 extends JPanel {
                     ScriptMetadata metadata = new ScriptMetadata();
                     metadata.setName(script.getName());
                     metadata.setDescription(script.getDescription());
+                    metadata.setAuthor(script.getAuthor());
+                    metadata.setCreatedDate(script.getCreatedDate());
+                    metadata.setLastModified(script.getLastModified());
+                    metadata.setVersion(script.getVersion());
                     metadataPanel.displayMetadata(metadata);
 
                     statusBar.setStatus("Loaded: " + script.getName(), ModernStatusBar.MessageType.SUCCESS);

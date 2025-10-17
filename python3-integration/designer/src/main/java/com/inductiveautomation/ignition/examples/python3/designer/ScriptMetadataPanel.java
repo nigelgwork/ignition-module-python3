@@ -35,7 +35,7 @@ public class ScriptMetadataPanel extends JPanel {
                         ModernTheme.FOREGROUND_PRIMARY),
                 BorderFactory.createEmptyBorder(5, 5, 5, 5)
         ));
-        setPreferredSize(new Dimension(250, 220));  // Increased from 180 to 220
+        setPreferredSize(new Dimension(250, 280));  // Increased from 220 to 280 for larger description area
         setBackground(ModernTheme.PANEL_BACKGROUND);
 
         // Create labels
@@ -45,7 +45,7 @@ public class ScriptMetadataPanel extends JPanel {
         modifiedLabel = createValueLabel();
         versionLabel = createValueLabel();
 
-        // Description text area - no fixed rows for better scrollbar behavior
+        // Description text area - expanded for better usability (v2.0.1 UX fix)
         descriptionArea = new JTextArea();
         descriptionArea.setEditable(false);
         descriptionArea.setLineWrap(true);
@@ -55,9 +55,9 @@ public class ScriptMetadataPanel extends JPanel {
         descriptionArea.setForeground(ModernTheme.FOREGROUND_PRIMARY);
         descriptionArea.setCaretColor(ModernTheme.FOREGROUND_PRIMARY);
 
-        // Set minimum size to prevent collapse
-        descriptionArea.setMinimumSize(new Dimension(200, 40));
-        descriptionArea.setPreferredSize(new Dimension(200, 60));
+        // Expanded size for better usability (v2.0.1 UX fix: 60px → 100px)
+        descriptionArea.setMinimumSize(new Dimension(200, 60));
+        descriptionArea.setPreferredSize(new Dimension(200, 100));
 
         // Layout
         JPanel fieldsPanel = new JPanel(new GridLayout(5, 2, 5, 3));
@@ -98,9 +98,9 @@ public class ScriptMetadataPanel extends JPanel {
         descScroll.getViewport().setBackground(ModernTheme.BACKGROUND_DARKER);
         descScroll.setBorder(BorderFactory.createLineBorder(ModernTheme.BORDER_DEFAULT));
 
-        // Ensure scroll pane doesn't show scrollbar when content fits
-        descScroll.setPreferredSize(new Dimension(240, 70));
-        descScroll.setMinimumSize(new Dimension(240, 50));
+        // Expanded scroll pane for better usability (v2.0.1 UX fix: 70px → 120px)
+        descScroll.setPreferredSize(new Dimension(240, 120));
+        descScroll.setMinimumSize(new Dimension(240, 80));
 
         descPanel.add(descScroll, BorderLayout.CENTER);
 
