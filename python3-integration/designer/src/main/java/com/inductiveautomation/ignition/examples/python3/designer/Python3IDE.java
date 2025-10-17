@@ -1508,8 +1508,7 @@ public class Python3IDE extends JPanel {
                 try {
                     SavedScript script = get();
 
-                    // Apply theme-aware styling to file chooser (v2.0.14)
-                    applyFileChooserTheme();
+                    // v2.0.17: Removed applyFileChooserTheme() - used global UIManager.put()
 
                     JFileChooser fileChooser = new JFileChooser();
                     fileChooser.setSelectedFile(new File(script.getName() + ".py"));
@@ -1790,8 +1789,7 @@ public class Python3IDE extends JPanel {
             return;
         }
 
-        // Apply theme-aware styling to file chooser (v2.0.14)
-        applyFileChooserTheme();
+        // v2.0.17: Removed applyFileChooserTheme() - used global UIManager.put()
 
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setFileFilter(new javax.swing.filechooser.FileFilter() {
@@ -1877,8 +1875,7 @@ public class Python3IDE extends JPanel {
             return;
         }
 
-        // Apply theme-aware styling to file chooser (v2.0.14)
-        applyFileChooserTheme();
+        // v2.0.17: Removed applyFileChooserTheme() - used global UIManager.put()
 
         JFileChooser fileChooser = new JFileChooser();
 
@@ -2051,8 +2048,7 @@ public class Python3IDE extends JPanel {
 
             // Apply theme colors to output and error areas
             if (isDarkTheme) {
-                // Apply scrollbar theming
-                applyDarkScrollbarTheme();
+                // v2.0.17: Removed applyDarkScrollbarTheme() - used global UIManager.put()
 
                 // Set DarkDialog theme (v2.0.12)
                 DarkDialog.setDarkTheme(true);
@@ -2105,11 +2101,9 @@ public class Python3IDE extends JPanel {
                 // Panels
                 updateComponent(this, ModernTheme.BACKGROUND_DARK);
 
-                // Apply dark theme to popup dialogs
-                applyDarkDialogTheme();
+                // v2.0.17: Removed applyDarkDialogTheme() - used global UIManager.put()
             } else {
-                // Apply light scrollbar theming
-                applyLightScrollbarTheme();
+                // v2.0.17: Removed applyLightScrollbarTheme() - used global UIManager.put()
 
                 // Set DarkDialog theme (v2.0.12)
                 DarkDialog.setDarkTheme(false);
@@ -2172,8 +2166,7 @@ public class Python3IDE extends JPanel {
                 // Panels
                 updateComponent(this, Color.WHITE);
 
-                // Apply light theme to popup dialogs
-                applyLightDialogTheme();
+                // v2.0.17: Removed applyLightDialogTheme() - used global UIManager.put()
             }
 
             // Force repaint of all components
@@ -2200,81 +2193,11 @@ public class Python3IDE extends JPanel {
         }
     }
 
-    /**
-     * Applies dark theme styling to popup dialogs (JOptionPane).
-     *
-     * v1.17.1: Enhanced with ComboBox and additional component theming
-     */
-    private void applyDarkDialogTheme() {
-        UIManager.put("OptionPane.background", ModernTheme.PANEL_BACKGROUND);
-        UIManager.put("OptionPane.messageForeground", ModernTheme.FOREGROUND_PRIMARY);
-        UIManager.put("Panel.background", ModernTheme.PANEL_BACKGROUND);
-        UIManager.put("TextField.background", ModernTheme.BACKGROUND_DARKER);
-        UIManager.put("TextField.foreground", ModernTheme.FOREGROUND_PRIMARY);
-        UIManager.put("TextField.caretForeground", ModernTheme.FOREGROUND_PRIMARY);
-        UIManager.put("TextField.inactiveForeground", ModernTheme.FOREGROUND_SECONDARY);
-        UIManager.put("Label.foreground", ModernTheme.FOREGROUND_PRIMARY);
-        UIManager.put("Label.disabledForeground", ModernTheme.FOREGROUND_SECONDARY);
-        UIManager.put("Button.background", ModernTheme.BACKGROUND_DARK);
-        UIManager.put("Button.foreground", ModernTheme.FOREGROUND_PRIMARY);
-        UIManager.put("ComboBox.background", ModernTheme.BACKGROUND_DARKER);
-        UIManager.put("ComboBox.foreground", ModernTheme.FOREGROUND_PRIMARY);
-        UIManager.put("ComboBox.selectionBackground", ModernTheme.INFO);
-        UIManager.put("ComboBox.selectionForeground", ModernTheme.FOREGROUND_PRIMARY);
-    }
-
-    /**
-     * Applies light theme styling to popup dialogs (JOptionPane).
-     *
-     * v1.17.1: Enhanced with ComboBox and additional component theming
-     */
-    private void applyLightDialogTheme() {
-        UIManager.put("OptionPane.background", Color.WHITE);
-        UIManager.put("OptionPane.messageForeground", Color.BLACK);
-        UIManager.put("Panel.background", Color.WHITE);
-        UIManager.put("TextField.background", Color.WHITE);
-        UIManager.put("TextField.foreground", Color.BLACK);
-        UIManager.put("TextField.caretForeground", Color.BLACK);
-        UIManager.put("TextField.inactiveForeground", new Color(128, 128, 128));
-        UIManager.put("Label.foreground", Color.BLACK);
-        UIManager.put("Label.disabledForeground", new Color(128, 128, 128));
-        UIManager.put("Button.background", new Color(238, 238, 238));
-        UIManager.put("Button.foreground", Color.BLACK);
-        UIManager.put("ComboBox.background", Color.WHITE);
-        UIManager.put("ComboBox.foreground", Color.BLACK);
-        UIManager.put("ComboBox.selectionBackground", new Color(184, 207, 229));
-        UIManager.put("ComboBox.selectionForeground", Color.BLACK);
-    }
-
-    /**
-     * Applies dark theme styling to scrollbars.
-     */
-    private void applyDarkScrollbarTheme() {
-        UIManager.put("ScrollBar.track", ModernTheme.BACKGROUND_DARK);
-        UIManager.put("ScrollBar.thumb", ModernTheme.BORDER_DEFAULT);
-        UIManager.put("ScrollBar.thumbDarkShadow", ModernTheme.BACKGROUND_DARKER);
-        UIManager.put("ScrollBar.thumbHighlight", ModernTheme.FOREGROUND_SECONDARY);
-        UIManager.put("ScrollBar.thumbShadow", ModernTheme.BACKGROUND_DARKER);
-        UIManager.put("ScrollBar.background", ModernTheme.BACKGROUND_DARK);
-        UIManager.put("ScrollBar.foreground", ModernTheme.FOREGROUND_PRIMARY);
-        UIManager.put("ScrollPane.background", ModernTheme.BACKGROUND_DARK);
-        UIManager.put("Viewport.background", ModernTheme.BACKGROUND_DARK);
-    }
-
-    /**
-     * Applies light theme styling to scrollbars.
-     */
-    private void applyLightScrollbarTheme() {
-        UIManager.put("ScrollBar.track", Color.WHITE);
-        UIManager.put("ScrollBar.thumb", new Color(200, 200, 200));
-        UIManager.put("ScrollBar.thumbDarkShadow", new Color(150, 150, 150));
-        UIManager.put("ScrollBar.thumbHighlight", new Color(230, 230, 230));
-        UIManager.put("ScrollBar.thumbShadow", new Color(180, 180, 180));
-        UIManager.put("ScrollBar.background", Color.WHITE);
-        UIManager.put("ScrollBar.foreground", Color.BLACK);
-        UIManager.put("ScrollPane.background", Color.WHITE);
-        UIManager.put("Viewport.background", Color.WHITE);
-    }
+    // v2.0.17: REMOVED applyDarkDialogTheme(), applyLightDialogTheme(),
+    // applyDarkScrollbarTheme(), applyLightScrollbarTheme() methods.
+    // These methods used UIManager.put() which sets GLOBAL Swing defaults
+    // affecting the entire Ignition Designer, not just our IDE.
+    // Solution: Use DarkDialog (already implemented v2.0.12) and direct component styling only.
 
     /**
      * Styles a popup menu to match the current theme.
@@ -2316,60 +2239,9 @@ public class Python3IDE extends JPanel {
         }
     }
 
-    /**
-     * Applies theme-aware styling to JFileChooser via UIManager.
-     * Must be called BEFORE showing any JFileChooser.
-     *
-     * @since v2.0.14 - Made theme-aware for consistency
-     */
-    private void applyFileChooserTheme() {
-        if (useDarkTheme) {
-            // JFileChooser dark theme
-            UIManager.put("FileChooser.background", new Color(43, 43, 43));
-            UIManager.put("FileChooser.foreground", new Color(224, 224, 224));
-            UIManager.put("List.background", new Color(30, 30, 30));
-            UIManager.put("List.foreground", new Color(224, 224, 224));
-            UIManager.put("List.selectionBackground", new Color(60, 63, 65));
-            UIManager.put("List.selectionForeground", new Color(224, 224, 224));
-            UIManager.put("Table.background", new Color(30, 30, 30));
-            UIManager.put("Table.foreground", new Color(224, 224, 224));
-            UIManager.put("TextField.background", new Color(30, 30, 30));
-            UIManager.put("TextField.foreground", new Color(224, 224, 224));
-            UIManager.put("ComboBox.background", new Color(30, 30, 30));
-            UIManager.put("ComboBox.foreground", new Color(224, 224, 224));
-        } else {
-            // JFileChooser light theme (system defaults)
-            UIManager.put("FileChooser.background", Color.WHITE);
-            UIManager.put("FileChooser.foreground", Color.BLACK);
-            UIManager.put("List.background", Color.WHITE);
-            UIManager.put("List.foreground", Color.BLACK);
-            UIManager.put("List.selectionBackground", new Color(184, 207, 229));
-            UIManager.put("List.selectionForeground", Color.BLACK);
-            UIManager.put("Table.background", Color.WHITE);
-            UIManager.put("Table.foreground", Color.BLACK);
-            UIManager.put("TextField.background", Color.WHITE);
-            UIManager.put("TextField.foreground", Color.BLACK);
-            UIManager.put("ComboBox.background", Color.WHITE);
-            UIManager.put("ComboBox.foreground", Color.BLACK);
-        }
-    }
-
-    /**
-     * Applies dialog dark theme via UIManager for JOptionPane and JFileChooser components.
-     * Must be called BEFORE showing any JOptionPane dialog or JFileChooser.
-     */
-    private void applyDialogDarkTheme() {
-        // JOptionPane dark theme
-        UIManager.put("OptionPane.background", new Color(43, 43, 43));
-        UIManager.put("Panel.background", new Color(43, 43, 43));
-        UIManager.put("OptionPane.messageForeground", new Color(224, 224, 224));
-        UIManager.put("TextField.background", new Color(30, 30, 30));
-        UIManager.put("TextField.foreground", new Color(224, 224, 224));
-        UIManager.put("TextField.caretForeground", new Color(224, 224, 224));
-        UIManager.put("Button.background", new Color(60, 63, 65));
-        UIManager.put("Button.foreground", new Color(224, 224, 224));
-        UIManager.put("Label.foreground", new Color(224, 224, 224));
-    }
+    // v2.0.17: REMOVED applyFileChooserTheme() and applyDialogDarkTheme() methods.
+    // These used UIManager.put() affecting GLOBAL Swing UI (entire Ignition Designer).
+    // JFileChooser will use system defaults - acceptable tradeoff for isolation.
 
     /**
      * Recursively applies dark theme colors to all components in a container.

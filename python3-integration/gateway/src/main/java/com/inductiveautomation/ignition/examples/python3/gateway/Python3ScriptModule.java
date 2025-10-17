@@ -277,7 +277,8 @@ public class Python3ScriptModule implements Python3RpcFunctions {
                 return versionInfo;
             }
 
-            Python3Result result = pool.execute("import sys; result = sys.version", Collections.emptyMap());
+            // v2.0.17: Use ADMIN mode to allow sys import (safe read-only operation)
+            Python3Result result = pool.execute("import sys; result = sys.version", Collections.emptyMap(), "ADMIN");
 
             if (result.isSuccess()) {
                 Map<String, Object> versionInfo = new HashMap<>();
