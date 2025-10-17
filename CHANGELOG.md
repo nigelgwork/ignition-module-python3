@@ -5,6 +5,132 @@ All notable changes to the Python 3 Integration module are documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.16.0] - 2025-10-17
+
+### Added - Security Enhancements
+- **Admin Mode Detection**: HTTP header-based authentication for ADMIN mode access
+  - Configure via `-Dignition.python3.admin.apikey=your-secret-key`
+  - Use `X-Python3-Admin-Key` header for REST API requests
+  - Allows administrators to use advanced Python modules (pandas, numpy, requests)
+  - Falls back to RESTRICTED mode if no valid API key provided
+- **Resource Limits on Python Processes**:
+  - Memory limit: 512MB per process (configurable via `-Dignition.python3.max.memory.mb`)
+  - CPU time limit: 60 seconds per execution (configurable via `-Dignition.python3.max.cpu.seconds`)
+  - Applied via Python resource module (Unix/Linux only)
+  - Prevents runaway scripts from consuming Gateway resources
+
+### Added - Performance Monitoring
+- **Per-Script Performance Metrics**:
+  - Track execution count, success rate, timing by individual script
+  - Top 50 scripts by execution count
+  - REST endpoint: `GET /api/v1/metrics/script-metrics`
+- **Historical Metric Tracking**:
+  - Circular buffer of 100 snapshots (1-minute intervals)
+  - Track execution trends, pool utilization over time
+  - Analyze performance degradation
+  - REST endpoint: `GET /api/v1/metrics/historical`
+- **Health Alerts**:
+  - Automatic threshold-based alerting
+  - Pool utilization alerts (70% warning, 90% critical)
+  - Failure rate alerts (>20%)
+  - Alert deduplication (1-minute window)
+  - REST endpoint: `GET /api/v1/metrics/alerts`
+
+### Changed
+- Python3MetricsCollector enhanced with per-script tracking, historical snapshots, health alerts
+- Python3Executor sets resource limit environment variables
+- Python3RestEndpoints includes admin mode detection logic and new metrics endpoints
+- python_bridge.py applies resource limits on startup
+
+### Technical
+- New inner classes in Python3MetricsCollector: ScriptMetrics, MetricSnapshot, HealthAlert
+- Resource limits applied via Python resource.setrlimit() (RLIMIT_AS, RLIMIT_CPU)
+- Admin API key configured via system property, checked against HTTP headers
+- 3 new REST API endpoints for advanced metrics
+
+### Security Assessment
+- RestrictedPython sandboxing already fully implemented (discovered in v1.14.0)
+- Rate limiting, input validation, audit logging already in place
+- No SQL injection risk (file-based JSON storage)
+- Resource limits prevent DoS attacks from runaway scripts
+
+---
+
+## [1.15.1] - 2025-10-17
+
+### Fixed - Designer IDE UI/UX
+- JSplitPane dividers now use dark theme colors (ModernTheme.BACKGROUND_DARKER)
+- Diagnostics panel visible in IDE (divider location adjusted from 400px to 300px)
+- Theme selector expanded to prevent text cutoff (150x28 pixels)
+- Scrollbars now hide when not required (VERTICAL_SCROLLBAR_AS_NEEDED policy)
+- Gateway connection bar height reduced by 25% (padding and gaps optimized)
+
+### Changed
+- Python3IDE_v1_9.java: Split pane divider theming, scrollbar policies, layout spacing
+- Improved overall user experience in dark theme
+
+---
+
+## [1.15.0] - 2025-10-17
+
+### Added
+- Modern UI design system for Designer IDE
+- Dark theme support (VS Code Dark+ and Default Light)
+- Theme selector in IDE toolbar
+- Comprehensive diagnostics panel with auto-refresh
+- Real-time pool statistics display
+
+### Changed
+- Designer IDE completely redesigned with modern aesthetics
+- Color scheme follows ModernTheme constants
+- Improved readability and visual consistency
+
+---
+
+## [1.14.0] - 2025-10-17
+
+### Added - Security Hardening
+- **RestrictedPython Sandboxing**:
+  - Module whitelisting (safe vs admin vs always-blocked)
+  - Blocked function lists (eval, exec, open, etc.)
+  - Safe __import__ override
+  - Pattern-based dangerous code detection
+- **Security Mode System**:
+  - RESTRICTED mode (default): Only safe modules allowed
+  - ADMIN mode: Advanced modules allowed
+  - Always-blocked modules (telnetlib, paramiko, threading, ctypes)
+- **Rate Limiting**: 100 requests per minute per user
+- **Input Validation**:
+  - Code size limits (1MB max)
+  - Script name validation (alphanumeric only)
+  - Path traversal prevention
+  - SQL keyword blacklisting (defense in depth)
+- **Audit Logging**:
+  - All code execution logged
+  - Code hash tracking (privacy-preserving)
+  - Secret sanitization (redacts passwords, tokens, API keys)
+
+### Added - Performance Monitoring
+- **Python3MetricsCollector**: Comprehensive performance tracking
+  - Total executions, success/failure counts, success rate
+  - Min/max/average execution time
+  - Pool utilization and health score (0-100)
+  - Error tracking by type
+- **Gateway Impact Assessment**:
+  - Executions per minute
+  - Pool contention events
+  - Impact level classification (LOW/MEDIUM/HIGH)
+  - Average CPU time consumed
+- **REST API Endpoints**:
+  - `GET /api/v1/metrics` - Performance metrics
+  - `GET /api/v1/gateway-impact` - Gateway impact assessment
+
+### Changed
+- Python3RestEndpoints includes security checks and metrics collection
+- python_bridge.py implements sandboxing and security validation
+
+---
+
 ## [1.8.0] - 2025-10-16
 
 ### Added

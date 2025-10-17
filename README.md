@@ -2,11 +2,11 @@
 
 A production-ready Ignition module that enables Python 3.11 scripting in Ignition 8.3+, bridging the gap between Ignition's Jython 2.7 and modern Python 3.
 
-## Current Version: 1.15.1
+## Current Version: 1.16.0
 
 **Latest Features:**
-- 🔒 **Security Hardening** - Admin mode, input validation, audit logging (NEW in 1.14.0)
-- 📊 **Performance Monitoring** - Real-time metrics and Gateway impact assessment (NEW in 1.14.0)
+- 🔒 **Security Hardening** - Admin mode detection, resource limits, sandboxing (ENHANCED in 1.16.0)
+- 📊 **Performance Monitoring** - Per-script metrics, historical tracking, health alerts (ENHANCED in 1.16.0)
 - ✨ **Saved Scripts** - Build a library of reusable Python scripts
 - 🎨 **Designer IDE** - Visual code editor with saved script management
 - 🔄 **REST API** - Remote execution and script management
@@ -18,7 +18,7 @@ A production-ready Ignition module that enables Python 3.11 scripting in Ignitio
 
 ### Installation
 
-1. Download: [Python3Integration-1.15.1.modl](/modules/ignition-module-python3/python3-integration/build/Python3Integration-1.15.1.modl)
+1. Download: [Python3Integration-1.16.0.modl](/modules/ignition-module-python3/python3-integration/build/Python3Integration-1.16.0.modl)
 2. Install: Config → System → Modules → Install or Upgrade a Module
 3. Upload the .modl file
 4. Restart Gateway
@@ -44,32 +44,63 @@ A production-ready Ignition module that enables Python 3.11 scripting in Ignitio
 | **Variable Passing** | Share data between Jython and Python 3 |
 | **Package Support** | Install any package via pip |
 
-### 🔒 Security Hardening (New in 1.14.0)
+### 🔒 Security Hardening (Enhanced in 1.16.0)
 
-**Admin Mode:**
+**Admin Mode Detection (NEW in 1.16.0):**
 - **RESTRICTED mode** (default): Only safe modules allowed (math, json, datetime, etc.)
 - **ADMIN mode**: Full access to advanced modules (os, subprocess, requests, pandas, numpy, etc.)
-- Automatic role detection (Ignition Administrator role required for ADMIN mode)
+- HTTP header-based authentication via `X-Python3-Admin-Key`
+- Configure admin API key: `-Dignition.python3.admin.apikey=your-secret-key`
 - Always-blocked modules for security (telnetlib, paramiko, threading, ctypes, etc.)
+
+**Resource Limits (NEW in 1.16.0):**
+- **Memory limit**: 512MB per process (configurable)
+- **CPU time limit**: 60 seconds per execution (configurable)
+- Prevents runaway scripts from consuming Gateway resources
+- Applied via Python resource module (Unix/Linux)
 
 **Input Validation:**
 - Code size limits (1MB max)
 - Script name validation (alphanumeric only)
 - Path traversal prevention
-- SQL injection protection
+- No SQL injection risk (file-based storage)
 
 **Audit Logging:**
 - All code execution logged
 - Code hash tracking (not full code for privacy)
 - Sanitized logging (redacts passwords, tokens, secrets)
 
-### 📊 Performance Monitoring (New in 1.14.0)
+**RestrictedPython Sandboxing:**
+- Module whitelisting (safe vs admin modules)
+- Blocked function lists (eval, exec, open, etc.)
+- Safe __import__ override
+- Pattern-based dangerous code detection
+
+### 📊 Performance Monitoring (Enhanced in 1.16.0)
 
 **Real-Time Metrics:**
 - Total executions, success/failure counts, success rate
 - Min/max/average execution time
 - Pool utilization and health score (0-100)
 - Error tracking by type
+
+**Per-Script Metrics (NEW in 1.16.0):**
+- Track performance by individual script
+- Execution count, success rate per script
+- Average/min/max timing per script
+- Top 50 scripts by execution count
+
+**Historical Tracking (NEW in 1.16.0):**
+- Circular buffer of 100 snapshots (1-minute intervals)
+- Track execution trends over time
+- Pool utilization history
+- Analyze performance degradation
+
+**Health Alerts (NEW in 1.16.0):**
+- Automatic threshold-based alerts
+- Pool utilization alerts (70% warning, 90% critical)
+- Failure rate alerts (>20%)
+- Alert deduplication (1-minute window)
 
 **Gateway Impact Assessment:**
 - Executions per minute
@@ -80,6 +111,9 @@ A production-ready Ignition module that enables Python 3.11 scripting in Ignitio
 **REST API Endpoints:**
 - `GET /api/v1/metrics` - Get comprehensive performance metrics
 - `GET /api/v1/gateway-impact` - Get Gateway impact assessment
+- `GET /api/v1/metrics/script-metrics` - Per-script performance (NEW in 1.16.0)
+- `GET /api/v1/metrics/historical` - Historical snapshots (NEW in 1.16.0)
+- `GET /api/v1/metrics/alerts` - Active health alerts (NEW in 1.16.0)
 
 ### 💾 Saved Scripts (New in 1.8.0)
 
@@ -184,8 +218,11 @@ system.python3.example()
 | `/eval` | POST | Evaluate Python expression |
 | `/pool-stats` | GET | Get process pool statistics |
 | `/health` | GET | Health check |
-| `/metrics` | GET | Get performance metrics (NEW in 1.14.0) |
-| `/gateway-impact` | GET | Get Gateway impact assessment (NEW in 1.14.0) |
+| `/metrics` | GET | Get performance metrics |
+| `/gateway-impact` | GET | Get Gateway impact assessment |
+| `/metrics/script-metrics` | GET | Per-script performance data (NEW in 1.16.0) |
+| `/metrics/historical` | GET | Historical metric snapshots (NEW in 1.16.0) |
+| `/metrics/alerts` | GET | Active health alerts (NEW in 1.16.0) |
 | `/scripts/list` | GET | List all saved scripts |
 | `/scripts/load/:name` | GET | Load a saved script |
 | `/scripts/save` | POST | Save a new script |
@@ -193,15 +230,42 @@ system.python3.example()
 
 ## Configuration
 
-### Pool Size
-
 Edit `<ignition-install>/data/ignition.conf`:
+
+### Pool Size
 
 ```properties
 wrapper.java.additional.200=-Dignition.python3.poolsize=5
 ```
 
 Default: 3 processes
+
+### Admin API Key (NEW in 1.16.0)
+
+Enable ADMIN mode for administrators (allows pandas, numpy, requests, etc.):
+
+```properties
+wrapper.java.additional.300=-Dignition.python3.admin.apikey=your-32-character-secret-key
+```
+
+**Usage:**
+```bash
+curl -X POST http://gateway:9088/data/python3integration/api/v1/exec \
+  -H "X-Python3-Admin-Key: your-32-character-secret-key" \
+  -H "Content-Type: application/json" \
+  -d '{"code": "import pandas as pd\nresult = str(pd.DataFrame())"}'
+```
+
+### Resource Limits (NEW in 1.16.0)
+
+Prevent runaway scripts from consuming Gateway resources:
+
+```properties
+wrapper.java.additional.301=-Dignition.python3.max.memory.mb=512
+wrapper.java.additional.302=-Dignition.python3.max.cpu.seconds=60
+```
+
+Defaults: 512MB memory, 60 seconds CPU time
 
 ### Python Path (Optional)
 
@@ -229,6 +293,34 @@ cd <ignition-install>/data/python3-integration/python/python/bin
 Installed packages are available to all Python processes immediately.
 
 ## Upgrading
+
+### From 1.15.x to 1.16.0
+
+**Important:** This upgrade adds significant security and performance enhancements.
+
+**Recommended Process:**
+1. Install v1.16.0 over existing version
+2. Restart Gateway
+3. Restart Designer clients (if using Designer IDE)
+4. (Optional) Configure admin API key for ADMIN mode access
+
+**Key Changes:**
+- **Security:** Admin mode detection via HTTP headers
+- **Security:** Resource limits on Python processes (memory, CPU time)
+- **Performance:** Per-script performance metrics
+- **Performance:** Historical metric tracking (100 snapshots)
+- **Performance:** Automatic health alerts
+- **API:** 3 new REST endpoints for advanced metrics
+
+**Configuration (Optional):**
+```properties
+# Enable ADMIN mode for administrators
+wrapper.java.additional.300=-Dignition.python3.admin.apikey=your-secret-key
+
+# Resource limits (prevent runaway scripts)
+wrapper.java.additional.301=-Dignition.python3.max.memory.mb=512
+wrapper.java.additional.302=-Dignition.python3.max.cpu.seconds=60
+```
 
 ### From 1.14.x to 1.15.1
 
@@ -355,7 +447,7 @@ cd python3-integration
 ./gradlew clean build --no-daemon
 ```
 
-Output: `build/Python3Integration-1.15.1.modl`
+Output: `build/Python3Integration-1.16.0.modl`
 
 ### Testing
 
