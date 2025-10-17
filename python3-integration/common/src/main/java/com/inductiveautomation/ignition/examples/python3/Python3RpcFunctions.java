@@ -89,4 +89,12 @@ public interface Python3RpcFunctions {
      * @throws Exception if script not found or execution fails
      */
     Object callScript(String scriptPath, List<Object> args, Map<String, Object> kwargs) throws Exception;
+
+    /**
+     * Get list of available saved scripts with metadata.
+     * Useful for autocomplete helpers and script browsers.
+     *
+     * @return List of script metadata maps containing name, description, path, author, version
+     */
+    List<Map<String, Object>> getAvailableScripts();
 }

@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Gateway implementation of Python 3 scripting functions.
@@ -489,6 +490,52 @@ public class Python3ScriptModule implements Python3RpcFunctions {
      */
     public Object callScript(String scriptPath) throws Exception {
         return callScript(scriptPath, Collections.emptyList(), Collections.emptyMap());
+    }
+
+    /**
+     * Get list of available saved scripts with metadata.
+     * Useful for autocomplete helpers and script browsers.
+     *
+     * @return List of script metadata maps (name, description, path, author, version)
+     */
+    @Override
+    public List<Map<String, Object>> getAvailableScripts() {
+        LOGGER.debug("getAvailableScripts() called");
+
+        Python3ScriptRepository repository = getScriptRepository();
+        if (repository == null) {
+            LOGGER.warn("getAvailableScripts() - repository not initialized");
+            return Collections.emptyList();
+        }
+
+        List<Python3ScriptRepository.ScriptMetadata> scripts = repository.listScripts();
+
+        return scripts.stream()
+            .map(script -> {
+                Map<String, Object> metadata = new HashMap<>();
+                metadata.put("name", script.getName());
+                metadata.put("description", script.getDescription() != null ? script.getDescription() : "");
+                metadata.put("path", buildScriptPath(script));
+                metadata.put("author", script.getAuthor() != null ? script.getAuthor() : "");
+                metadata.put("version", script.getVersion() != null ? script.getVersion() : "1.0");
+                metadata.put("lastModified", script.getLastModified() != null ? script.getLastModified() : "");
+                return metadata;
+            })
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * Build full script path from metadata (folder/name format).
+     *
+     * @param script Script metadata
+     * @return Full path string
+     */
+    private String buildScriptPath(Python3ScriptRepository.ScriptMetadata script) {
+        String folder = script.getFolderPath();
+        if (folder == null || folder.isEmpty()) {
+            return script.getName();
+        }
+        return folder + "/" + script.getName();
     }
 
     /**

@@ -2,17 +2,18 @@
 
 **Generated:** 2025-10-18 (Updated)
 **Author:** Claude Code
-**Current Version:** v2.0.23
+**Current Version:** v2.0.27
 
 ---
 
 ## Executive Summary
 
 **v1.17.2** (before refactor): Full-featured Python IDE in single 2,676-line file
-**v2.0.23** (current): Refactored architecture with enhanced features and diagnostics
+**v2.0.27** (current): Refactored architecture with Phase 1 complete (Essential IDE features)
 
-**Progress Since Original Roadmap (v2.0.8 → v2.0.23):**
-- 15 versions released with continuous improvements
+**Progress Since Original Roadmap (v2.0.8 → v2.0.27):**
+- **19 versions released** with continuous improvements
+- **Phase 1 Complete** (v2.0.24-v2.0.27): Essential IDE features validated/implemented
 - Enhanced diagnostics, theme fixes, and stability improvements
 - Repository cleanup and documentation consolidation
 - Security enhancements and performance optimizations
@@ -27,9 +28,9 @@ This document provides:
 
 ## Feature Comparison Matrix
 
-### ✅ **Implemented in v2.0.23**
+### ✅ **Implemented in v2.0.27**
 
-| Feature | v1.17.2 | v2.0.8 | Version Added | Notes |
+| Feature | v1.17.2 | v2.0.27 | Version Added | Notes |
 |---------|---------|---------|---------------|-------|
 | **Core Functionality** |
 | Gateway Connection | ✅ | ✅ | v2.0.0 | Via GatewayConnectionManager |
@@ -79,43 +80,28 @@ This document provides:
 | Gateway Impact Level | ✅ | ✅ | v2.0.0 | Low/Moderate/High/Critical |
 | Health Score | ✅ | ✅ | v2.0.0 | 0-100 score |
 | Auto-Refresh (5s) | ✅ | ✅ | v2.0.0 | Timer-based refresh |
+| **Phase 1 Features (v2.0.24-v2.0.27)** |
+| Clear Output Button | ✅ | ✅ | v2.0.24 | EditorPanel toolbar |
+| Script Autocomplete API | ❌ | ✅ | v2.0.24 | getAvailableScripts() |
+| Keyboard Shortcuts | ✅ | ✅ | v2.0.25 | Ctrl+Enter, Ctrl+S, etc. |
+| Context Menus | ✅ | ✅ | v2.0.26 | Right-click scripts/folders |
+| Save As Button | ✅ | ✅ | v2.0.27 | Full metadata dialog |
+| Current Script Label | ✅ | ✅ | v2.0.27 | Shows active script |
+| Dirty State Indicator | ✅ | ✅ | v2.0.27 | (*) for unsaved changes |
 
 ---
 
-### ⏳ **Missing from v2.0.23** (TODO)
+### ⏳ **Missing from v2.0.27** (Phase 2 - TODO)
 
-| Feature | v1.17.2 | v2.0.8 | Priority | Target Version | Effort |
+| Feature | v1.17.2 | v2.0.27 | Priority | Target Version | Effort |
 |---------|---------|---------|----------|----------------|--------|
-| **UI Features** |
-| Clear Output Button | ✅ | ❌ | HIGH | v2.0.24 | 1 hour |
-| New Script Button | ✅ | ❌ | HIGH | v2.0.24 | 2 hours |
-| Save As Button (separate) | ✅ | ❌ | MEDIUM | v2.0.27 | 2 hours |
-| **Script Autocomplete (getAvailableScripts)** | ❌ | ❌ | **MEDIUM** | **v2.0.24** | **2-4 hours** |
-| Current Script Label | ✅ | ❌ | MEDIUM | v2.0.10 | 1 hour |
-| Dirty State Indicator (*) | ✅ | ❌ | MEDIUM | v2.0.10 | 3 hours |
-| **Keyboard Shortcuts** |
-| Ctrl+Enter (Execute) | ✅ | ❌ | HIGH | v2.0.11 | 4 hours |
-| Ctrl+S (Save) | ✅ | ❌ | HIGH | v2.0.11 | 1 hour |
-| Ctrl+Shift+S (Save As) | ✅ | ❌ | MEDIUM | v2.0.11 | 1 hour |
-| Ctrl+N (New Script) | ✅ | ❌ | MEDIUM | v2.0.11 | 1 hour |
-| Ctrl+F (Find) | ✅ | ❌ | MEDIUM | v2.0.11 | 1 hour |
-| Ctrl+H (Replace) | ✅ | ❌ | MEDIUM | v2.0.11 | 1 hour |
-| Ctrl+/Ctrl- (Font Size) | ✅ | ❌ | LOW | v2.0.12 | 2 hours |
-| Ctrl+0 (Reset Font) | ✅ | ❌ | LOW | v2.0.12 | 1 hour |
-| **Context Menu (Right-Click)** |
-| Script: Load | ✅ | ❌ | HIGH | v2.0.13 | 4 hours |
-| Script: Export | ✅ | ❌ | HIGH | v2.0.13 | 1 hour |
-| Script: Rename | ✅ | ❌ | HIGH | v2.0.13 | 1 hour |
-| Script: Delete | ✅ | ❌ | HIGH | v2.0.13 | 1 hour |
-| Folder: New Script Here | ✅ | ❌ | MEDIUM | v2.0.13 | 2 hours |
-| Folder: New Subfolder | ✅ | ❌ | MEDIUM | v2.0.13 | 1 hour |
-| Folder: Rename | ✅ | ❌ | MEDIUM | v2.0.13 | 1 hour |
-| **Advanced Features** |
-| Drag-and-Drop Scripts | ✅ | ❌ | LOW | v2.1.0 | 8 hours |
-| Move Script Between Folders | ✅ | ❌ | LOW | v2.1.0 | 4 hours |
-| Move Folder (Reparent) | ✅ | ❌ | LOW | v2.1.0 | 4 hours |
-| Font Size Controls | ✅ | ❌ | LOW | v2.0.12 | 3 hours |
-| Font Size Persistence | ✅ | ❌ | LOW | v2.0.12 | 1 hour |
+| **Power User Features (Phase 2)** |
+| Font Size Controls | ✅ | ❌ | MEDIUM | v2.0.28 | 6 hours |
+| Ctrl+/Ctrl- (Font Size) | ✅ | ❌ | MEDIUM | v2.0.28 | included |
+| Ctrl+0 (Reset Font) | ✅ | ❌ | MEDIUM | v2.0.28 | included |
+| Move Script Between Folders | ✅ | ❌ | MEDIUM | v2.0.29 | 12 hours |
+| Drag-and-Drop Scripts | ✅ | ❌ | LOW | v2.0.30 | 8 hours |
+| Move Folder (Reparent) | ✅ | ❌ | LOW | v2.0.30 | included |
 | **Advanced Editor Features** |
 | Real-time Syntax Checking | ✅ | ❌ | LOW | v2.2.0 | 12 hours |
 | Intelligent Auto-Completion | ✅ | ❌ | LOW | v2.2.0 | 16 hours |
@@ -129,200 +115,63 @@ This document provides:
 
 ## Detailed Roadmap
 
-### **Phase 1: Quick Wins** (v2.0.9 - v2.0.13)
-**Target: 1-2 weeks**
-**Total Effort: ~40 hours**
+### **Phase 1: Essential IDE Features** (v2.0.24 - v2.0.27) - ✅ **COMPLETED**
 
-Focus on high-impact, low-effort features to improve daily usability.
+#### v2.0.24: Script Autocomplete + Clear Output - ✅ COMPLETE
+**Actual Effort: 2-3 hours**
 
-#### v2.0.24: Essential UI Controls + Script Autocomplete (1 day)
-**Effort: 5-7 hours**
-
-- ✅ Clear Output Button
-  - Add to toolbar next to Run button
-  - Clears both output and error tabs
-  - Keyboard shortcut optional
-
-- ✅ New Script Button
-  - Dialog for script name
-  - Auto-opens in editor
-  - Sets folder path based on tree selection
-
+- ✅ Clear Output Button - Added to EditorPanel toolbar
 - ✅ **Script Autocomplete - getAvailableScripts()** ⭐ NEW FEATURE
-  - Add `getAvailableScripts()` method to Python3ScriptModule.java
-  - Returns List<Map<String, Object>> with script metadata
-  - Includes: name, description, path (folder/name), author, version, lastModified
-  - Add to Python3RpcFunctions.java interface
-  - Add documentation to Python3ScriptModule.properties
-  - Add REST API endpoint: `GET /api/v1/scripts/available`
-  - Update Python 3 IDE autocomplete integration
-
-**User Experience:**
-```python
-# Get available scripts programmatically:
-scripts = system.python3.getAvailableScripts()
-# Returns: [{"name": "CalculateTax", "description": "...", "path": "Finance/CalculateTax"}, ...]
-
-# Then call with autocomplete-friendly path:
-result = system.python3.callScript("Finance/CalculateTax", args=[order_total])
-```
-
-**Benefits:**
-- Cleaner workflow (don't need to execute blank code to clear)
-- Faster script creation (no need to Save with empty name first)
-- **Script discovery API enables custom autocomplete UIs**
-- **Foundation for future dynamic script registration**
+  - Added `getAvailableScripts()` method to Python3ScriptModule.java
+  - Added to Python3RpcFunctions.java interface
+  - Added documentation to Python3ScriptModule.properties
+  - Added REST API endpoint: `GET /api/v1/scripts/available`
 
 ---
 
-#### v2.0.25: Keyboard Shortcuts (1 day)
-**Effort: 9 hours**
+#### v2.0.25: Keyboard Shortcuts - ✅ COMPLETE (Already Existed)
+**Actual Effort: <1 hour (validation only)**
 
-Essential keyboard shortcuts for power users:
-
+All keyboard shortcuts were already implemented in Python3IDE.java:
 - ✅ Ctrl+Enter: Execute code
 - ✅ Ctrl+S: Save current script
 - ✅ Ctrl+Shift+S: Save As
 - ✅ Ctrl+N: New Script
-- ✅ Ctrl+F: Focus find field (already in toolbar)
-- ✅ Ctrl+H: Focus replace field (already in toolbar)
-
-**Implementation:**
-```java
-private void setupKeyboardShortcuts() {
-    InputMap inputMap = editorPanel.getCodeEditor().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
-    ActionMap actionMap = editorPanel.getCodeEditor().getActionMap();
-
-    // Ctrl+Enter: Execute
-    inputMap.put(KeyStroke.getKeyStroke("control ENTER"), "execute");
-    actionMap.put("execute", new AbstractAction() {
-        public void actionPerformed(ActionEvent e) { executeCode(); }
-    });
-
-    // ... rest of shortcuts
-}
-```
-
-**Benefits:**
-- Faster workflow (no mouse needed)
-- Standard IDE shortcuts (familiar to developers)
-- Execute without clicking Run button
+- ✅ Ctrl+F: Focus find field
+- ✅ Ctrl+H: Focus replace field
 
 ---
 
-#### v2.0.26: Context Menu (1 day)
-**Effort: 11 hours**
+#### v2.0.26: Context Menu - ✅ COMPLETE (Already Existed)
+**Actual Effort: <1 hour (validation only)**
 
-Right-click context menu on script tree:
-
-**For Scripts:**
-- Load
-- Export...
-- Rename...
-- Delete
-
-**For Folders:**
-- New Script Here
-- New Subfolder
-- Rename... (non-root only)
-
-**Implementation:**
-```java
-private void setupContextMenu() {
-    treePanel.getTree().addMouseListener(new MouseAdapter() {
-        public void mousePressed(MouseEvent e) {
-            if (e.isPopupTrigger()) {
-                showContextMenu(e);
-            }
-        }
-        public void mouseReleased(MouseEvent e) {
-            if (e.isPopupTrigger()) {
-                showContextMenu(e);
-            }
-        }
-    });
-}
-```
-
-**Benefits:**
-- Faster access to common operations
-- Standard tree UI pattern
-- Discoverability (users find features via right-click)
+Context menus were already implemented with full functionality:
+- ✅ Script menu: Load, Export, Rename, Delete
+- ✅ Folder menu: New Script Here, New Subfolder, Rename
 
 ---
 
-#### v2.0.27: Save Improvements (1 day)
-**Effort: 9 hours**
+#### v2.0.27: Save Improvements - ✅ COMPLETE (Already Existed)
+**Actual Effort: <1 hour (validation only)**
 
-- ✅ Save As Button (separate from Save)
-  - Shows full metadata dialog
-  - Allows changing name, description, folder, author
-  - Doesn't overwrite current script tracking
-
-- ✅ Current Script Label
-  - Shows currently loaded script name
-  - Updates on load/save
-  - "(New Script)" for unsaved
-
-- ✅ Dirty State Indicator
-  - Asterisk (*) in current script label when modified
-  - Document listener on code editor
-  - Clears on save, sets on text change
-
-- ✅ Full Metadata Save Dialog
-  - Name, Description, Author, Folder Path, Version
-  - Pre-fills with current script metadata if editing
-  - Validates inputs (no empty names, etc.)
-
-**Benefits:**
-- Clear feedback on unsaved changes (like real IDEs)
-- More control over script metadata on save
-- Prevents accidental overwrites
+All save features were already implemented:
+- ✅ Save As Button with full metadata dialog
+- ✅ Current Script Label showing folder/script path
+- ✅ Dirty State Indicator (*) for unsaved changes
 
 ---
 
-#### v2.0.11: Keyboard Shortcuts (1 day)
-**Effort: 9 hours**
+### **Phase 2: Power User Features** (v2.0.28 - v2.0.30) - ⏳ **NEXT**
+**Target: 2-3 weeks**
+**Total Effort: ~26 hours**
 
-Essential keyboard shortcuts for power users:
-
-- ✅ Ctrl+Enter: Execute code
-- ✅ Ctrl+S: Save current script
-- ✅ Ctrl+Shift+S: Save As
-- ✅ Ctrl+N: New Script
-- ✅ Ctrl+F: Focus find field (already in toolbar)
-- ✅ Ctrl+H: Focus replace field (already in toolbar)
-
-**Implementation:**
-```java
-private void setupKeyboardShortcuts() {
-    InputMap inputMap = editorPanel.getCodeEditor().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
-    ActionMap actionMap = editorPanel.getCodeEditor().getActionMap();
-
-    // Ctrl+Enter: Execute
-    inputMap.put(KeyStroke.getKeyStroke("control ENTER"), "execute");
-    actionMap.put("execute", new AbstractAction() {
-        public void actionPerformed(ActionEvent e) { executeCode(); }
-    });
-
-    // ... rest of shortcuts
-}
-```
-
-**Benefits:**
-- Faster workflow (no mouse needed)
-- Standard IDE shortcuts (familiar to developers)
-- Execute without clicking Run button
-
----
-
-#### v2.0.12: Font Size Controls (0.5 days)
+#### v2.0.28: Font Size Controls (1 day)
 **Effort: 6 hours**
 
-- ✅ Font size spinner or buttons (+ / -)
-- ✅ Ctrl+ / Ctrl- keyboard shortcuts
-- ✅ Ctrl+0 reset to default (12pt)
-- ✅ Save font size preference
+- ❌ Font size spinner or buttons (+ / -)
+- ❌ Ctrl+ / Ctrl- keyboard shortcuts
+- ❌ Ctrl+0 reset to default (12pt)
+- ❌ Save font size preference
 
 **Benefits:**
 - Better readability for users with vision needs
@@ -331,78 +180,27 @@ private void setupKeyboardShortcuts() {
 
 ---
 
-#### v2.0.13: Context Menu (1 day)
-**Effort: 11 hours**
-
-Right-click context menu on script tree:
-
-**For Scripts:**
-- Load
-- Export...
-- Rename...
-- Delete
-
-**For Folders:**
-- New Script Here
-- New Subfolder
-- Rename... (non-root only)
-
-**Implementation:**
-```java
-private void setupContextMenu() {
-    treePanel.getTree().addMouseListener(new MouseAdapter() {
-        public void mousePressed(MouseEvent e) {
-            if (e.isPopupTrigger()) {
-                showContextMenu(e);
-            }
-        }
-        public void mouseReleased(MouseEvent e) {
-            if (e.isPopupTrigger()) {
-                showContextMenu(e);
-            }
-        }
-    });
-}
-```
-
-**Benefits:**
-- Faster access to common operations
-- Standard tree UI pattern
-- Discoverability (users find features via right-click)
-
----
-
-### **Phase 2: Advanced Save & Folder Management** (v2.0.14 - v2.0.15)
-**Target: 1 week**
-**Total Effort: ~18 hours**
-
-#### v2.0.14: Advanced Folder Operations (2 days)
+#### v2.0.29: Move Script Between Folders (1-2 days)
 **Effort: 12 hours**
 
-- ✅ Move script to different folder
-  - Drag-and-drop in tree (basic)
-  - "Move to..." dialog with folder selector
-  - Updates folderPath, reloads tree
-
-- ✅ Move folder (reparent)
-  - Changes parent folder
-  - Updates all child scripts' folderPath
-  - Preserves subfolder structure
+- ❌ "Move to Folder..." context menu item
+- ❌ Folder selection dialog
+- ❌ Move operation (load → delete → save pattern)
+- ❌ Tree refresh after move
 
 **Benefits:**
 - Flexible script organization
-- Fix mistakes without manual rename
-- Large-scale reorganization support
+- Fix mistakes without manual operations
+- Better script management
 
 ---
 
-#### v2.0.15: Complete Drag-and-Drop (3 days)
+#### v2.0.30: Drag-and-Drop Organization (1 day)
 **Effort: 8 hours**
 
-- ✅ Drag script to folder (move)
-- ✅ Drag folder to folder (reparent)
-- ✅ Visual feedback (cursor changes, drop target highlight)
-- ✅ Undo/redo support (optional)
+- ❌ Drag script to folder (move)
+- ❌ Drag folder to folder (reparent)
+- ❌ Visual feedback (cursor changes, drop target highlight)
 
 **Implementation:**
 ```java
@@ -418,9 +216,9 @@ treePanel.getTree().setTransferHandler(new ScriptTreeTransferHandler());
 
 ---
 
-### **Phase 3: Advanced Editor Features** (v2.1.0 - v2.2.0)
-**Target: 2-3 weeks**
-**Total Effort: ~40 hours**
+### **Phase 3: Advanced Editor Features** (v2.1.0 - v2.2.0) - 📋 **FUTURE**
+**Target: 3-4 weeks**
+**Total Effort: ~34 hours**
 
 #### v2.1.0: Find/Replace Enhancements (1 week)
 **Effort: 6 hours**
@@ -472,91 +270,71 @@ autoCompletion.install(editorPanel.getCodeEditor());
 
 ## Priority Matrix
 
-### **Critical Path** (Must-Have for Daily Use)
-1. ✅ **Clear Output Button** (v2.0.9) - 1 hour
-2. ✅ **New Script Button** (v2.0.9) - 2 hours
-3. ✅ **Keyboard Shortcuts** (v2.0.11) - 9 hours
-4. ✅ **Context Menu** (v2.0.13) - 11 hours
+### **Phase 1: Essential IDE Features** - ✅ **COMPLETED**
+1. ✅ **Clear Output Button** (v2.0.24) - 1 hour
+2. ✅ **Script Autocomplete API** (v2.0.24) - 2 hours
+3. ✅ **Keyboard Shortcuts** (v2.0.25) - Already existed
+4. ✅ **Context Menu** (v2.0.26) - Already existed
+5. ✅ **Save Improvements** (v2.0.27) - Already existed
 
-**Total: 23 hours (3 days)**
-
----
-
-### **High Value** (Improves UX Significantly)
-1. ✅ **Dirty State Indicator** (v2.0.10) - 3 hours
-2. ✅ **Current Script Label** (v2.0.10) - 1 hour
-3. ✅ **Save As Button** (v2.0.10) - 2 hours
-4. ✅ **Full Metadata Save Dialog** (v2.0.10) - 4 hours
-
-**Total: 10 hours (1-2 days)**
+**Total Actual Effort: 2-3 hours (most features already existed!)**
 
 ---
 
-### **Nice to Have** (Power User Features)
-1. ✅ **Font Size Controls** (v2.0.12) - 6 hours
-2. ✅ **Move Script/Folder** (v2.0.14) - 12 hours
-3. ✅ **Drag-and-Drop** (v2.0.15) - 8 hours
-4. ✅ **Find/Replace Dialog** (v2.1.0) - 6 hours
+### **Phase 2: Power User Features** - ⏳ **NEXT**
+1. ❌ **Font Size Controls** (v2.0.28) - 6 hours
+2. ❌ **Move Script Between Folders** (v2.0.29) - 12 hours
+3. ❌ **Drag-and-Drop** (v2.0.30) - 8 hours
 
-**Total: 32 hours (4-5 days)**
+**Total: 26 hours (2-3 weeks)**
 
 ---
 
-### **Future Enhancements** (Advanced IDE Features)
-1. ✅ **Syntax Checking** (v2.2.0) - 12 hours
-2. ✅ **Auto-Completion** (v2.2.0) - 16 hours
+### **Phase 3: Advanced Editor Features** - 📋 **FUTURE**
+1. ❌ **Find/Replace Dialog** (v2.1.0) - 6 hours
+2. ❌ **Syntax Checking** (v2.2.0) - 14 hours
+3. ❌ **Auto-Completion** (v2.2.0) - 14 hours
 
-**Total: 28 hours (3-4 days)**
+**Total: 34 hours (3-4 weeks)**
 
 ---
 
 ## Recommended Work Plan
 
-### **Sprint 1: Essential Features** (Week 1)
-**Goal: Make v2.0 fully usable for daily work**
+### **✅ Phase 1 Complete** (v2.0.24 - v2.0.27)
+**Status: DELIVERED**
 
-- v2.0.9: Clear Output + New Script (3 hours)
-- v2.0.10: Save improvements (9 hours)
-- v2.0.11: Keyboard shortcuts (9 hours)
-- v2.0.12: Font size controls (6 hours)
+- v2.0.24: Script Autocomplete + Clear Output (2-3 hours)
+- v2.0.25: Keyboard Shortcuts (validation only)
+- v2.0.26: Context Menu (validation only)
+- v2.0.27: Save Improvements (validation only)
 
-**Total: 27 hours (3-4 days)**
+**Actual Total: 2-3 hours**
 
-**Deliverable:** v2.0.12 with all essential UI features
-
----
-
-### **Sprint 2: Context Menu & Organization** (Week 2)
-**Goal: Add professional context menu and folder management**
-
-- v2.0.13: Context menu (11 hours)
-- v2.0.14: Move operations (12 hours)
-
-**Total: 23 hours (3 days)**
-
-**Deliverable:** v2.0.14 with complete script organization
+**Deliverable:** ✅ v2.0.27 with all essential IDE features
 
 ---
 
-### **Sprint 3: Drag-and-Drop** (Week 3 - Optional)
-**Goal: Polish UX with drag-and-drop**
+### **⏳ Phase 2: Power User Features** (Week 3-4)
+**Goal: Add font controls and script organization**
 
-- v2.0.15: Complete drag-and-drop (8 hours)
-- Testing and bug fixes (4 hours)
+- v2.0.28: Font size controls (6 hours)
+- v2.0.29: Move script between folders (12 hours)
+- v2.0.30: Drag-and-drop organization (8 hours)
 
-**Total: 12 hours (1-2 days)**
+**Total: 26 hours (2-3 weeks)**
 
-**Deliverable:** v2.0.15 with full drag-and-drop support
+**Deliverable:** v2.0.30 with complete power user features
 
 ---
 
-### **Sprint 4: Advanced Editor** (Weeks 4-5 - Future)
+### **📋 Phase 3: Advanced Editor** (Weeks 5-8 - Future)
 **Goal: Add advanced IDE features**
 
 - v2.1.0: Find/Replace dialog (6 hours)
 - v2.2.0: Syntax checking + Auto-completion (28 hours)
 
-**Total: 34 hours (4-5 days)**
+**Total: 34 hours (3-4 weeks)**
 
 **Deliverable:** v2.2.0 with full IDE capabilities
 
@@ -564,56 +342,67 @@ autoCompletion.install(editorPanel.getCodeEditor());
 
 ## Effort Summary
 
-| Phase | Features | Effort | Duration |
-|-------|----------|--------|----------|
-| **Phase 1** | Essential UI + Shortcuts + Context Menu | 40 hours | 1-2 weeks |
-| **Phase 2** | Folder Operations + Drag-and-Drop | 18 hours | 1 week |
-| **Phase 3** | Advanced Editor Features | 34 hours | 2-3 weeks |
-| **Total** | Complete Feature Parity | **92 hours** | **4-6 weeks** |
+| Phase | Features | Effort | Status |
+|-------|----------|--------|--------|
+| **Phase 1** | Essential IDE Features (v2.0.24-v2.0.27) | 2-3 hours | ✅ Complete |
+| **Phase 2** | Power User Features (v2.0.28-v2.0.30) | 26 hours | ⏳ Next |
+| **Phase 3** | Advanced Editor Features (v2.1.0-v2.2.0) | 34 hours | 📋 Future |
+| **Total Remaining** | Phase 2 + Phase 3 | **60 hours** | **5-7 weeks** |
 
 ---
 
 ## Next Steps
 
-### **Immediate (This Week)**
+### **Immediate (Week 3)**
 
-1. **Start v2.0.9**: Clear Output + New Script buttons (3 hours)
-2. **Continue v2.0.10**: Save improvements (9 hours)
-3. **Build and test** each version incrementally
+1. **Start v2.0.28**: Font size controls (6 hours)
+   - Add +/- buttons to toolbar
+   - Implement font size spinner control
+   - Add keyboard shortcuts (Ctrl+/Ctrl-/Ctrl+0)
+   - Persist font size preference
 
-### **Questions to Answer**
+2. **Continue v2.0.29**: Move script between folders (12 hours)
+   - Add "Move to Folder..." context menu item
+   - Create folder selection dialog
+   - Implement move operation
+   - Update tree after move
 
-1. **Priority Confirmation**: Does the recommended work plan align with your needs?
-2. **Drag-and-Drop**: Is this feature critical, or can it wait for Phase 2?
-3. **Syntax Checking**: Should this be prioritized higher (users asking for it)?
-4. **Timeline**: Is 4-6 weeks acceptable, or do you need faster delivery?
+3. **Complete v2.0.30**: Drag-and-drop organization (8 hours)
+   - Enable drag-and-drop in script tree
+   - Visual feedback during drag
+   - Update TransferHandler
 
 ---
 
 ## Success Criteria
 
-**v2.0.15 (End of Phase 2) should have:**
-- ✅ All v1.17.2 core features
-- ✅ All v1.17.2 UI features (buttons, shortcuts, context menu)
-- ✅ Complete folder management (create, rename, move)
+**✅ v2.0.27 (Phase 1 Complete):**
+- ✅ All essential IDE features (Clear Output, Keyboard Shortcuts, Context Menu)
+- ✅ Script autocomplete API (getAvailableScripts)
+- ✅ Save improvements (Save As, Dirty State, Current Script Label)
+- ✅ Professional UX for daily use
+
+**v2.0.30 (End of Phase 2) should have:**
+- ✅ Font size controls with persistence
+- ✅ Move script between folders
 - ✅ Drag-and-drop script organization
-- ✅ Professional UX matching v1.17.2
+- ✅ Complete power user features
 
 **v2.2.0 (End of Phase 3) should have:**
 - ✅ All Phase 2 features
+- ✅ Advanced find/replace dialog
 - ✅ Real-time syntax checking
 - ✅ Intelligent auto-completion
-- ✅ Advanced find/replace
 - **Feature parity with v1.17.2 complete** 🎉
 
 ---
 
 ## Document Info
 
-**Version:** 1.0
-**Last Updated:** 2025-10-17
+**Version:** 2.0
+**Last Updated:** 2025-10-18
 **Author:** Claude Code
-**Current Module Version:** v2.0.8
+**Current Module Version:** v2.0.27
 
 ---
 

@@ -1,6 +1,6 @@
 # Python 3 Integration Module for Ignition
 
-**Current Version: v2.0.23** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
+**Current Version: v2.0.30** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
 
 This module enables Python 3 scripting functions in Ignition 8.3+, allowing you to use modern Python 3 features and libraries alongside Ignition's built-in Jython 2.7 environment.
 
@@ -133,7 +133,7 @@ cd python3-integration
 
 ## Usage
 
-### Designer IDE (v2.0.23 - Current)
+### Designer IDE (v2.0.30 - Current)
 
 The Designer IDE provides an interactive development environment for testing Python 3 code directly in the Ignition Designer.
 
@@ -150,6 +150,14 @@ The Designer IDE provides an interactive development environment for testing Pyt
 - **Modern UI** *(v1.12.0+)*: VS Code-inspired dark theme with modern buttons and styling
 - **Refactored Architecture** *(v2.0.0+)*: Modular design with 95-490 line files (down from 2,676-line monolith)
 - **Execute Button**: Run code on the Gateway (Ctrl+Enter shortcut)
+- **Clear Output Button** *(v2.0.24)*: Quickly clear output and error panels
+- **Keyboard Shortcuts** *(v2.0.25)*: Ctrl+Enter, Ctrl+S, Ctrl+Shift+S, Ctrl+N, Ctrl+F, Ctrl+H
+- **Context Menus** *(v2.0.26)*: Right-click scripts (Load, Export, Rename, Delete, Move) and folders
+- **Save As** *(v2.0.27)*: Full metadata save dialog with dirty state indicator
+- **Current Script Label** *(v2.0.27)*: Shows active script with unsaved changes indicator (*)
+- **Font Size Controls** *(v2.0.28)*: A+/A- buttons, Ctrl++/Ctrl+-/Ctrl+0 shortcuts
+- **Move to Folder** *(v2.0.29)*: Context menu to move scripts between folders
+- **Drag-and-Drop** *(v2.0.30)*: Drag scripts and folders to reorganize
 - **Output Panel**: View execution results
 - **Error Panel**: View detailed error messages and tracebacks
 - **Diagnostics**: Real-time pool statistics (healthy processes, available, in use)
@@ -328,6 +336,22 @@ Run a simple test example.
 
 **Returns:** Test result string
 
+#### `system.python3.getAvailableScripts()` *(v2.0.24+)*
+Get list of all available saved scripts with metadata. Useful for building script selection UIs and autocomplete helpers.
+
+**Returns:** List of script metadata dictionaries
+
+**Example:**
+```python
+scripts = system.python3.getAvailableScripts()
+# Returns: [
+#   {"name": "CalculateTax", "description": "Tax calculator",
+#    "path": "Finance/CalculateTax", "author": "John",
+#    "version": "1.0", "lastModified": "2025-10-18 10:30:00"},
+#   ...
+# ]
+```
+
 ## Installing Python Packages
 
 To use third-party packages in your Python 3 scripts:
@@ -468,7 +492,7 @@ python3-integration/
 │   └── V2_STATUS_SUMMARY.md             # Status summary
 ├── build.gradle.kts        # Root build file
 ├── settings.gradle.kts     # Gradle settings
-├── version.properties      # Module version (v2.0.23)
+├── version.properties      # Module version (v2.0.30)
 └── README.md               # This file
 ```
 
@@ -511,7 +535,7 @@ Apache 2.0
 
 ## Roadmap
 
-**Current Release: v2.0.23** - Repository Consolidation
+**Current Release: v2.0.30** - Phase 1 & 2 Complete! (Essential + Power User Features)
 
 **Completed:**
 - [x] Designer integration (Python 3 script editor) - **v1.7.0**
@@ -522,14 +546,21 @@ Apache 2.0
 - [x] UX fixes (scrollbars, dividers, dialogs) - **v2.0.9**
 - [x] Python version detection - **v2.0.17**
 - [x] Theme-aware split pane dividers - **v2.0.22**
+- [x] **Clear Output button** - **v2.0.24**
+- [x] **Script autocomplete API (getAvailableScripts)** - **v2.0.24**
+- [x] **Keyboard shortcuts (Ctrl+Enter, Ctrl+S, etc.)** - **v2.0.25**
+- [x] **Context menu (right-click on scripts/folders)** - **v2.0.26**
+- [x] **Save As button with full metadata** - **v2.0.27**
+- [x] **Dirty state indicator (unsaved changes)** - **v2.0.27**
+- [x] **Current script label** - **v2.0.27**
+- [x] **Font size controls (A+/A- buttons, Ctrl++/-)** - **v2.0.28**
+- [x] **Move script between folders** - **v2.0.29**
+- [x] **Drag-and-drop organization** - **v2.0.30**
 
-**Planned (v2.0.10+):**
-- [ ] Clear Output button
-- [ ] New Script button
-- [ ] Keyboard shortcuts (Ctrl+Enter, Ctrl+S, etc.)
-- [ ] Context menu (right-click on scripts)
-- [ ] Dirty state indicator (unsaved changes)
-- [ ] Font size controls
+**Optional Future Enhancements (Phase 3):**
+- [ ] Advanced Find/Replace dialog (v2.1.0)
+- [ ] Real-time syntax checking (v2.2.0)
+- [ ] Intelligent auto-completion with Jedi (v2.2.0)
 - [ ] Virtual environment support
 - [ ] Package manager UI in Gateway
 - [ ] Async/callback support
@@ -538,7 +569,7 @@ Apache 2.0
 - [ ] Python process resource limits (CPU, memory)
 - [ ] Multiple Python versions support
 
-See [V2_FEATURE_COMPARISON_AND_ROADMAP.md](docs/V2_FEATURE_COMPARISON_AND_ROADMAP.md) for detailed roadmap.
+See [ROADMAP.md](ROADMAP.md) and [docs/V2_FEATURE_COMPARISON_AND_ROADMAP.md](docs/V2_FEATURE_COMPARISON_AND_ROADMAP.md) for detailed roadmap.
 
 ## Examples
 
@@ -551,6 +582,55 @@ Built using the Ignition SDK:
 - https://www.sdk-docs.inductiveautomation.com/
 
 ## Changelog
+
+### 2.0.30 (Drag-and-Drop Organization - Validated)
+- **VALIDATED**: Drag-and-drop already fully implemented via ScriptTreeTransferHandler
+- **VALIDATED**: Scripts and folders can be dragged to reorganize
+- **VALIDATED**: Visual feedback during drag operations
+- **BUILD**: Verified build and documentation updates
+- **DOCS**: Updated all documentation to reflect Phase 2 completion
+
+### 2.0.29 (Move Script Between Folders)
+- **NEW**: "Move to Folder..." context menu item for scripts
+- **NEW**: Folder selection dialog with JComboBox picker
+- **NEW**: Async move operation (load → save with new folder path)
+- **NEW**: Status feedback and tree refresh after move
+- **IMPROVED**: Better script organization capabilities
+
+### 2.0.28 (Font Size Controls)
+- **NEW**: A+ and A- buttons in toolbar for font size adjustment
+- **NEW**: Tooltips showing keyboard shortcut hints (Ctrl++/Ctrl+-)
+- **VALIDATED**: Font size persistence already existed via Preferences
+- **VALIDATED**: Keyboard shortcuts (Ctrl++, Ctrl+-, Ctrl+0) already existed
+- **IMPROVED**: Better accessibility for users with vision needs
+
+### 2.0.27 (Save Improvements - Validated)
+- **VALIDATED**: Save As button already existed with full metadata dialog
+- **VALIDATED**: Current Script Label already existed showing folder/script path
+- **VALIDATED**: Dirty State Indicator (*) already existed for unsaved changes
+- **BUILD**: Verified build and documentation updates
+- **DOCS**: Updated all documentation to reflect Phase 1 completion
+
+### 2.0.26 (Context Menus - Validated)
+- **VALIDATED**: Context menus already existed for scripts and folders
+- **VALIDATED**: Right-click scripts shows: Load, Export, Rename, Delete
+- **VALIDATED**: Right-click folders shows: New Script, New Subfolder, Rename
+- **BUILD**: Verified build and documentation updates
+
+### 2.0.25 (Keyboard Shortcuts - Validated)
+- **VALIDATED**: All keyboard shortcuts already existed
+- **VALIDATED**: Ctrl+Enter (Execute), Ctrl+S (Save), Ctrl+Shift+S (Save As)
+- **VALIDATED**: Ctrl+N (New), Ctrl+F (Find), Ctrl+H (Replace)
+- **BUILD**: Verified build and documentation updates
+
+### 2.0.24 (Script Autocomplete + Clear Output)
+- **NEW**: getAvailableScripts() method for script discovery
+- **NEW**: REST API endpoint /api/v1/scripts/available
+- **NEW**: RPC interface update for Designer/Client access
+- **NEW**: Python3ScriptModule.properties documentation for autocomplete
+- **NEW**: Clear Output button added to EditorPanel toolbar
+- **IMPROVED**: Script discoverability for programmatic access
+- **IMPROVED**: Foundation for future dynamic script registration
 
 ### 2.0.23 (Repository Consolidation)
 - **CLEANUP**: Removed 11 redundant documentation files (5,300+ lines)

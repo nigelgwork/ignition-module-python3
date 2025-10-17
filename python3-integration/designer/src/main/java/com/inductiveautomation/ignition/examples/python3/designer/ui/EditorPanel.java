@@ -66,6 +66,10 @@ public class EditorPanel extends JPanel {
         replaceAllButton.setFont(ModernTheme.FONT_REGULAR);
         replaceAllButton.addActionListener(e -> replaceAll());
 
+        JButton clearOutputButton = new JButton("Clear Output");
+        clearOutputButton.setFont(ModernTheme.FONT_REGULAR);
+        clearOutputButton.addActionListener(e -> clearOutput());
+
         findReplacePanel.add(new JLabel("Find:"));
         findReplacePanel.add(findField);
         findReplacePanel.add(new JLabel("Replace:"));
@@ -74,6 +78,7 @@ public class EditorPanel extends JPanel {
         findReplacePanel.add(findNextButton);
         findReplacePanel.add(replaceButton);
         findReplacePanel.add(replaceAllButton);
+        findReplacePanel.add(clearOutputButton);
 
         add(findReplacePanel, BorderLayout.NORTH);
 

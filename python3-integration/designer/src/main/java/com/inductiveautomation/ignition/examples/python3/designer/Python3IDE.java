@@ -78,6 +78,8 @@ public class Python3IDE extends JPanel {
     private JButton saveAsButton;
     private JButton importButton;
     private JButton exportButton;
+    private JButton fontIncreaseButton;
+    private JButton fontDecreaseButton;
     private JProgressBar progressBar;
 
     // Script Browser Components
@@ -211,6 +213,12 @@ public class Python3IDE extends JPanel {
         importButton = ModernButton.createDefault("Import...");
         exportButton = ModernButton.createDefault("Export...");
 
+        // Font size buttons (v2.0.28)
+        fontIncreaseButton = ModernButton.createDefault("A+");
+        fontIncreaseButton.setToolTipText("Increase Font Size (Ctrl++)");
+        fontDecreaseButton = ModernButton.createDefault("A-");
+        fontDecreaseButton.setToolTipText("Decrease Font Size (Ctrl+-)");
+
         progressBar = new JProgressBar();
         progressBar.setIndeterminate(false);
         progressBar.setVisible(false);
@@ -289,9 +297,19 @@ public class Python3IDE extends JPanel {
         centerPanel.add(progressBar);
         gatewayPanel.add(centerPanel, BorderLayout.CENTER);
 
-        // Right side: Theme selector
+        // Right side: Font size controls and Theme selector (v2.0.28)
         JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 1));  // Reduced vertical gap for 25% height reduction (Issue 5 - v1.15.1)
         rightPanel.setBackground(ModernTheme.PANEL_BACKGROUND);
+
+        // Font size controls
+        JLabel fontLabel = new JLabel("Font:");
+        fontLabel.setForeground(ModernTheme.FOREGROUND_PRIMARY);
+        fontLabel.setFont(ModernTheme.FONT_REGULAR);
+        rightPanel.add(fontLabel);
+        rightPanel.add(fontDecreaseButton);
+        rightPanel.add(fontIncreaseButton);
+
+        // Theme selector
         JLabel themeLabel = new JLabel("Theme:");
         themeLabel.setForeground(ModernTheme.FOREGROUND_PRIMARY);
         themeLabel.setFont(ModernTheme.FONT_REGULAR);
@@ -530,6 +548,10 @@ public class Python3IDE extends JPanel {
 
         // Export button
         exportButton.addActionListener(e -> exportCurrentScript());
+
+        // Font size buttons (v2.0.28)
+        fontIncreaseButton.addActionListener(e -> changeFontSize(1));
+        fontDecreaseButton.addActionListener(e -> changeFontSize(-1));
 
         // Theme selector
         themeSelector.addActionListener(e -> {
@@ -1474,6 +1496,11 @@ public class Python3IDE extends JPanel {
             renameItem.addActionListener(ev -> renameScript(scriptNode));
             menu.add(renameItem);
 
+            // v2.0.29: Move to Folder
+            JMenuItem moveItem = new JMenuItem("Move to Folder...");
+            moveItem.addActionListener(ev -> showMoveToFolderDialog(scriptNode));
+            menu.add(moveItem);
+
             menu.addSeparator();
 
             JMenuItem deleteItem = new JMenuItem("Delete");
@@ -1746,6 +1773,133 @@ public class Python3IDE extends JPanel {
         }
 
         return path.toString();
+    }
+
+    /**
+     * Shows dialog to move a script to a different folder (v2.0.29).
+     */
+    private void showMoveToFolderDialog(ScriptTreeNode scriptNode) {
+        ScriptMetadata metadata = scriptNode.getScriptMetadata();
+        String scriptName = metadata.getName();
+        String currentFolderPath = metadata.getFolderPath() != null ? metadata.getFolderPath() : "";
+
+        // Get all available folders
+        java.util.List<String> folders = new java.util.ArrayList<>();
+        folders.add("[Root]");  // Root folder option
+        collectFolderPaths(rootNode, "", folders);
+
+        if (folders.size() == 1) {
+            DarkDialog.showMessage(
+                    this,
+                    "No other folders available. Create folders first.",
+                    "Move to Folder"
+            );
+            return;
+        }
+
+        // Create combo box for folder selection
+        JComboBox<String> folderCombo = new JComboBox<>(folders.toArray(new String[0]));
+        folderCombo.setFont(ModernTheme.FONT_REGULAR);
+        folderCombo.setBackground(ModernTheme.BACKGROUND_DARKER);
+        folderCombo.setForeground(ModernTheme.FOREGROUND_PRIMARY);
+
+        JPanel panel = new JPanel(new BorderLayout(5, 5));
+        panel.setBackground(ModernTheme.BACKGROUND_DARKER);
+        JLabel label = new JLabel("Select destination folder for '" + scriptName + "':");
+        label.setForeground(ModernTheme.FOREGROUND_PRIMARY);
+        label.setFont(ModernTheme.FONT_REGULAR);
+        panel.add(label, BorderLayout.NORTH);
+        panel.add(folderCombo, BorderLayout.CENTER);
+
+        int result = JOptionPane.showConfirmDialog(
+                this,
+                panel,
+                "Move to Folder",
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.PLAIN_MESSAGE
+        );
+
+        if (result != JOptionPane.OK_OPTION) {
+            return;  // User cancelled
+        }
+
+        String selected = (String) folderCombo.getSelectedItem();
+        if (selected == null) {
+            return;
+        }
+
+        String newFolderPath = selected.equals("[Root]") ? "" : selected;
+
+        if (newFolderPath.equals(currentFolderPath)) {
+            return;  // No change
+        }
+
+        // Move the script
+        moveScriptToFolder(scriptName, newFolderPath);
+    }
+
+    /**
+     * Recursively collects all folder paths from the tree (v2.0.29).
+     */
+    private void collectFolderPaths(ScriptTreeNode node, String currentPath, java.util.List<String> folders) {
+        for (int i = 0; i < node.getChildCount(); i++) {
+            ScriptTreeNode child = (ScriptTreeNode) node.getChildAt(i);
+            if (!child.isScript()) {
+                String childPath = currentPath.isEmpty() ? child.toString() : currentPath + "/" + child.toString();
+                folders.add(childPath);
+                collectFolderPaths(child, childPath, folders);
+            }
+        }
+    }
+
+    /**
+     * Moves a script to a new folder (v2.0.29).
+     */
+    private void moveScriptToFolder(String scriptName, String newFolderPath) {
+        if (restClient == null) {
+            return;
+        }
+
+        SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
+            private SavedScript script;
+
+            @Override
+            protected Void doInBackground() throws Exception {
+                // Load the script
+                script = restClient.loadScript(scriptName);
+
+                // Save with new folder path
+                restClient.saveScript(
+                        script.getName(),
+                        script.getCode(),
+                        script.getDescription(),
+                        script.getAuthor(),
+                        newFolderPath,  // New folder path
+                        script.getVersion()
+                );
+
+                return null;
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    get();
+                    setStatus("Moved '" + scriptName + "' to " +
+                            (newFolderPath.isEmpty() ? "root" : newFolderPath), new Color(0, 128, 0));
+                    refreshScriptTree();
+                } catch (Exception e) {
+                    LOGGER.error("Failed to move script", e);
+                    DarkDialog.showMessage(
+                            Python3IDE.this,
+                            "Failed to move script: " + e.getMessage(),
+                            "Error"
+                    );
+                }
+            }
+        };
+
+        worker.execute();
     }
 
     /**

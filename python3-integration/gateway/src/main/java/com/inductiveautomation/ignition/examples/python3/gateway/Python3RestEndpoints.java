@@ -642,6 +642,14 @@ public final class Python3RestEndpoints {
             .accessControl(Python3RestEndpoints::checkManagePermission)  // ✅ AUTH + RATE LIMIT
             .mount();
 
+        // GET /data/python3integration/api/v1/scripts/available - Get available scripts (NEW v2.0.24)
+        routes.newRoute("/api/v1/scripts/available")
+            .handler(Python3RestEndpoints::handleGetAvailableScripts)
+            .method(HttpMethod.GET)
+            .type(RouteGroup.TYPE_JSON)
+            .accessControl(Python3RestEndpoints::checkReadPermission)  // ✅ AUTH (read-only)
+            .mount();
+
         LOGGER.info("Python3 REST API routes mounted successfully at /api/v1/*");
     }
 
@@ -1471,6 +1479,42 @@ public final class Python3RestEndpoints {
 
         } catch (Exception e) {
             LOGGER.error("REST API: /scripts/delete failed", e);
+            return createErrorResponse(e.getMessage());
+        }
+    }
+
+    /**
+     * Handle GET /scripts/available - Get list of available scripts with metadata
+     *
+     * Response: {"success": true, "scripts": [{name, description, path, author, version}, ...]}
+     *
+     * v2.0.24: New endpoint for script autocomplete and discovery
+     */
+    private static JsonObject handleGetAvailableScripts(RequestContext req, HttpServletResponse res) {
+        LOGGER.debug("REST API: /scripts/available called");
+
+        try {
+            if (scriptModule == null) {
+                return createErrorResponse("Script module not initialized");
+            }
+
+            List<Map<String, Object>> scripts = scriptModule.getAvailableScripts();
+
+            JsonObject response = new JsonObject();
+            response.addProperty("success", true);
+
+            JsonArray scriptsArray = new JsonArray();
+            for (Map<String, Object> script : scripts) {
+                scriptsArray.add(mapToJson(script));
+            }
+            response.add("scripts", scriptsArray);
+            response.addProperty("count", scriptsArray.size());
+
+            LOGGER.debug("REST API: /scripts/available completed successfully, {} scripts", scriptsArray.size());
+            return response;
+
+        } catch (Exception e) {
+            LOGGER.error("REST API: /scripts/available failed", e);
             return createErrorResponse(e.getMessage());
         }
     }

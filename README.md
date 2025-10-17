@@ -1,6 +1,6 @@
 # Python 3 Integration for Ignition
 
-**Current Version: v2.0.23** | [Full Documentation →](python3-integration/README.md)
+**Current Version: v2.0.30** | [Full Documentation →](python3-integration/README.md)
 
 A production-ready Ignition module that enables Python 3 scripting alongside Jython 2.7, with a modern Designer IDE.
 
@@ -19,7 +19,10 @@ cd python3-integration
 - 🏗️ Modular Architecture (v2.0.0+)
 - 📊 Enhanced Diagnostics with real-time metrics
 - ✨ Script Management - Save, load, organize in folders
-- 🔄 REST API for remote execution
+- ⌨️ Keyboard Shortcuts - Ctrl+Enter, Ctrl+S, Ctrl+N, Ctrl+F
+- 🖱️ Context Menus - Right-click scripts (Load, Export, Rename, Delete, Move)
+- 🎯 Power User Features - Font controls, move to folder, drag-and-drop
+- 🔄 REST API for remote execution and script autocomplete
 - 🔒 Production Security - Script signing, CSRF protection
 
 👉 **[See Full Documentation](python3-integration/README.md)** for features, API reference, and examples.
