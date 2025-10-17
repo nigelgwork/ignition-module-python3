@@ -73,6 +73,7 @@ public class Python3IDE_v2 extends JPanel {
     private JButton executeButton;
     private JButton saveButton;
     private JButton loadButton;
+    private JButton deleteButton;
     private JProgressBar progressBar;
     private JComboBox<String> themeSelector;
 
@@ -127,6 +128,10 @@ public class Python3IDE_v2 extends JPanel {
         loadButton = new JButton("📂 Load");
         loadButton.setFont(ModernTheme.FONT_REGULAR);
         loadButton.setEnabled(false);
+
+        deleteButton = new JButton("🗑️ Delete");
+        deleteButton.setFont(ModernTheme.FONT_REGULAR);
+        deleteButton.setEnabled(false);
 
         progressBar = new JProgressBar();
         progressBar.setVisible(false);
@@ -189,6 +194,7 @@ public class Python3IDE_v2 extends JPanel {
         leftPanel.add(executeButton);
         leftPanel.add(saveButton);
         leftPanel.add(loadButton);
+        leftPanel.add(deleteButton);
         leftPanel.add(progressBar);
 
         // Right: Theme
@@ -241,6 +247,7 @@ public class Python3IDE_v2 extends JPanel {
         executeButton.addActionListener(e -> executeCode());
         saveButton.addActionListener(e -> saveScript());
         loadButton.addActionListener(e -> loadSelectedScript());
+        deleteButton.addActionListener(e -> deleteScript());
 
         themeSelector.addActionListener(e -> {
             String selected = (String) themeSelector.getSelectedItem();
@@ -275,6 +282,7 @@ public class Python3IDE_v2 extends JPanel {
             executeButton.setEnabled(true);
             saveButton.setEnabled(true);
             loadButton.setEnabled(true);
+            deleteButton.setEnabled(true);
 
             refreshScriptTree();
             refreshDiagnostics();
@@ -368,6 +376,39 @@ public class Python3IDE_v2 extends JPanel {
     private void loadSelectedScript() {
         // TODO: Implement script selection dialog
         statusBar.setStatus("Load feature: Use script tree", ModernStatusBar.MessageType.INFO);
+    }
+
+    private void deleteScript() {
+        if (!connectionManager.isConnected() || scriptManager == null) {
+            return;
+        }
+
+        String selectedScript = treePanel.getSelectedScriptName();
+        if (selectedScript == null || selectedScript.isEmpty()) {
+            statusBar.setStatus("No script selected", ModernStatusBar.MessageType.WARNING);
+            return;
+        }
+
+        int confirm = JOptionPane.showConfirmDialog(
+                this,
+                "Are you sure you want to delete '" + selectedScript + "'?",
+                "Confirm Delete",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE
+        );
+
+        if (confirm == JOptionPane.YES_OPTION) {
+            try {
+                scriptManager.deleteScript(selectedScript);
+                statusBar.setStatus("Deleted: " + selectedScript, ModernStatusBar.MessageType.SUCCESS);
+                refreshScriptTree();
+                editorPanel.setCode("");
+                metadataPanel.clear();
+            } catch (Exception e) {
+                LOGGER.error("Failed to delete script", e);
+                statusBar.setStatus("Delete failed: " + e.getMessage(), ModernStatusBar.MessageType.ERROR);
+            }
+        }
     }
 
     private void loadScript(String name) {

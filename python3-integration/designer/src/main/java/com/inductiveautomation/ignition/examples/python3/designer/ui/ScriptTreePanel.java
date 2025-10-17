@@ -118,6 +118,17 @@ public class ScriptTreePanel extends JPanel {
         this.selectionListener = listener;
     }
 
+    public String getSelectedScriptName() {
+        TreePath path = scriptTree.getSelectionPath();
+        if (path != null) {
+            ScriptTreeNode node = (ScriptTreeNode) path.getLastPathComponent();
+            if (node.isScript()) {
+                return node.getScriptMetadata().getName();
+            }
+        }
+        return null;
+    }
+
     public JTree getTree() {
         return scriptTree;
     }
