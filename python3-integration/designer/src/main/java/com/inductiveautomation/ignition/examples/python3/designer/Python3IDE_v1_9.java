@@ -87,6 +87,7 @@ public class Python3IDE_v1_9 extends JPanel {
     // Theme and Settings
     private String currentTheme;
     private int fontSize;
+    private boolean useDarkTheme = true;  // Track current theme for popup menu styling (v2.0.12)
 
     // Find/Replace Dialogs
     private FindDialog findDialog;
@@ -866,11 +867,10 @@ public class Python3IDE_v1_9 extends JPanel {
      */
     private void handlePoolClicked() {
         if (restClient == null) {
-            JOptionPane.showMessageDialog(
+            DarkDialog.showMessage(
                     this,
                     "Please connect to a Gateway first",
-                    "Not Connected",
-                    JOptionPane.WARNING_MESSAGE
+                    "Not Connected"
             );
             return;
         }
@@ -885,11 +885,11 @@ public class Python3IDE_v1_9 extends JPanel {
         }
 
         // Show input dialog to adjust pool size
-        String input = JOptionPane.showInputDialog(
+        String input = DarkDialog.showInput(
                 this,
                 "Enter new pool size (1-20):",
                 "Adjust Pool Size",
-                JOptionPane.PLAIN_MESSAGE
+                String.valueOf(currentSize)
         );
 
         if (input == null || input.trim().isEmpty()) {
@@ -900,11 +900,10 @@ public class Python3IDE_v1_9 extends JPanel {
             int newSize = Integer.parseInt(input.trim());
 
             if (newSize < 1 || newSize > 20) {
-                JOptionPane.showMessageDialog(
+                DarkDialog.showMessage(
                         this,
                         "Pool size must be between 1 and 20",
-                        "Invalid Pool Size",
-                        JOptionPane.ERROR_MESSAGE
+                        "Invalid Pool Size"
                 );
                 return;
             }
@@ -925,11 +924,10 @@ public class Python3IDE_v1_9 extends JPanel {
                         refreshDiagnostics();  // Refresh to show new pool size
                     } catch (Exception e) {
                         LOGGER.error("Failed to set pool size", e);
-                        JOptionPane.showMessageDialog(
+                        DarkDialog.showMessage(
                                 Python3IDE_v1_9.this,
                                 "Failed to set pool size: " + e.getMessage(),
-                                "Error",
-                                JOptionPane.ERROR_MESSAGE
+                                "Error"
                         );
                     }
                 }
@@ -938,11 +936,10 @@ public class Python3IDE_v1_9 extends JPanel {
             worker.execute();
 
         } catch (NumberFormatException e) {
-            JOptionPane.showMessageDialog(
+            DarkDialog.showMessage(
                     this,
                     "Please enter a valid number",
-                    "Invalid Input",
-                    JOptionPane.ERROR_MESSAGE
+                    "Invalid Input"
             );
         }
     }
@@ -990,13 +987,12 @@ public class Python3IDE_v1_9 extends JPanel {
      * Shows an error dialog for invalid name.
      */
     private void showInvalidNameError(String name) {
-        JOptionPane.showMessageDialog(
+        DarkDialog.showMessage(
                 this,
                 "Invalid name: '" + name + "'\n\n" +
                 "Names cannot contain the following characters:\n" +
                 "/ \\ : * ? \" < > |",
-                "Invalid Name",
-                JOptionPane.ERROR_MESSAGE
+                "Invalid Name"
         );
     }
 
@@ -1181,11 +1177,10 @@ public class Python3IDE_v1_9 extends JPanel {
                     setStatus("Loaded: " + script.getName(), new Color(0, 128, 0));
                 } catch (Exception e) {
                     LOGGER.error("Failed to load script", e);
-                    JOptionPane.showMessageDialog(
+                    DarkDialog.showMessage(
                             Python3IDE_v1_9.this,
                             "Failed to load script: " + e.getMessage(),
-                            "Error",
-                            JOptionPane.ERROR_MESSAGE
+                            "Error"
                     );
                 }
             }
@@ -1201,11 +1196,10 @@ public class Python3IDE_v1_9 extends JPanel {
      */
     private void saveCurrentScript() {
         if (restClient == null) {
-            JOptionPane.showMessageDialog(
+            DarkDialog.showMessage(
                     this,
                     "Please connect to a Gateway first",
-                    "Not Connected",
-                    JOptionPane.WARNING_MESSAGE
+                    "Not Connected"
             );
             return;
         }
@@ -1213,11 +1207,10 @@ public class Python3IDE_v1_9 extends JPanel {
         String code = codeEditor.getText().trim();
 
         if (code.isEmpty()) {
-            JOptionPane.showMessageDialog(
+            DarkDialog.showMessage(
                     this,
                     "Cannot save empty script",
-                    "Empty Script",
-                    JOptionPane.WARNING_MESSAGE
+                    "Empty Script"
             );
             return;
         }
@@ -1242,11 +1235,10 @@ public class Python3IDE_v1_9 extends JPanel {
      */
     private void saveScriptAs() {
         if (restClient == null) {
-            JOptionPane.showMessageDialog(
+            DarkDialog.showMessage(
                     this,
                     "Please connect to a Gateway first",
-                    "Not Connected",
-                    JOptionPane.WARNING_MESSAGE
+                    "Not Connected"
             );
             return;
         }
@@ -1254,11 +1246,10 @@ public class Python3IDE_v1_9 extends JPanel {
         String code = codeEditor.getText().trim();
 
         if (code.isEmpty()) {
-            JOptionPane.showMessageDialog(
+            DarkDialog.showMessage(
                     this,
                     "Cannot save empty script",
-                    "Empty Script",
-                    JOptionPane.WARNING_MESSAGE
+                    "Empty Script"
             );
             return;
         }
@@ -1344,11 +1335,10 @@ public class Python3IDE_v1_9 extends JPanel {
                     refreshScriptTree();
                 } catch (Exception e) {
                     LOGGER.error("Failed to save script", e);
-                    JOptionPane.showMessageDialog(
+                    DarkDialog.showMessage(
                             Python3IDE_v1_9.this,
                             "Failed to save script: " + e.getMessage(),
-                            "Error",
-                            JOptionPane.ERROR_MESSAGE
+                            "Error"
                     );
                 }
             }
@@ -1361,11 +1351,11 @@ public class Python3IDE_v1_9 extends JPanel {
      * Creates a new folder.
      */
     private void createNewFolder() {
-        String folderName = JOptionPane.showInputDialog(
+        String folderName = DarkDialog.showInput(
                 this,
                 "Enter folder name:",
                 "New Folder",
-                JOptionPane.PLAIN_MESSAGE
+                ""
         );
 
         if (folderName == null || folderName.trim().isEmpty()) {
@@ -1429,6 +1419,9 @@ public class Python3IDE_v1_9 extends JPanel {
 
         ScriptTreeNode scriptNode = (ScriptTreeNode) node;
         JPopupMenu menu = new JPopupMenu();
+
+        // Apply theme to popup menu (v2.0.12)
+        stylePopupMenu(menu);
 
         if (scriptNode.isScript()) {
             // Script context menu
@@ -1509,11 +1502,10 @@ public class Python3IDE_v1_9 extends JPanel {
 
                 } catch (Exception e) {
                     LOGGER.error("Failed to export script", e);
-                    JOptionPane.showMessageDialog(
+                    DarkDialog.showMessage(
                             Python3IDE_v1_9.this,
                             "Failed to export script: " + e.getMessage(),
-                            "Error",
-                            JOptionPane.ERROR_MESSAGE
+                            "Error"
                     );
                 }
             }
@@ -1529,9 +1521,10 @@ public class Python3IDE_v1_9 extends JPanel {
         ScriptMetadata metadata = scriptNode.getScriptMetadata();
         String oldName = metadata.getName();
 
-        String newName = JOptionPane.showInputDialog(
+        String newName = DarkDialog.showInput(
                 this,
                 "Enter new name for script:",
+                "Rename Script",
                 oldName
         );
 
@@ -1590,11 +1583,10 @@ public class Python3IDE_v1_9 extends JPanel {
 
                 } catch (Exception e) {
                     LOGGER.error("Failed to rename script", e);
-                    JOptionPane.showMessageDialog(
+                    DarkDialog.showMessage(
                             Python3IDE_v1_9.this,
                             "Failed to rename script: " + e.getMessage(),
-                            "Error",
-                            JOptionPane.ERROR_MESSAGE
+                            "Error"
                     );
                 }
             }
@@ -1610,9 +1602,10 @@ public class Python3IDE_v1_9 extends JPanel {
         String oldName = folderNode.toString();
         String oldPath = getFolderPathForNode(folderNode);
 
-        String newName = JOptionPane.showInputDialog(
+        String newName = DarkDialog.showInput(
                 this,
                 "Enter new name for folder:",
+                "Rename Folder",
                 oldName
         );
 
@@ -1682,11 +1675,10 @@ public class Python3IDE_v1_9 extends JPanel {
                     refreshScriptTree();
                 } catch (Exception e) {
                     LOGGER.error("Failed to rename folder", e);
-                    JOptionPane.showMessageDialog(
+                    DarkDialog.showMessage(
                             Python3IDE_v1_9.this,
                             "Failed to rename folder: " + e.getMessage(),
-                            "Error",
-                            JOptionPane.ERROR_MESSAGE
+                            "Error"
                     );
                 }
             }
@@ -1723,15 +1715,13 @@ public class Python3IDE_v1_9 extends JPanel {
     private void deleteScript(ScriptTreeNode scriptNode) {
         ScriptMetadata metadata = scriptNode.getScriptMetadata();
 
-        int confirm = JOptionPane.showConfirmDialog(
+        boolean confirm = DarkDialog.showConfirm(
                 this,
                 "Are you sure you want to delete '" + metadata.getName() + "'?",
-                "Confirm Delete",
-                JOptionPane.YES_NO_OPTION,
-                JOptionPane.WARNING_MESSAGE
+                "Confirm Delete"
         );
 
-        if (confirm != JOptionPane.YES_OPTION) {
+        if (!confirm) {
             return;
         }
 
@@ -1750,11 +1740,10 @@ public class Python3IDE_v1_9 extends JPanel {
                     refreshScriptTree();
                 } catch (Exception e) {
                     LOGGER.error("Failed to delete script", e);
-                    JOptionPane.showMessageDialog(
+                    DarkDialog.showMessage(
                             Python3IDE_v1_9.this,
                             "Failed to delete script: " + e.getMessage(),
-                            "Error",
-                            JOptionPane.ERROR_MESSAGE
+                            "Error"
                     );
                 }
             }
@@ -1768,11 +1757,10 @@ public class Python3IDE_v1_9 extends JPanel {
      */
     private void importScript() {
         if (restClient == null) {
-            JOptionPane.showMessageDialog(
+            DarkDialog.showMessage(
                     this,
                     "Please connect to a Gateway first",
-                    "Not Connected",
-                    JOptionPane.WARNING_MESSAGE
+                    "Not Connected"
             );
             return;
         }
@@ -1808,45 +1796,27 @@ public class Python3IDE_v1_9 extends JPanel {
                     fileName.substring(0, fileName.length() - 3) : fileName;
 
                 // Show save dialog with imported content
-                JTextField nameField = new JTextField(scriptName, 20);
-                JTextField authorField = new JTextField(System.getProperty("user.name", "Unknown"), 20);
-                JTextField versionField = new JTextField("1.0", 10);
-                JTextField folderField = new JTextField("", 20);
-                JTextField descField = new JTextField("Imported from " + fileName, 30);
+                java.util.Map<String, String> fields = new java.util.LinkedHashMap<>();
+                fields.put("Script Name", scriptName);
+                fields.put("Author", System.getProperty("user.name", "Unknown"));
+                fields.put("Version", "1.0");
+                fields.put("Folder Path", "");
+                fields.put("Description", "Imported from " + fileName);
 
-                JPanel panel = new JPanel(new GridLayout(5, 2, 5, 5));
-                panel.add(new JLabel("Script Name:"));
-                panel.add(nameField);
-                panel.add(new JLabel("Author:"));
-                panel.add(authorField);
-                panel.add(new JLabel("Version:"));
-                panel.add(versionField);
-                panel.add(new JLabel("Folder Path:"));
-                panel.add(folderField);
-                panel.add(new JLabel("Description:"));
-                panel.add(descField);
+                java.util.Map<String, String> inputResult = DarkDialog.showMultiInput(this, "Import Script", fields);
 
-                int dialogResult = JOptionPane.showConfirmDialog(
-                        this,
-                        panel,
-                        "Import Script",
-                        JOptionPane.OK_CANCEL_OPTION,
-                        JOptionPane.PLAIN_MESSAGE
-                );
-
-                if (dialogResult == JOptionPane.OK_OPTION) {
-                    String name = nameField.getText().trim();
-                    String author = authorField.getText().trim();
-                    String version = versionField.getText().trim();
-                    String folder = folderField.getText().trim();
-                    String description = descField.getText().trim();
+                if (inputResult != null) {
+                    String name = inputResult.get("Script Name").trim();
+                    String author = inputResult.get("Author").trim();
+                    String version = inputResult.get("Version").trim();
+                    String folder = inputResult.get("Folder Path").trim();
+                    String description = inputResult.get("Description").trim();
 
                     if (name.isEmpty()) {
-                        JOptionPane.showMessageDialog(
+                        DarkDialog.showMessage(
                                 this,
                                 "Script name cannot be empty",
-                                "Invalid Name",
-                                JOptionPane.WARNING_MESSAGE
+                                "Invalid Name"
                         );
                         return;
                     }
@@ -1858,11 +1828,10 @@ public class Python3IDE_v1_9 extends JPanel {
 
             } catch (IOException e) {
                 LOGGER.error("Failed to import script", e);
-                JOptionPane.showMessageDialog(
+                DarkDialog.showMessage(
                         this,
                         "Failed to import script: " + e.getMessage(),
-                        "Error",
-                        JOptionPane.ERROR_MESSAGE
+                        "Error"
                 );
             }
         }
@@ -1875,11 +1844,10 @@ public class Python3IDE_v1_9 extends JPanel {
         String code = codeEditor.getText().trim();
 
         if (code.isEmpty()) {
-            JOptionPane.showMessageDialog(
+            DarkDialog.showMessage(
                     this,
                     "Cannot export empty code",
-                    "Empty Code",
-                    JOptionPane.WARNING_MESSAGE
+                    "Empty Code"
             );
             return;
         }
@@ -1910,11 +1878,10 @@ public class Python3IDE_v1_9 extends JPanel {
                 LOGGER.info("Exported script to: {}", file.getAbsolutePath());
             } catch (IOException e) {
                 LOGGER.error("Failed to export script", e);
-                JOptionPane.showMessageDialog(
+                DarkDialog.showMessage(
                         this,
                         "Failed to export script: " + e.getMessage(),
-                        "Error",
-                        JOptionPane.ERROR_MESSAGE
+                        "Error"
                 );
             }
         }
@@ -2054,10 +2021,16 @@ public class Python3IDE_v1_9 extends JPanel {
             // Apply theme to code editor
             theme.apply(codeEditor);
 
+            // Store theme state for popup menu styling (v2.0.12)
+            this.useDarkTheme = isDarkTheme;
+
             // Apply theme colors to output and error areas
             if (isDarkTheme) {
                 // Apply scrollbar theming
                 applyDarkScrollbarTheme();
+
+                // Set DarkDialog theme (v2.0.12)
+                DarkDialog.setDarkTheme(true);
 
                 // Output/Error areas
                 outputArea.setBackground(ModernTheme.BACKGROUND_DARKER);
@@ -2080,6 +2053,9 @@ public class Python3IDE_v1_9 extends JPanel {
             } else {
                 // Apply light scrollbar theming
                 applyLightScrollbarTheme();
+
+                // Set DarkDialog theme (v2.0.12)
+                DarkDialog.setDarkTheme(false);
 
                 // Output/Error areas
                 outputArea.setBackground(Color.WHITE);
@@ -2199,6 +2175,26 @@ public class Python3IDE_v1_9 extends JPanel {
         UIManager.put("ScrollBar.foreground", Color.BLACK);
         UIManager.put("ScrollPane.background", Color.WHITE);
         UIManager.put("Viewport.background", Color.WHITE);
+    }
+
+    /**
+     * Styles a popup menu to match the current theme.
+     *
+     * @param menu the popup menu to style
+     */
+    private void stylePopupMenu(JPopupMenu menu) {
+        // Determine current theme
+        boolean isDark = useDarkTheme;
+
+        if (isDark) {
+            menu.setBackground(ModernTheme.BACKGROUND_DARK);
+            menu.setForeground(ModernTheme.FOREGROUND_PRIMARY);
+            menu.setBorder(BorderFactory.createLineBorder(ModernTheme.BORDER_DEFAULT, 1));
+        } else {
+            menu.setBackground(Color.WHITE);
+            menu.setForeground(Color.BLACK);
+            menu.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200), 1));
+        }
     }
 
     /**
@@ -2659,11 +2655,10 @@ public class Python3IDE_v1_9 extends JPanel {
                         refreshScriptTree();
                     } catch (Exception e) {
                         LOGGER.error("Failed to move script", e);
-                        JOptionPane.showMessageDialog(
+                        DarkDialog.showMessage(
                                 Python3IDE_v1_9.this,
                                 "Failed to move script: " + e.getMessage(),
-                                "Error",
-                                JOptionPane.ERROR_MESSAGE
+                                "Error"
                         );
                     }
                 }
@@ -2736,11 +2731,10 @@ public class Python3IDE_v1_9 extends JPanel {
                         refreshScriptTree();
                     } catch (Exception e) {
                         LOGGER.error("Failed to move folder", e);
-                        JOptionPane.showMessageDialog(
+                        DarkDialog.showMessage(
                                 Python3IDE_v1_9.this,
                                 "Failed to move folder: " + e.getMessage(),
-                                "Error",
-                                JOptionPane.ERROR_MESSAGE
+                                "Error"
                         );
                     }
                 }
