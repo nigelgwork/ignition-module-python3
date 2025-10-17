@@ -164,8 +164,9 @@ public class Python3IDE_v2 extends JPanel {
         String[] themes = {"Dark", "VS Code Dark+", "Monokai"};
         themeSelector = new JComboBox<>(themes);
         themeSelector.setFont(ModernTheme.FONT_REGULAR);
+        themeSelector.setPreferredSize(new java.awt.Dimension(150, themeSelector.getPreferredSize().height));  // UX Fix: Prevent text cutoff
 
-        statusBar.setStatus("Ready - v2.0.0 (Refactored)", ModernStatusBar.MessageType.INFO);
+        statusBar.setStatus("Ready - v2.0.9 (UX Fixes)", ModernStatusBar.MessageType.INFO);
         statusBar.setConnection("Not Connected");
     }
 
@@ -323,6 +324,7 @@ public class Python3IDE_v2 extends JPanel {
 
             refreshScriptTree();
             refreshDiagnostics();
+            refreshPythonVersion();  // UX Fix: Fetch and display Python version
         } else {
             statusBar.setStatus("Connection failed", ModernStatusBar.MessageType.ERROR);
             statusBar.setConnection("Not Connected", ModernTheme.ERROR);
@@ -629,6 +631,36 @@ public class Python3IDE_v2 extends JPanel {
                     statusBar.updatePoolStats(stats);
                 } catch (Exception e) {
                     statusBar.setPoolStats("Pool: Unavailable", ModernTheme.ERROR);
+                }
+            }
+        };
+
+        worker.execute();
+    }
+
+    private void refreshPythonVersion() {
+        if (!connectionManager.isConnected()) {
+            return;
+        }
+
+        SwingWorker<String, Void> worker = new SwingWorker<String, Void>() {
+            @Override
+            protected String doInBackground() throws Exception {
+                return connectionManager.getRestClient().getPythonVersion();
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    String version = get();
+                    if (version != null && !version.isEmpty()) {
+                        statusBar.setPythonVersion("Python: " + version);
+                    } else {
+                        statusBar.setPythonVersion("Python: Unknown");
+                    }
+                } catch (Exception e) {
+                    statusBar.setPythonVersion("Python: --");
+                    LOGGER.warn("Failed to fetch Python version", e);
                 }
             }
         };

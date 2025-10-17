@@ -6,6 +6,7 @@ import org.fife.ui.rsyntaxtextarea.Theme;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.swing.BorderFactory;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
@@ -119,14 +120,22 @@ public class ThemeManager {
     }
 
     private void applyDarkDialogTheme() {
+        // UX Fix v2.0.9: Enhanced dialog theming for consistent dark theme
         UIManager.put("OptionPane.background", ModernTheme.PANEL_BACKGROUND);
         UIManager.put("OptionPane.messageForeground", ModernTheme.FOREGROUND_PRIMARY);
+        UIManager.put("OptionPane.messagebackground", ModernTheme.PANEL_BACKGROUND);
         UIManager.put("Panel.background", ModernTheme.PANEL_BACKGROUND);
         UIManager.put("TextField.background", ModernTheme.BACKGROUND_DARKER);
         UIManager.put("TextField.foreground", ModernTheme.FOREGROUND_PRIMARY);
+        UIManager.put("TextField.caretForeground", ModernTheme.FOREGROUND_PRIMARY);
+        UIManager.put("TextField.selectionBackground", ModernTheme.ACCENT_PRIMARY);
+        UIManager.put("TextField.selectionForeground", Color.WHITE);
+        UIManager.put("TextField.border", BorderFactory.createLineBorder(ModernTheme.BORDER_DEFAULT));
         UIManager.put("Label.foreground", ModernTheme.FOREGROUND_PRIMARY);
-        UIManager.put("Button.background", ModernTheme.BACKGROUND_DARK);
+        UIManager.put("Label.background", ModernTheme.PANEL_BACKGROUND);
+        UIManager.put("Button.background", ModernTheme.BUTTON_BACKGROUND);
         UIManager.put("Button.foreground", ModernTheme.FOREGROUND_PRIMARY);
+        UIManager.put("Button.select", ModernTheme.BUTTON_HOVER);
     }
 
     private void applyLightDialogTheme() {

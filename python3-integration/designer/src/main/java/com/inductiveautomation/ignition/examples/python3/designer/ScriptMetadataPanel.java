@@ -35,7 +35,7 @@ public class ScriptMetadataPanel extends JPanel {
                         ModernTheme.FOREGROUND_PRIMARY),
                 BorderFactory.createEmptyBorder(5, 5, 5, 5)
         ));
-        setPreferredSize(new Dimension(250, 280));  // Increased from 220 to 280 for larger description area
+        setPreferredSize(new Dimension(250, 320));  // Increased from 280 to 320 for even larger description area
         setBackground(ModernTheme.PANEL_BACKGROUND);
 
         // Create labels
@@ -98,9 +98,9 @@ public class ScriptMetadataPanel extends JPanel {
         descScroll.getViewport().setBackground(ModernTheme.BACKGROUND_DARKER);
         descScroll.setBorder(BorderFactory.createLineBorder(ModernTheme.BORDER_DEFAULT));
 
-        // Expanded scroll pane for better usability (v2.0.1 UX fix: 70px → 120px)
-        descScroll.setPreferredSize(new Dimension(240, 120));
-        descScroll.setMinimumSize(new Dimension(240, 80));
+        // Expanded scroll pane for better usability (v2.0.1 UX fix: 70px → 120px, v2.0.9: 120px → 150px)
+        descScroll.setPreferredSize(new Dimension(240, 150));
+        descScroll.setMinimumSize(new Dimension(240, 100));
 
         descPanel.add(descScroll, BorderLayout.CENTER);
 

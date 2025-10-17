@@ -518,6 +518,94 @@ Built using the Ignition SDK:
 
 ## Changelog
 
+### 2.0.9 (UX Fixes)
+- **FIXED**: Scrollbars now only appear when needed (AS_NEEDED policy applied to all scroll panes)
+- **FIXED**: Theme selector dropdown width increased to 150px to prevent "VS Code Dark+" text cutoff
+- **FIXED**: Description panel expanded from 120px to 150px for better usability (50% increase from v2.0.1)
+- **FIXED**: Python version detection now displays actual version (e.g., "Python: 3.11.5") instead of "Unknown"
+- **FIXED**: Panel dividers now styled with dark theme (removed white dividers)
+- **FIXED**: Popup dialogs (Save, Delete, Rename) now follow dark theme with proper styling
+- **IMPROVED**: ScrollPane policies explicitly set to AS_NEEDED in ScriptTreePanel and EditorPanel
+- **IMPROVED**: ModernStatusBar now fetches and displays Python version on connection
+- **IMPROVED**: JSplitPane divider in EditorPanel styled to match dark theme
+- **IMPROVED**: Enhanced UIManager properties for consistent dialog theming (TextField borders, selection colors, button hover states)
+
+### 2.0.8 (Enhanced Diagnostics)
+- **NEW**: Python version display in diagnostics panel
+- **NEW**: Total executions counter with real-time updates
+- **NEW**: Success rate display with color coding (95%+ green, 85%+ yellow, <85% red)
+- **NEW**: Average execution time metric in milliseconds
+- **NEW**: ExecutionMetrics data class for structured diagnostics parsing
+- **IMPROVED**: Enhanced diagnostics panel with 10 metrics vs 6 in v2.0.0
+- **IMPROVED**: Auto-refresh every 5 seconds for real-time monitoring
+- **IMPROVED**: Color-coded health indicators for success rate and pool usage
+
+### 2.0.7 (Export/Import)
+- **NEW**: Export script to .py file functionality with file chooser dialog
+- **NEW**: Import script from .py file functionality
+- **NEW**: Automatic .py extension addition on export
+- **IMPROVED**: JFileChooser dialogs with Python file filter (.py)
+- **IMPROVED**: File I/O with proper error handling and status messages
+
+### 2.0.6 (Find/Replace)
+- **NEW**: Find/Replace toolbar integrated into EditorPanel
+- **NEW**: Find Next functionality with forward search
+- **NEW**: Replace and Replace All functionality
+- **NEW**: Match case checkbox option for case-sensitive search
+- **IMPROVED**: Integrated with RSyntaxTextArea SearchEngine API
+- **IMPROVED**: Toolbar layout with labeled input fields
+
+### 2.0.5 (Folder Management)
+- **NEW**: New Folder button with folder path input dialog
+- **NEW**: Rename button for scripts and folders
+- **NEW**: ScriptManager.renameScript() method for script renaming
+- **IMPROVED**: Complete folder organization capabilities
+- **IMPROVED**: Folder and script rename with validation
+
+### 2.0.4 (Delete Script)
+- **NEW**: Delete script functionality with confirmation dialog
+- **NEW**: Script deletion clears editor and metadata after successful delete
+- **NEW**: ScriptTreePanel.getSelectedScriptName() helper method
+- **IMPROVED**: Warning-style confirmation dialog (Yes/No) for safe deletion
+- **IMPROVED**: Status bar feedback for delete operations
+
+### 2.0.3 (Comprehensive Documentation)
+- **NEW**: V2_ARCHITECTURE_GUIDE.md (530 lines) - Complete architectural overview
+- **NEW**: V2_MIGRATION_GUIDE.md (470 lines) - Migration strategies and code examples
+- **NEW**: DEVELOPER_EXTENSION_GUIDE.md (530 lines) - Extension patterns and best practices
+- **IMPROVED**: Comprehensive v2.0 documentation for developers and contributors
+- **IMPROVED**: Detailed component interaction diagrams and threading model
+- **IMPROVED**: Code examples for extending the v2.0 architecture
+
+### 2.0.2 (Code Cleanup)
+- **FIXED**: Star imports replaced with specific imports in all v2 files
+- **FIXED**: Removed unused imports across codebase (EditorPanel, ScriptTreePanel, ThemeManager, etc.)
+- **IMPROVED**: Checkstyle warnings reduced from 91 to 50
+- **IMPROVED**: Code quality and maintainability improvements
+
+### 2.0.1 (UX Fix)
+- **IMPROVED**: Metadata description panel height increased from 70px to 120px (70% increase)
+- **IMPROVED**: Better scroll pane sizing for multi-line script descriptions
+- **IMPROVED**: Enhanced metadata panel visibility and usability
+
+### 2.0.0 (Architecture Refactoring)
+- **ARCHITECTURE**: Refactored from 2,676-line monolith (Python3IDE_v1_17_2.java) to modular architecture
+- **NEW**: GatewayConnectionManager for centralized Gateway communication
+- **NEW**: ScriptManager for script CRUD operations (load, save, delete, list)
+- **NEW**: ThemeManager for centralized theme management (Dark, Monokai, VS Code Dark+)
+- **NEW**: EditorPanel UI component (95 lines) with RSyntaxTextArea integration
+- **NEW**: ScriptTreePanel UI component (440 lines) with hierarchical folder structure
+- **NEW**: MetadataPanel UI component (145 lines) with read-only script metadata
+- **NEW**: DiagnosticsPanel UI component (241 lines) with real-time pool statistics
+- **NEW**: ModernStatusBar UI component with connection status and pool stats
+- **NEW**: Python3IDE_v2.java main class (490 lines) orchestrating all components
+- **ARCHITECTURE**: Token reduction from 25K tokens to 2.5K tokens per file (10x improvement)
+- **ARCHITECTURE**: Separation of concerns - Managers (business logic), UI Panels (presentation), Main Class (orchestration)
+- **IMPROVED**: Easier testing with isolated, mockable components
+- **IMPROVED**: Easier maintenance with focused, single-responsibility classes
+- **IMPROVED**: Easier extension with clear extension points and dependency injection
+- **IMPROVED**: Each file 95-490 lines (vs 2,676 in v1.17.2 monolith)
+
 ### 1.12.1 (Bug Fixes)
 - **FIXED**: URL encoding for script names with spaces in REST API calls
 - **IMPROVED**: Script tree font size increased from 14pt to 16pt for better readability

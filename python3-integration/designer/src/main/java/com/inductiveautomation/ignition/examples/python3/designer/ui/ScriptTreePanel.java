@@ -55,6 +55,8 @@ public class ScriptTreePanel extends JPanel {
 
         JScrollPane treeScroll = new JScrollPane(scriptTree);
         treeScroll.setBackground(ModernTheme.TREE_BACKGROUND);
+        treeScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        treeScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         add(treeScroll, BorderLayout.CENTER);
     }
 

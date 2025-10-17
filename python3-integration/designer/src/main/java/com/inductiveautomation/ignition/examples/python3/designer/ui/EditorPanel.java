@@ -102,15 +102,31 @@ public class EditorPanel extends JPanel {
         errorArea.setBackground(ModernTheme.BACKGROUND_DARKER);
         errorArea.setForeground(ModernTheme.ERROR);
 
+        JScrollPane outputScroll = new JScrollPane(outputArea);
+        outputScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        outputScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+
+        JScrollPane errorScroll = new JScrollPane(errorArea);
+        errorScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        errorScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+
         JTabbedPane outputTabs = new JTabbedPane();
-        outputTabs.addTab("Output", new JScrollPane(outputArea));
-        outputTabs.addTab("Errors", new JScrollPane(errorArea));
+        outputTabs.addTab("Output", outputScroll);
+        outputTabs.addTab("Errors", errorScroll);
 
         JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
         splitPane.setTopComponent(editorScroll);
         splitPane.setBottomComponent(outputTabs);
         splitPane.setResizeWeight(0.7);
         splitPane.setDividerLocation(400);
+        splitPane.setBackground(ModernTheme.BACKGROUND_DARK);
+        splitPane.setBorder(null);
+        splitPane.setDividerSize(8);
+
+        // UX Fix: Style divider to match dark theme
+        if (splitPane.getUI() instanceof javax.swing.plaf.basic.BasicSplitPaneUI) {
+            ((javax.swing.plaf.basic.BasicSplitPaneUI) splitPane.getUI()).getDivider().setBackground(ModernTheme.BACKGROUND_DARKER);
+        }
 
         add(splitPane, BorderLayout.CENTER);
     }
