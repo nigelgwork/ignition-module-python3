@@ -87,6 +87,14 @@ public class Python3IDE extends JPanel {
     private ScriptMetadataPanel metadataPanel;
     private DiagnosticsPanel diagnosticsPanel;
 
+    // Toolbar buttons for script tree (v2.0.15 - made instance vars for theme updates)
+    private ModernButton newFolderBtn;
+    private ModernButton newScriptBtn;
+    private ModernButton refreshBtn;
+
+    // Output tabs (v2.0.15 - made instance var for theme updates)
+    private JTabbedPane outputTabs;
+
     // Theme and Settings
     private String currentTheme;
     private int fontSize;
@@ -336,15 +344,15 @@ public class Python3IDE extends JPanel {
         JPanel treeToolbar = new JPanel(new FlowLayout(FlowLayout.LEFT, 3, 2));
         treeToolbar.setBackground(ModernTheme.PANEL_BACKGROUND);
 
-        ModernButton newFolderBtn = ModernButton.createSmall("+Folder");
+        newFolderBtn = ModernButton.createSmall("+Folder");
         newFolderBtn.setToolTipText("New Folder");
         newFolderBtn.addActionListener(e -> createNewFolder());
 
-        ModernButton newScriptBtn = ModernButton.createSmall("+Script");
+        newScriptBtn = ModernButton.createSmall("+Script");
         newScriptBtn.setToolTipText("New Script");
         newScriptBtn.addActionListener(e -> createNewScript());
 
-        ModernButton refreshBtn = ModernButton.createSmall("Refresh");
+        refreshBtn = ModernButton.createSmall("Refresh");
         refreshBtn.setToolTipText("Refresh Scripts");
         refreshBtn.addActionListener(e -> refreshScriptTree());
 
@@ -432,7 +440,7 @@ public class Python3IDE extends JPanel {
         panel.add(toolbar, BorderLayout.NORTH);
 
         // Output tabs
-        JTabbedPane outputTabs = new JTabbedPane();
+        outputTabs = new JTabbedPane();
         outputTabs.setBackground(ModernTheme.PANEL_BACKGROUND);
         outputTabs.setForeground(ModernTheme.FOREGROUND_PRIMARY);
 
@@ -836,50 +844,46 @@ public class Python3IDE extends JPanel {
     /**
      * Refreshes Python version display in status bar.
      *
-     * v2.0.14: Enhanced logging to debug version detection issues
+     * v2.0.15: Completely rebuilt for reliability - now synchronous since called from background thread
      */
     private void refreshPythonVersion() {
-        LOGGER.info("refreshPythonVersion() called");
+        LOGGER.info("refreshPythonVersion() - START");
 
         if (restClient == null) {
-            LOGGER.warn("restClient is null, cannot fetch Python version");
-            statusBar.setPythonVersion("Python: --");
+            LOGGER.warn("refreshPythonVersion() - restClient is null");
+            SwingUtilities.invokeLater(() -> statusBar.setPythonVersion("Python: --"));
             return;
         }
 
-        LOGGER.info("Creating SwingWorker to fetch Python version");
+        // Since we're already in a SwingWorker from connectToGateway(), we can call synchronously
+        try {
+            LOGGER.info("refreshPythonVersion() - Calling restClient.getPythonVersion()");
+            String version = restClient.getPythonVersion();
 
-        SwingWorker<String, Void> worker = new SwingWorker<String, Void>() {
-            @Override
-            protected String doInBackground() throws Exception {
-                LOGGER.info("SwingWorker.doInBackground() - Calling restClient.getPythonVersion()");
-                try {
-                    String version = restClient.getPythonVersion();
-                    LOGGER.info("Successfully got Python version: {}", version);
-                    return version;
-                } catch (Exception e) {
-                    LOGGER.error("Exception in getPythonVersion()", e);
-                    throw e;
-                }
+            if (version == null || version.trim().isEmpty()) {
+                LOGGER.warn("refreshPythonVersion() - Received null or empty version");
+                SwingUtilities.invokeLater(() -> statusBar.setPythonVersion("Python: --"));
+                return;
             }
 
-            @Override
-            protected void done() {
-                try {
-                    LOGGER.info("SwingWorker.done() - Getting result");
-                    String version = get();
-                    LOGGER.info("Setting status bar Python version to: {}", version);
-                    statusBar.setPythonVersion("Python: " + version);
-                    LOGGER.info("Successfully updated status bar");
-                } catch (Exception e) {
-                    LOGGER.error("Failed to get Python version in done()", e);
-                    statusBar.setPythonVersion("Python: Unknown");
-                }
-            }
-        };
+            LOGGER.info("refreshPythonVersion() - Successfully retrieved version: {}", version);
 
-        worker.execute();
-        LOGGER.info("SwingWorker.execute() called");
+            // Update UI on EDT
+            final String finalVersion = version;
+            SwingUtilities.invokeLater(() -> {
+                statusBar.setPythonVersion("Python: " + finalVersion);
+                LOGGER.info("refreshPythonVersion() - Status bar updated with: {}", finalVersion);
+            });
+
+        } catch (IOException e) {
+            LOGGER.error("refreshPythonVersion() - IOException occurred: {}", e.getMessage(), e);
+            SwingUtilities.invokeLater(() -> statusBar.setPythonVersion("Python: Connection Error"));
+        } catch (Exception e) {
+            LOGGER.error("refreshPythonVersion() - Unexpected exception: {}", e.getMessage(), e);
+            SwingUtilities.invokeLater(() -> statusBar.setPythonVersion("Python: Error"));
+        }
+
+        LOGGER.info("refreshPythonVersion() - END");
     }
 
     /**
@@ -2085,6 +2089,16 @@ public class Python3IDE extends JPanel {
                 updateButtonTheme(saveAsButton, ModernTheme.BUTTON_BACKGROUND, ModernTheme.BUTTON_HOVER, ModernTheme.BUTTON_ACTIVE);
                 updateButtonTheme(importButton, ModernTheme.BUTTON_BACKGROUND, ModernTheme.BUTTON_HOVER, ModernTheme.BUTTON_ACTIVE);
                 updateButtonTheme(exportButton, ModernTheme.BUTTON_BACKGROUND, ModernTheme.BUTTON_HOVER, ModernTheme.BUTTON_ACTIVE);
+                updateButtonTheme(newFolderBtn, ModernTheme.BUTTON_BACKGROUND, ModernTheme.BUTTON_HOVER, ModernTheme.BUTTON_ACTIVE);
+                updateButtonTheme(newScriptBtn, ModernTheme.BUTTON_BACKGROUND, ModernTheme.BUTTON_HOVER, ModernTheme.BUTTON_ACTIVE);
+                updateButtonTheme(refreshBtn, ModernTheme.BUTTON_BACKGROUND, ModernTheme.BUTTON_HOVER, ModernTheme.BUTTON_ACTIVE);
+
+                // Update outputTabs background/foreground
+                outputTabs.setBackground(ModernTheme.PANEL_BACKGROUND);
+                outputTabs.setForeground(ModernTheme.FOREGROUND_PRIMARY);
+
+                // Update metadata panel theme
+                metadataPanel.applyTheme(true);
 
                 // Update all TitledBorder components for dark theme
                 updateTitledBorders(this, true);
@@ -2142,6 +2156,16 @@ public class Python3IDE extends JPanel {
                 updateButtonTheme(saveAsButton, lightDefault, lightDefaultHover, lightDefaultActive);
                 updateButtonTheme(importButton, lightDefault, lightDefaultHover, lightDefaultActive);
                 updateButtonTheme(exportButton, lightDefault, lightDefaultHover, lightDefaultActive);
+                updateButtonTheme(newFolderBtn, lightDefault, lightDefaultHover, lightDefaultActive);
+                updateButtonTheme(newScriptBtn, lightDefault, lightDefaultHover, lightDefaultActive);
+                updateButtonTheme(refreshBtn, lightDefault, lightDefaultHover, lightDefaultActive);
+
+                // Update outputTabs background/foreground
+                outputTabs.setBackground(Color.WHITE);
+                outputTabs.setForeground(Color.BLACK);
+
+                // Update metadata panel theme
+                metadataPanel.applyTheme(false);
 
                 // Update all TitledBorder components for light theme
                 updateTitledBorders(this, false);

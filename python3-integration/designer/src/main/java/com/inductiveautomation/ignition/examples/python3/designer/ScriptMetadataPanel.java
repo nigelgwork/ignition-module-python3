@@ -192,4 +192,28 @@ public class ScriptMetadataPanel extends JPanel {
         label.setForeground(ModernTheme.FOREGROUND_PRIMARY);
         return label;
     }
+
+    /**
+     * Applies theme to the metadata panel.
+     *
+     * @param isDarkTheme true for dark theme, false for light theme
+     *
+     * v2.0.15: Added for dynamic theme switching
+     */
+    public void applyTheme(boolean isDarkTheme) {
+        if (isDarkTheme) {
+            // Dark theme
+            setBackground(ModernTheme.PANEL_BACKGROUND);
+            descriptionArea.setBackground(ModernTheme.BACKGROUND_DARKER);
+            descriptionArea.setForeground(ModernTheme.FOREGROUND_PRIMARY);
+            descriptionArea.setCaretColor(ModernTheme.FOREGROUND_PRIMARY);
+        } else {
+            // Light theme
+            setBackground(Color.WHITE);
+            descriptionArea.setBackground(Color.WHITE);
+            descriptionArea.setForeground(Color.BLACK);
+            descriptionArea.setCaretColor(Color.BLACK);
+        }
+        repaint();
+    }
 }
