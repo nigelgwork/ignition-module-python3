@@ -650,4 +650,34 @@ public class Python3RestClient {
             return new GatewayImpact("LOW", 100, "All systems operational");
         }
     }
+
+    /**
+     * Sets the Python process pool size (1-20).
+     *
+     * @param size the new pool size (must be between 1 and 20)
+     * @throws IOException if the HTTP request fails
+     * @throws IllegalArgumentException if size is out of range
+     *
+     * v1.17.2: Added for dynamic pool size adjustment
+     */
+    public void setPoolSize(int size) throws IOException {
+        if (size < 1 || size > 20) {
+            throw new IllegalArgumentException("Pool size must be between 1 and 20");
+        }
+
+        LOGGER.debug("Setting pool size to {} via REST API", size);
+
+        JsonObject requestBody = new JsonObject();
+        requestBody.addProperty("size", size);
+
+        String response = post("/pool-size", requestBody.toString());
+        JsonObject json = JsonParser.parseString(response).getAsJsonObject();
+
+        if (!json.has("success") || !json.get("success").getAsBoolean()) {
+            String error = json.has("error") ? json.get("error").getAsString() : "Unknown error";
+            throw new IOException("Failed to set pool size: " + error);
+        }
+
+        LOGGER.info("Pool size changed to {}", size);
+    }
 }

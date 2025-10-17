@@ -516,6 +516,14 @@ public final class Python3RestEndpoints {
             .accessControl(Python3RestEndpoints::checkReadPermission)  // ✅ AUTH (read-only)
             .mount();
 
+        // POST /data/python3integration/api/v1/pool-size - Set process pool size (NEW v1.17.2)
+        routes.newRoute("/api/v1/pool-size")
+            .handler(Python3RestEndpoints::handleSetPoolSize)
+            .method(HttpMethod.POST)
+            .type(RouteGroup.TYPE_JSON)
+            .accessControl(Python3RestEndpoints::checkManagePermission)  // ✅ AUTH (requires management permission)
+            .mount();
+
         // GET /data/python3integration/api/v1/health - Health check
         routes.newRoute("/api/v1/health")
             .handler(Python3RestEndpoints::handleHealthCheck)
@@ -874,6 +882,51 @@ public final class Python3RestEndpoints {
 
         } catch (Exception e) {
             LOGGER.error("REST API: /pool-stats failed", e);
+            return createErrorResponse(e.getMessage());
+        }
+    }
+
+    /**
+     * Handle POST /pool-size - Set process pool size
+     *
+     * Request body: {"size": ...}
+     * Response: {"success": true/false, "poolSize": ..., "message": "..."}
+     *
+     * v1.17.2: New endpoint for dynamic pool size adjustment (1-20)
+     */
+    private static JsonObject handleSetPoolSize(RequestContext req, HttpServletResponse res) {
+        LOGGER.debug("REST API: /pool-size called");
+
+        try {
+            JsonObject requestBody = parseJsonBody(req);
+
+            if (!requestBody.has("size")) {
+                return createErrorResponse("Pool size parameter is required");
+            }
+
+            int newSize = requestBody.get("size").getAsInt();
+
+            // Validate pool size range
+            if (newSize < 1 || newSize > 20) {
+                return createErrorResponse("Pool size must be between 1 and 20");
+            }
+
+            // AUDIT LOG: Log pool size change
+            auditLog("POOL_SIZE_CHANGE", "newSize=" + newSize);
+
+            // Resize the pool via script module
+            scriptModule.resizePool(newSize);
+
+            JsonObject response = new JsonObject();
+            response.addProperty("success", true);
+            response.addProperty("poolSize", newSize);
+            response.addProperty("message", "Pool size changed to " + newSize);
+
+            LOGGER.info("REST API: Pool size changed to {}", newSize);
+            return response;
+
+        } catch (Exception e) {
+            LOGGER.error("REST API: /pool-size failed", e);
             return createErrorResponse(e.getMessage());
         }
     }

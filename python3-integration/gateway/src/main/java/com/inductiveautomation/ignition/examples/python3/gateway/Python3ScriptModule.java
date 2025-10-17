@@ -334,6 +334,29 @@ public class Python3ScriptModule implements Python3RpcFunctions {
     }
 
     /**
+     * Resize the process pool to a new size (1-20).
+     *
+     * @param newSize the new pool size (1-20)
+     * @throws IllegalArgumentException if newSize is out of range
+     * @throws IllegalStateException if pool is not initialized or shutdown
+     *
+     * v1.17.2: Added for dynamic pool size adjustment
+     */
+    public void resizePool(int newSize) {
+        LOGGER.debug("resizePool() called with newSize: {}", newSize);
+
+        Python3ProcessPool pool = getProcessPool();
+        if (pool == null) {
+            String errorMsg = "Python 3 process pool is not initialized";
+            LOGGER.error(errorMsg);
+            throw new IllegalStateException(errorMsg);
+        }
+
+        pool.resizePool(newSize);
+        LOGGER.info("Process pool resized to {}", newSize);
+    }
+
+    /**
      * Execute a simple Python 3 example (for testing).
      *
      * @return Example result

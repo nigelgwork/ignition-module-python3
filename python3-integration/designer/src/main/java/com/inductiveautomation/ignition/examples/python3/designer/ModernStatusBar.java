@@ -2,10 +2,14 @@ package com.inductiveautomation.ignition.examples.python3.designer;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 /**
  * Modern status bar component for displaying IDE information.
  * Shows cursor position, Python version, pool status, and other metadata.
+ *
+ * v1.17.2: Pool stats label is now clickable for adjusting pool size
  */
 public class ModernStatusBar extends JPanel {
     private final JLabel statusLabel;
@@ -13,6 +17,7 @@ public class ModernStatusBar extends JPanel {
     private final JLabel pythonVersionLabel;
     private final JLabel poolStatsLabel;
     private final JLabel connectionLabel;
+    private PoolClickListener poolClickListener;
 
     /**
      * Creates a new modern status bar.
@@ -44,6 +49,27 @@ public class ModernStatusBar extends JPanel {
 
         poolStatsLabel = createStatusLabel();
         poolStatsLabel.setForeground(ModernTheme.FOREGROUND_SECONDARY);
+        poolStatsLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));  // v1.17.2: Clickable
+
+        // Add click listener to pool stats label (v1.17.2)
+        poolStatsLabel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (poolClickListener != null) {
+                    poolClickListener.onPoolClicked();
+                }
+            }
+
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                poolStatsLabel.setForeground(ModernTheme.INFO);  // Highlight on hover
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                poolStatsLabel.setForeground(ModernTheme.FOREGROUND_SECONDARY);  // Restore color
+            }
+        });
 
         pythonVersionLabel = createStatusLabel();
         pythonVersionLabel.setForeground(ModernTheme.FOREGROUND_SECONDARY);
@@ -179,6 +205,28 @@ public class ModernStatusBar extends JPanel {
 
         Color color = stats.isHealthy() ? ModernTheme.SUCCESS : ModernTheme.WARNING;
         setPoolStats(text, color);
+    }
+
+    /**
+     * Sets the pool click listener.
+     *
+     * @param listener the listener to call when pool stats is clicked
+     *
+     * v1.17.2: Added for pool size adjustment
+     */
+    public void setPoolClickListener(PoolClickListener listener) {
+        this.poolClickListener = listener;
+    }
+
+    // === Callback Interface ===
+
+    /**
+     * Interface for handling pool stats click events.
+     *
+     * v1.17.2: Added for pool size adjustment
+     */
+    public interface PoolClickListener {
+        void onPoolClicked();
     }
 
     // === Message Types ===

@@ -22,7 +22,7 @@ public class Python3ProcessPool {
     private static final Logger LOGGER = LoggerFactory.getLogger(Python3ProcessPool.class);
 
     private final String pythonPath;
-    private final int poolSize;
+    private volatile int poolSize;  // Changed to volatile for dynamic resizing (v1.17.2)
     private final BlockingQueue<Python3Executor> availableExecutors;
     private final CopyOnWriteArrayList<Python3Executor> allExecutors;
     private final ScheduledExecutorService healthCheckExecutor;
@@ -354,6 +354,86 @@ public class Python3ProcessPool {
                 poolSize - availableExecutors.size(),
                 (int) allExecutors.stream().filter(Python3Executor::isHealthy).count()
         );
+    }
+
+    /**
+     * Resize the process pool to a new size (1-20).
+     * If increasing, new executors are created.
+     * If decreasing, excess executors are gracefully shut down.
+     *
+     * @param newSize the new pool size (1-20)
+     * @throws IllegalArgumentException if newSize is out of range
+     * @throws IllegalStateException if pool is already shutdown
+     *
+     * v1.17.2: Added for dynamic pool size adjustment
+     */
+    public synchronized void resizePool(int newSize) {
+        if (newSize < 1 || newSize > 20) {
+            throw new IllegalArgumentException("Pool size must be between 1 and 20");
+        }
+
+        if (isShutdown) {
+            throw new IllegalStateException("Cannot resize shutdown pool");
+        }
+
+        int currentSize = poolSize;
+        if (newSize == currentSize) {
+            LOGGER.info("Pool size already {}, no resize needed", newSize);
+            return;
+        }
+
+        LOGGER.info("Resizing pool from {} to {}", currentSize, newSize);
+
+        if (newSize > currentSize) {
+            // Increase pool size - create new executors
+            int toAdd = newSize - currentSize;
+            for (int i = 0; i < toAdd; i++) {
+                try {
+                    Python3Executor executor = createExecutor();
+                    allExecutors.add(executor);
+                    availableExecutors.offer(executor);
+                    LOGGER.info("Added executor {} of {}", i + 1, toAdd);
+                } catch (IOException e) {
+                    LOGGER.error("Failed to create executor during pool resize", e);
+                    // Continue trying to create remaining executors
+                }
+            }
+        } else {
+            // Decrease pool size - remove excess executors
+            int toRemove = currentSize - newSize;
+            for (int i = 0; i < toRemove; i++) {
+                // Try to remove from available executors first (not currently in use)
+                Python3Executor executor = availableExecutors.poll();
+                if (executor != null) {
+                    allExecutors.remove(executor);
+                    try {
+                        executor.shutdown();
+                        LOGGER.info("Removed available executor {} of {}", i + 1, toRemove);
+                    } catch (Exception e) {
+                        LOGGER.error("Error shutting down executor during resize", e);
+                    }
+                } else {
+                    LOGGER.warn("No available executors to remove, {} executors currently in use",
+                            currentSize - availableExecutors.size());
+                    break;
+                }
+            }
+        }
+
+        poolSize = newSize;
+        LOGGER.info("Pool resized to {} (healthy: {}, available: {})",
+                newSize, allExecutors.stream().filter(Python3Executor::isHealthy).count(), availableExecutors.size());
+    }
+
+    /**
+     * Get the current pool size.
+     *
+     * @return the current pool size
+     *
+     * v1.17.2: Added for dynamic pool size querying
+     */
+    public int getPoolSize() {
+        return poolSize;
     }
 
     /**

@@ -183,6 +183,9 @@ public class Python3IDE_v1_9 extends JPanel {
         // Status bar
         statusBar = new ModernStatusBar();
 
+        // Pool click listener for adjusting pool size (v1.17.2)
+        statusBar.setPoolClickListener(this::handlePoolClicked);
+
         // Buttons
         executeButton = ModernButton.createPrimary("Execute (Ctrl+Enter)");
         clearButton = ModernButton.createDefault("Clear");
@@ -342,18 +345,17 @@ public class Python3IDE_v1_9 extends JPanel {
         treePanel.add(treeToolbar, BorderLayout.NORTH);
         treePanel.add(treeScroll, BorderLayout.CENTER);
 
-        // Bottom panel: metadata and diagnostics stacked vertically
-        JPanel bottomPanel = new JPanel(new BorderLayout(0, 5));
+        // Bottom panel: metadata only (diagnostics moved to execution results panel - v1.17.2)
+        JPanel bottomPanel = new JPanel(new BorderLayout());
         bottomPanel.setBackground(ModernTheme.BACKGROUND_DARK);
-        bottomPanel.add(metadataPanel, BorderLayout.NORTH);
-        bottomPanel.add(diagnosticsPanel, BorderLayout.CENTER);
+        bottomPanel.add(metadataPanel, BorderLayout.CENTER);
 
-        // Split tree and bottom panel (metadata + diagnostics)
+        // Split tree and bottom panel (metadata only)
         JSplitPane sidebarSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
         sidebarSplit.setTopComponent(treePanel);
         sidebarSplit.setBottomComponent(bottomPanel);
-        sidebarSplit.setDividerLocation(300);  // Reduced from 400 to make diagnostics visible (Issue 2 - v1.15.1)
-        sidebarSplit.setResizeWeight(0.5);  // Equal split on resize
+        sidebarSplit.setDividerLocation(400);  // More space for tree since diagnostics moved (v1.17.2)
+        sidebarSplit.setResizeWeight(0.6);  // More weight to tree
         sidebarSplit.setBackground(ModernTheme.BACKGROUND_DARK);
         sidebarSplit.setBorder(null);
         sidebarSplit.setDividerSize(8);
@@ -428,9 +430,9 @@ public class Python3IDE_v1_9 extends JPanel {
         errorScroll.getViewport().setBackground(ModernTheme.BACKGROUND_DARKER);
         outputTabs.addTab("Errors", errorScroll);
 
-        JPanel bottomPanel = new JPanel(new BorderLayout());
-        bottomPanel.setBackground(ModernTheme.PANEL_BACKGROUND);
-        bottomPanel.setBorder(BorderFactory.createCompoundBorder(
+        JPanel outputPanel = new JPanel(new BorderLayout());
+        outputPanel.setBackground(ModernTheme.PANEL_BACKGROUND);
+        outputPanel.setBorder(BorderFactory.createCompoundBorder(
                 new TitledBorder(BorderFactory.createLineBorder(ModernTheme.BORDER_DEFAULT),
                         "Execution Results",
                         TitledBorder.DEFAULT_JUSTIFICATION,
@@ -439,10 +441,24 @@ public class Python3IDE_v1_9 extends JPanel {
                         ModernTheme.FOREGROUND_PRIMARY),
                 BorderFactory.createEmptyBorder(5, 5, 5, 5)
         ));
-        bottomPanel.add(outputTabs, BorderLayout.CENTER);
-        bottomPanel.setPreferredSize(new Dimension(600, 200));
+        outputPanel.add(outputTabs, BorderLayout.CENTER);
 
-        panel.add(bottomPanel, BorderLayout.SOUTH);
+        // Split execution results (left 75%) and diagnostics (right 25%) - v1.17.2
+        JSplitPane bottomSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
+        bottomSplit.setLeftComponent(outputPanel);
+        bottomSplit.setRightComponent(diagnosticsPanel);
+        bottomSplit.setResizeWeight(0.75);  // 75% for execution results, 25% for diagnostics
+        bottomSplit.setBackground(ModernTheme.BACKGROUND_DARK);
+        bottomSplit.setBorder(null);
+        bottomSplit.setDividerSize(8);
+        bottomSplit.setPreferredSize(new Dimension(600, 200));
+
+        // Fix divider color for dark theme (v1.17.2)
+        if (bottomSplit.getUI() instanceof BasicSplitPaneUI) {
+            ((BasicSplitPaneUI) bottomSplit.getUI()).getDivider().setBackground(ModernTheme.BACKGROUND_DARKER);
+        }
+
+        panel.add(bottomSplit, BorderLayout.SOUTH);
 
         return panel;
     }
@@ -817,6 +833,94 @@ public class Python3IDE_v1_9 extends JPanel {
         };
 
         worker.execute();
+    }
+
+    /**
+     * Handles pool stats click event to adjust pool size.
+     *
+     * v1.17.2: Allow user to adjust pool size (1-20)
+     */
+    private void handlePoolClicked() {
+        if (restClient == null) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Please connect to a Gateway first",
+                    "Not Connected",
+                    JOptionPane.WARNING_MESSAGE
+            );
+            return;
+        }
+
+        // Get current pool size
+        int currentSize = 3;  // Default
+        try {
+            PoolStats stats = restClient.getPoolStats();
+            currentSize = stats.getTotalSize();
+        } catch (Exception e) {
+            LOGGER.warn("Failed to get current pool size", e);
+        }
+
+        // Show input dialog to adjust pool size
+        String input = JOptionPane.showInputDialog(
+                this,
+                "Enter new pool size (1-20):",
+                "Adjust Pool Size",
+                JOptionPane.PLAIN_MESSAGE
+        );
+
+        if (input == null || input.trim().isEmpty()) {
+            return;  // User cancelled
+        }
+
+        try {
+            int newSize = Integer.parseInt(input.trim());
+
+            if (newSize < 1 || newSize > 20) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Pool size must be between 1 and 20",
+                        "Invalid Pool Size",
+                        JOptionPane.ERROR_MESSAGE
+                );
+                return;
+            }
+
+            // Set the new pool size via REST API
+            SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
+                @Override
+                protected Void doInBackground() throws Exception {
+                    restClient.setPoolSize(newSize);
+                    return null;
+                }
+
+                @Override
+                protected void done() {
+                    try {
+                        get();
+                        setStatus("Pool size changed to " + newSize, new Color(0, 128, 0));
+                        refreshDiagnostics();  // Refresh to show new pool size
+                    } catch (Exception e) {
+                        LOGGER.error("Failed to set pool size", e);
+                        JOptionPane.showMessageDialog(
+                                Python3IDE_v1_9.this,
+                                "Failed to set pool size: " + e.getMessage(),
+                                "Error",
+                                JOptionPane.ERROR_MESSAGE
+                        );
+                    }
+                }
+            };
+
+            worker.execute();
+
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Please enter a valid number",
+                    "Invalid Input",
+                    JOptionPane.ERROR_MESSAGE
+            );
+        }
     }
 
     /**
