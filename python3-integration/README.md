@@ -1,11 +1,13 @@
 # Python 3 Integration Module for Ignition
 
+**Current Version: v2.0.9** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
+
 This module enables Python 3 scripting functions in Ignition 8.3+, allowing you to use modern Python 3 features and libraries alongside Ignition's built-in Jython 2.7 environment.
 
 ## Features
 
 - **Python 3 Execution**: Execute Python 3 code from Ignition scripts
-- **Designer IDE** *(v1.7.0+)*: Interactive Python 3 IDE in the Designer with code editor, output panel, and diagnostics
+- **Designer IDE** *(v1.7.0+, refactored v2.0.0)*: Interactive Python 3 IDE in the Designer with code editor, output panel, and diagnostics
 - **Process Pool**: Efficient subprocess pooling for minimal overhead
 - **Full Python 3 Library Support**: Use numpy, pandas, requests, and any Python 3 package
 - **Simple API**: Easy-to-use scripting functions under `system.python3.*`
@@ -117,7 +119,7 @@ cd python3-integration
 # Build with Gradle
 ./gradlew build
 
-# Module will be in: build/libs/python3-integration-1.0.0-SNAPSHOT.modl
+# Module will be in: build/libs/python3-integration-signed.modl
 ```
 
 ## Installation
@@ -131,9 +133,11 @@ cd python3-integration
 
 ## Usage
 
-### Designer IDE (v1.7.0+)
+### Designer IDE (v2.0.9 - Current)
 
 The Designer IDE provides an interactive development environment for testing Python 3 code directly in the Ignition Designer.
+
+**Architecture:** Refactored in v2.0.0 with modular design (Managers + UI Panels)
 
 **To open the IDE:**
 1. Open the Ignition Designer
@@ -141,8 +145,10 @@ The Designer IDE provides an interactive development environment for testing Pyt
 3. A new window will open with the code editor
 
 **Features:**
-- **Code Editor**: Write and edit Python 3 code with monospaced font
+- **Code Editor**: Write and edit Python 3 code with syntax highlighting
 - **Real-time Syntax Checking** *(v1.11.0+)*: Red squiggles for errors, yellow for warnings
+- **Modern UI** *(v1.12.0+)*: VS Code-inspired dark theme with modern buttons and styling
+- **Refactored Architecture** *(v2.0.0+)*: Modular design with 95-490 line files (down from 2,676-line monolith)
 - **Execute Button**: Run code on the Gateway (Ctrl+Enter shortcut)
 - **Output Panel**: View execution results
 - **Error Panel**: View detailed error messages and tracebacks
@@ -440,16 +446,29 @@ python3-integration/
 │   └── src/main/
 │       ├── java/           # Java source
 │       └── resources/      # Python bridge script
-├── designer/                # Designer scope (v1.7.0+)
+├── designer/                # Designer scope (v1.7.0+, refactored v2.0.0)
 │   └── src/main/java/      # Designer IDE components
-│       ├── Python3IDE.java              # Main IDE panel
+│       ├── Python3IDE_v2.java           # Main IDE panel (refactored v2.0.0)
+│       ├── ui/                          # UI panels (v2.0.0+)
+│       │   ├── EditorPanel.java
+│       │   └── ScriptTreePanel.java
+│       ├── managers/                    # Business logic (v2.0.0+)
+│       │   ├── GatewayConnectionManager.java
+│       │   ├── ScriptManager.java
+│       │   └── ThemeManager.java
 │       ├── Python3RestClient.java       # REST API client
 │       ├── Python3ExecutionWorker.java  # Async worker
 │       ├── DesignerHook.java            # Designer module hook
-│       ├── ExecutionResult.java         # Response model
-│       └── PoolStats.java               # Pool stats model
+│       ├── ModernTheme.java             # UI theme constants (v1.12.0+)
+│       └── ModernStatusBar.java         # Status bar component (v1.12.0+)
+├── docs/                    # Documentation
+│   ├── V2_ARCHITECTURE_GUIDE.md         # v2.0 architecture (v2.0.3)
+│   ├── V2_MIGRATION_GUIDE.md            # Migration guide (v2.0.3)
+│   ├── V2_FEATURE_COMPARISON_AND_ROADMAP.md  # Roadmap
+│   └── V2_STATUS_SUMMARY.md             # Status summary
 ├── build.gradle.kts        # Root build file
 ├── settings.gradle.kts     # Gradle settings
+├── version.properties      # Module version (v2.0.9)
 └── README.md               # This file
 ```
 
@@ -492,19 +511,32 @@ Apache 2.0
 
 ## Roadmap
 
-Future enhancements:
+**Current Release: v2.0.9** - UX Fixes complete
 
+**Completed:**
+- [x] Designer integration (Python 3 script editor) - **v1.7.0**
+- [x] Real-time syntax checking - **v1.11.0**
+- [x] Modern UI design (VS Code theme) - **v1.12.0**
+- [x] Modular architecture refactor - **v2.0.0**
+- [x] Enhanced diagnostics - **v2.0.8**
+- [x] UX fixes (scrollbars, dividers, dialogs) - **v2.0.9**
+
+**Planned (v2.0.10+):**
+- [ ] Clear Output button
+- [ ] New Script button
+- [ ] Keyboard shortcuts (Ctrl+Enter, Ctrl+S, etc.)
+- [ ] Context menu (right-click on scripts)
+- [ ] Dirty state indicator (unsaved changes)
+- [ ] Font size controls
 - [ ] Virtual environment support
 - [ ] Package manager UI in Gateway
-- [x] Designer integration (Python 3 script editor) - **Added in v1.7.0**
-- [x] Real-time syntax checking - **Added in v1.11.0**
 - [ ] Async/callback support
 - [ ] Binary data handling (bytes, numpy arrays)
 - [ ] Streaming results for large datasets
 - [ ] Python process resource limits (CPU, memory)
 - [ ] Multiple Python versions support
-- [ ] Designer IDE: Code completion (autocomplete)
-- [ ] Designer IDE: Variable input panel
+
+See [V2_FEATURE_COMPARISON_AND_ROADMAP.md](docs/V2_FEATURE_COMPARISON_AND_ROADMAP.md) for detailed roadmap.
 
 ## Examples
 
