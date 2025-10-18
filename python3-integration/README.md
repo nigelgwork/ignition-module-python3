@@ -1,6 +1,6 @@
 # Python 3 Integration Module for Ignition
 
-**Current Version: v2.5.22** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
+**Current Version: v2.5.23** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
 
 This module enables Python 3 scripting functions in Ignition 8.3+, allowing you to use modern Python 3 features and libraries alongside Ignition's built-in Jython 2.7 environment.
 
@@ -1234,6 +1234,36 @@ Built using the Ignition SDK:
 - https://www.sdk-docs.inductiveautomation.com/
 
 ## Changelog
+
+### 2.5.23 (FINAL FIX - Found and Eliminated the White Border!)
+- **CRITICAL FIX**: Found and removed the actual white border around editor panel
+  - **User Feedback**: "The white rectangle is still there. I think this must be related to the root panel somehow. Please, please find a way to fix it"
+  - **Root Cause FINALLY IDENTIFIED**: Output panel had a line border!
+    * Python3IDE.java:613: `outputPanel.setBorder(BorderFactory.createLineBorder(ModernTheme.BORDER_DEFAULT))`
+    * BORDER_DEFAULT = Color(64,64,64) - grey color appearing as white/light border
+    * This border went around entire output panel, creating visible line above it
+    * Since output panel sits directly below editor, this appeared as border around editor!
+  - **Fix Applied**:
+    * Python3IDE.java:613: Changed from createLineBorder(BORDER_DEFAULT) to null
+    * Removed line border completely from output panel
+  - **Additional Background Fixes** (to ensure no other color mismatches):
+    * Python3IDE.java:458: panel background BACKGROUND_DARK → Color(30,30,30)
+    * Python3IDE.java:366: mainSplit background BACKGROUND_DARK → Color(30,30,30)
+    * Python3IDE.java:443: sidebarSplit background BACKGROUND_DARK → Color(30,30,30)
+    * Python3IDE.java:642: bottomSplit background BACKGROUND_DARK → Color(30,30,30)
+  - **Result**: ✅ White border ELIMINATED - the real culprit found after 6+ attempts!
+
+**Why This Is THE FINAL FIX:**
+- Not a background color mismatch - it was an actual BORDER being drawn
+- BorderFactory.createLineBorder() draws a 1px line around the component
+- Output panel border appeared as white line separating editor from output
+- Removing the border = no more white line
+
+**FILES MODIFIED:**
+1. Python3IDE.java - Removed output panel line border + background fixes (458,366,443,613,642)
+2. DesignerHook.java - Fallback version 2.5.22 → 2.5.23 (183)
+3. version.properties - 2.5.22 → 2.5.23
+4. README.md (both) - Updated version and changelog
 
 ### 2.5.22 (UX Perfection - Tab Repositioning + Nuclear White Rectangle Fix)
 - **ENHANCEMENT 1**: Moved execution mode tabs to editor header

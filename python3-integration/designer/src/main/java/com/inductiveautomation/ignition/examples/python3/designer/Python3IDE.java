@@ -363,7 +363,7 @@ public class Python3IDE extends JPanel {
         mainSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
         mainSplit.setUI(new ThemedSplitPaneUI(useDarkTheme ? ModernTheme.BORDER_DEFAULT : new Color(200, 200, 200)));  // v2.5.7: Use BORDER_DEFAULT instead of BACKGROUND_DARKER
         mainSplit.setDividerLocation(250);
-        mainSplit.setBackground(ModernTheme.BACKGROUND_DARK);
+        mainSplit.setBackground(new Color(30, 30, 30));  // v2.5.23: Match editor background exactly
         mainSplit.setBorder(null);
         mainSplit.setDividerSize(4);  // Reduced from 8 to 4 for cleaner look
 
@@ -440,7 +440,7 @@ public class Python3IDE extends JPanel {
         sidebarSplit.setBottomComponent(bottomPanel);
         sidebarSplit.setDividerLocation(400);  // More space for tree since diagnostics moved (v1.17.2)
         sidebarSplit.setResizeWeight(0.6);  // More weight to tree
-        sidebarSplit.setBackground(ModernTheme.BACKGROUND_DARK);
+        sidebarSplit.setBackground(new Color(30, 30, 30));  // v2.5.23: Match editor background exactly
         sidebarSplit.setBorder(null);
         sidebarSplit.setDividerSize(4);  // Reduced from 8 to 4 for cleaner look
 
@@ -453,9 +453,9 @@ public class Python3IDE extends JPanel {
      * Creates the editor panel.
      */
     private JPanel createEditorPanel() {
-        // v2.5.11: Remove gaps to eliminate white spacing between components
+        // v2.5.23: CRITICAL - Match background exactly to eliminate white border
         JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(ModernTheme.BACKGROUND_DARK);
+        panel.setBackground(new Color(30, 30, 30));  // v2.5.23: Match ALL child components exactly
 
         // Editor with line numbers
         RTextScrollPane editorScroll = new RTextScrollPane(codeEditor);
@@ -606,11 +606,11 @@ public class Python3IDE extends JPanel {
             ((CardLayout) tabContentPanel.getLayout()).show(tabContentPanel, "ERRORS");
         });
 
-        // v2.5.18: Remove TitledBorder (causes white rectangles), use simple border + header
+        // v2.5.23: CRITICAL - Remove line border to eliminate white rectangle around editor
         JPanel outputPanel = new JPanel(new BorderLayout(0, 0));
         outputPanel.setBackground(ModernTheme.BACKGROUND_DARKER);
         outputPanel.setOpaque(true);
-        outputPanel.setBorder(BorderFactory.createLineBorder(ModernTheme.BORDER_DEFAULT));  // Simple line border only
+        outputPanel.setBorder(null);  // v2.5.23: NO border - was creating white line above output panel
 
         // Create header for "Execution Results" title
         JPanel outputHeaderPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
@@ -639,7 +639,7 @@ public class Python3IDE extends JPanel {
         bottomSplit.setLeftComponent(outputPanel);
         bottomSplit.setRightComponent(diagnosticsPanel);
         bottomSplit.setResizeWeight(0.75);  // 75% for execution results, 25% for diagnostics
-        bottomSplit.setBackground(ModernTheme.BACKGROUND_DARK);
+        bottomSplit.setBackground(new Color(30, 30, 30));  // v2.5.23: Match editor background exactly
         bottomSplit.setBorder(null);
         bottomSplit.setDividerSize(4);  // Reduced from 8 to 4 for cleaner look
         bottomSplit.setPreferredSize(new Dimension(600, 200));
