@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -36,6 +37,7 @@ public final class Python3RestEndpoints {
     private static Python3ScriptModule scriptModule;
     private static Python3ScriptRepository scriptRepository;
     private static Python3MetricsCollector metricsCollector = new Python3MetricsCollector();
+    private static Python3PackageManager packageManager;
 
     // Security: Rate limiting (100 requests per minute per user)
     private static final int RATE_LIMIT_PER_MINUTE = 100;
@@ -461,6 +463,17 @@ public final class Python3RestEndpoints {
     }
 
     /**
+     * Set the package manager for package management endpoints.
+     * Called from GatewayHook during startup.
+     *
+     * @since v2.3.0
+     */
+    public static void setPackageManager(Python3PackageManager manager) {
+        packageManager = manager;
+        LOGGER.info("Package manager configured");
+    }
+
+    /**
      * Mount all REST API routes.
      * Called from GatewayHook.mountRouteHandlers().
      *
@@ -648,6 +661,48 @@ public final class Python3RestEndpoints {
             .method(HttpMethod.GET)
             .type(RouteGroup.TYPE_JSON)
             .accessControl(Python3RestEndpoints::checkReadPermission)  // ✅ AUTH (read-only)
+            .mount();
+
+        // Package Management Endpoints (NEW v2.3.0)
+
+        // GET /data/python3integration/api/v1/packages/catalog - Get available packages
+        routes.newRoute("/api/v1/packages/catalog")
+            .handler(Python3RestEndpoints::handleGetPackageCatalog)
+            .method(HttpMethod.GET)
+            .type(RouteGroup.TYPE_JSON)
+            .accessControl(Python3RestEndpoints::checkReadPermission)  // ✅ AUTH (read-only)
+            .mount();
+
+        // GET /data/python3integration/api/v1/packages/status - Get package installation status
+        routes.newRoute("/api/v1/packages/status")
+            .handler(Python3RestEndpoints::handleGetPackageStatus)
+            .method(HttpMethod.GET)
+            .type(RouteGroup.TYPE_JSON)
+            .accessControl(Python3RestEndpoints::checkReadPermission)  // ✅ AUTH (read-only)
+            .mount();
+
+        // POST /data/python3integration/api/v1/packages/install/:name - Install a package bundle
+        routes.newRoute("/api/v1/packages/install/:name")
+            .handler(Python3RestEndpoints::handleInstallPackage)
+            .method(HttpMethod.POST)
+            .type(RouteGroup.TYPE_JSON)
+            .accessControl(Python3RestEndpoints::checkManagePermission)  // ✅ AUTH + RATE LIMIT
+            .mount();
+
+        // POST /data/python3integration/api/v1/packages/uninstall/:name - Uninstall a package bundle
+        routes.newRoute("/api/v1/packages/uninstall/:name")
+            .handler(Python3RestEndpoints::handleUninstallPackage)
+            .method(HttpMethod.POST)
+            .type(RouteGroup.TYPE_JSON)
+            .accessControl(Python3RestEndpoints::checkManagePermission)  // ✅ AUTH + RATE LIMIT
+            .mount();
+
+        // POST /data/python3integration/api/v1/packages/verify - Verify installed packages
+        routes.newRoute("/api/v1/packages/verify")
+            .handler(Python3RestEndpoints::handleVerifyPackages)
+            .method(HttpMethod.POST)
+            .type(RouteGroup.TYPE_JSON)
+            .accessControl(Python3RestEndpoints::checkReadPermission)  // ✅ AUTH (read-only, verification)
             .mount();
 
         LOGGER.info("Python3 REST API routes mounted successfully at /api/v1/*");
@@ -1515,6 +1570,242 @@ public final class Python3RestEndpoints {
 
         } catch (Exception e) {
             LOGGER.error("REST API: /scripts/available failed", e);
+            return createErrorResponse(e.getMessage());
+        }
+    }
+
+    // Package Management Handlers (v2.3.0)
+
+    /**
+     * Handle GET /packages/catalog - Get available package bundles
+     *
+     * Response: {"success": true, "packages": {"jedi": {...}, "web": {...}, "datascience": {...}}}
+     *
+     * v2.3.0: New endpoint for package management
+     */
+    private static JsonObject handleGetPackageCatalog(RequestContext req, HttpServletResponse res) {
+        LOGGER.debug("REST API: /packages/catalog called");
+
+        try {
+            if (packageManager == null) {
+                return createErrorResponse("Package manager not initialized");
+            }
+
+            Map<String, Python3PackageManager.PackageInfo> catalog = packageManager.getPackageCatalog();
+
+            JsonObject response = new JsonObject();
+            response.addProperty("success", true);
+
+            JsonObject packagesJson = new JsonObject();
+            for (Map.Entry<String, Python3PackageManager.PackageInfo> entry : catalog.entrySet()) {
+                String packageName = entry.getKey();
+                Python3PackageManager.PackageInfo info = entry.getValue();
+
+                JsonObject packageJson = new JsonObject();
+                packageJson.addProperty("version", info.version);
+                packageJson.addProperty("description", info.description);
+                packageJson.addProperty("sizeMb", info.sizeMb);
+                packageJson.addProperty("importName", info.importName);
+
+                JsonArray wheelsArray = new JsonArray();
+                for (String wheel : info.wheels) {
+                    wheelsArray.add(wheel);
+                }
+                packageJson.add("wheels", wheelsArray);
+
+                JsonArray pipPackagesArray = new JsonArray();
+                for (String pipPkg : info.pipPackages) {
+                    pipPackagesArray.add(pipPkg);
+                }
+                packageJson.add("pipPackages", pipPackagesArray);
+
+                JsonArray requiredForArray = new JsonArray();
+                for (String usage : info.requiredFor) {
+                    requiredForArray.add(usage);
+                }
+                packageJson.add("requiredFor", requiredForArray);
+
+                packagesJson.add(packageName, packageJson);
+            }
+            response.add("packages", packagesJson);
+            response.addProperty("count", catalog.size());
+
+            LOGGER.debug("REST API: /packages/catalog completed successfully, {} packages", catalog.size());
+            return response;
+
+        } catch (Exception e) {
+            LOGGER.error("REST API: /packages/catalog failed", e);
+            return createErrorResponse(e.getMessage());
+        }
+    }
+
+    /**
+     * Handle GET /packages/status - Get package installation status
+     *
+     * Response: {"success": true, "status": {...}, "installed": ["jedi", ...], "available": ["jedi", "web", ...]}
+     *
+     * v2.3.0: New endpoint for package management
+     */
+    private static JsonObject handleGetPackageStatus(RequestContext req, HttpServletResponse res) {
+        LOGGER.debug("REST API: /packages/status called");
+
+        try {
+            if (packageManager == null) {
+                return createErrorResponse("Package manager not initialized");
+            }
+
+            Map<String, Object> status = packageManager.getStatus();
+            Set<String> installed = packageManager.getInstalledPackages();
+            Map<String, Python3PackageManager.PackageInfo> catalog = packageManager.getPackageCatalog();
+
+            JsonObject response = new JsonObject();
+            response.addProperty("success", true);
+
+            // Add status information
+            response.add("status", mapToJson(status));
+
+            // Add installed packages
+            JsonArray installedArray = new JsonArray();
+            for (String packageName : installed) {
+                installedArray.add(packageName);
+            }
+            response.add("installed", installedArray);
+
+            // Add available packages
+            JsonArray availableArray = new JsonArray();
+            for (String packageName : catalog.keySet()) {
+                availableArray.add(packageName);
+            }
+            response.add("available", availableArray);
+
+            LOGGER.debug("REST API: /packages/status completed successfully");
+            return response;
+
+        } catch (Exception e) {
+            LOGGER.error("REST API: /packages/status failed", e);
+            return createErrorResponse(e.getMessage());
+        }
+    }
+
+    /**
+     * Handle POST /packages/install/:name - Install a package bundle
+     *
+     * Response: {"success": true/false, "message": "...", "installedWheels": [...]}
+     *
+     * v2.3.0: New endpoint for package management
+     */
+    private static JsonObject handleInstallPackage(RequestContext req, HttpServletResponse res) {
+        LOGGER.debug("REST API: /packages/install called");
+
+        try {
+            if (packageManager == null) {
+                return createErrorResponse("Package manager not initialized");
+            }
+
+            // Extract package name from URL path
+            String requestPath = req.getRequest().getRequestURI();
+            String packageName = requestPath.substring(requestPath.lastIndexOf('/') + 1);
+
+            if (packageName == null || packageName.trim().isEmpty()) {
+                return createErrorResponse("Package name is required");
+            }
+
+            // AUDIT LOG: Log package installation
+            auditLog("PACKAGE_INSTALL", "package=" + packageName);
+
+            Python3PackageManager.InstallResult result = packageManager.installPackage(packageName);
+
+            JsonObject response = new JsonObject();
+            response.addProperty("success", result.success);
+            response.addProperty("message", result.message);
+
+            JsonArray wheelsArray = new JsonArray();
+            for (String wheel : result.installedWheels) {
+                wheelsArray.add(wheel);
+            }
+            response.add("installedWheels", wheelsArray);
+
+            LOGGER.info("REST API: Package installation: {} - {}", packageName, result.success ? "success" : "failed");
+            return response;
+
+        } catch (Exception e) {
+            LOGGER.error("REST API: /packages/install failed", e);
+            return createErrorResponse(e.getMessage());
+        }
+    }
+
+    /**
+     * Handle POST /packages/uninstall/:name - Uninstall a package bundle
+     *
+     * Response: {"success": true/false, "message": "..."}
+     *
+     * v2.3.0: New endpoint for package management
+     */
+    private static JsonObject handleUninstallPackage(RequestContext req, HttpServletResponse res) {
+        LOGGER.debug("REST API: /packages/uninstall called");
+
+        try {
+            if (packageManager == null) {
+                return createErrorResponse("Package manager not initialized");
+            }
+
+            // Extract package name from URL path
+            String requestPath = req.getRequest().getRequestURI();
+            String packageName = requestPath.substring(requestPath.lastIndexOf('/') + 1);
+
+            if (packageName == null || packageName.trim().isEmpty()) {
+                return createErrorResponse("Package name is required");
+            }
+
+            // AUDIT LOG: Log package uninstallation
+            auditLog("PACKAGE_UNINSTALL", "package=" + packageName);
+
+            boolean success = packageManager.uninstallPackage(packageName);
+
+            JsonObject response = new JsonObject();
+            response.addProperty("success", success);
+            response.addProperty("message", success ? "Package uninstalled successfully" : "Failed to uninstall package");
+
+            LOGGER.info("REST API: Package uninstallation: {} - {}", packageName, success ? "success" : "failed");
+            return response;
+
+        } catch (Exception e) {
+            LOGGER.error("REST API: /packages/uninstall failed", e);
+            return createErrorResponse(e.getMessage());
+        }
+    }
+
+    /**
+     * Handle POST /packages/verify - Verify installed packages
+     *
+     * Response: {"success": true, "verification": {"jedi": true, "web": false, ...}}
+     *
+     * v2.3.0: New endpoint for package management
+     */
+    private static JsonObject handleVerifyPackages(RequestContext req, HttpServletResponse res) {
+        LOGGER.debug("REST API: /packages/verify called");
+
+        try {
+            if (packageManager == null) {
+                return createErrorResponse("Package manager not initialized");
+            }
+
+            Map<String, Boolean> verification = packageManager.verifyPackages();
+
+            JsonObject response = new JsonObject();
+            response.addProperty("success", true);
+
+            JsonObject verificationJson = new JsonObject();
+            for (Map.Entry<String, Boolean> entry : verification.entrySet()) {
+                verificationJson.addProperty(entry.getKey(), entry.getValue());
+            }
+            response.add("verification", verificationJson);
+
+            LOGGER.debug("REST API: /packages/verify completed successfully, verified {} packages", verification.size());
+            return response;
+
+        } catch (Exception e) {
+            LOGGER.error("REST API: /packages/verify failed", e);
             return createErrorResponse(e.getMessage());
         }
     }

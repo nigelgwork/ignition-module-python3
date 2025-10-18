@@ -1,6 +1,6 @@
 # Python 3 Integration Module for Ignition
 
-**Current Version: v2.2.0** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
+**Current Version: v2.3.0** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
 
 This module enables Python 3 scripting functions in Ignition 8.3+, allowing you to use modern Python 3 features and libraries alongside Ignition's built-in Jython 2.7 environment.
 
@@ -582,6 +582,22 @@ Built using the Ignition SDK:
 - https://www.sdk-docs.inductiveautomation.com/
 
 ## Changelog
+
+### 2.3.0 (Bundled Python Package Management - Foundation)
+- **NEW**: Python3PackageManager class for offline package installation
+- **NEW**: Package catalog system with metadata (packages.json)
+- **NEW**: Platform-specific wheel bundling (Windows x64, Linux x64)
+- **NEW**: REST API endpoints for package management:
+  - GET /api/v1/packages/catalog - Get available packages
+  - GET /api/v1/packages/status - Get installation status
+  - POST /api/v1/packages/install/:name - Install package bundle
+  - POST /api/v1/packages/uninstall/:name - Uninstall package bundle
+  - POST /api/v1/packages/verify - Verify installed packages
+- **NEW**: Helper script download_wheels.py for downloading wheels from PyPI
+- **NEW**: Package bundles: jedi (~3MB), web (~5MB), datascience (~85MB)
+- **IMPROVED**: Air-gapped deployment support
+- **DOCS**: Package bundling documentation and usage guide
+- **NOTE**: This is the foundation release - wheels not yet bundled (will be added in future release)
 
 ### 2.2.0 (Real-time Syntax Checking + Intelligent Auto-Completion)
 - **COMPLETE**: Phase 3 fully implemented! All advanced IDE features now available

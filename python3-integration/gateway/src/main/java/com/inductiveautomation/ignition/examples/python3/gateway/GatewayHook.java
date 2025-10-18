@@ -25,6 +25,7 @@ public class GatewayHook extends AbstractGatewayModuleHook {
     private PythonDistributionManager distributionManager;
     private Python3ScriptModule scriptModule;
     private Python3ScriptRepository scriptRepository;
+    private Python3PackageManager packageManager;
 
     // Configuration
     private int poolSize = 3; // Default pool size
@@ -70,6 +71,18 @@ public class GatewayHook extends AbstractGatewayModuleHook {
             // Initialize process pool
             LOGGER.info("Initializing Python 3 process pool (size: {})", poolSize);
             processPool = new Python3ProcessPool(pythonPath, poolSize);
+
+            // Initialize package manager (v2.3.0)
+            try {
+                packageManager = new Python3PackageManager(
+                        gatewayContext.getSystemManager().getDataDir().toPath().resolve("python3-integration"),
+                        pythonPath
+                );
+                LOGGER.info("Package manager initialized");
+            } catch (Exception e) {
+                LOGGER.error("Failed to initialize package manager", e);
+                // Don't throw - allow module to continue without package management
+            }
 
             LOGGER.info("Python 3 Integration module started successfully");
             LOGGER.info("Script module will now have access to initialized process pool");
@@ -121,6 +134,9 @@ public class GatewayHook extends AbstractGatewayModuleHook {
         Python3RestEndpoints.initialize(scriptModule);
         if (scriptRepository != null) {
             Python3RestEndpoints.setScriptRepository(scriptRepository);
+        }
+        if (packageManager != null) {
+            Python3RestEndpoints.setPackageManager(packageManager);
         }
         LOGGER.info("REST API endpoints initialized");
 
