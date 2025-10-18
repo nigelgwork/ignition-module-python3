@@ -571,6 +571,34 @@ Apache 2.0
 
 See [ROADMAP.md](ROADMAP.md) and [docs/V2_FEATURE_COMPARISON_AND_ROADMAP.md](docs/V2_FEATURE_COMPARISON_AND_ROADMAP.md) for detailed roadmap.
 
+## Future Enhancements
+
+Comprehensive planning documents for enterprise-scale production deployments:
+
+### 📋 [Comprehensive Test Suite](docs/roadmap/COMPREHENSIVE_TEST_SUITE.md)
+**Priority: HIGH** | Unit tests, integration tests, performance benchmarks, security validation, CI/CD pipeline
+- Achieve 80%+ code coverage
+- JUnit/Mockito framework
+- GitHub Actions automation
+- Performance baselines
+
+### 🔍 [Process Monitoring and Recovery](docs/roadmap/PROCESS_MONITORING_AND_RECOVERY.md)
+**Priority: MEDIUM** | Production-grade monitoring, health checks, circuit breakers, automatic recovery
+- Multi-level health monitoring
+- Circuit breaker pattern
+- Adaptive pool sizing
+- Metrics export (Prometheus, CloudWatch)
+- Alert management (Email, Slack)
+
+### 🔒 [Python Sandboxing and Security](docs/roadmap/PYTHON_SANDBOXING_AND_SECURITY.md)
+**Priority: MEDIUM-HIGH** | Resource protection, audit trails, user context tracking, compliance
+- Resource limit enforcement
+- User authentication and authorization
+- Audit logging for compliance
+- Script access control
+
+**[See Complete Roadmap →](docs/roadmap/README.md)**
+
 ## Examples
 
 See the usage examples above for common Python 3 integration patterns. Additional examples can be found in the module documentation and test scripts.
