@@ -105,7 +105,7 @@ public class Python3IDE extends JPanel {
     private JPanel editorContainer;
     private TerminalPanel terminalPanel;  // v2.5.9: True terminal UI
     private JPanel centerPanel;  // v2.5.9: Container that switches between editor and terminal
-    private TitledBorder editorTitledBorder;
+    private JLabel editorTitleLabel;  // v2.5.18: Replaced TitledBorder with simple label
 
     // Split panes (v2.0.22 - made instance vars for theme updates)
     private JSplitPane mainSplit;
@@ -471,22 +471,27 @@ public class Python3IDE extends JPanel {
         editorScroll.setBackground(new Color(30, 30, 30));
         editorScroll.getViewport().setBackground(new Color(30, 30, 30));
 
-        // v2.5.5: Made instance variable to allow dynamic title updates
-        editorContainer = new JPanel(new BorderLayout(0, 0));  // v2.5.17: Zero gaps
-        // v2.5.11: Match codeEditor background (30,30,30) to eliminate white lines
+        // v2.5.18: Remove TitledBorder (causes white rectangles), use simple border + header panel
+        editorContainer = new JPanel(new BorderLayout(0, 0));  // Zero gaps
         editorContainer.setBackground(new Color(30, 30, 30));
-        editorContainer.setOpaque(true);  // v2.5.17: Ensure background is visible
-        editorTitledBorder = new TitledBorder(BorderFactory.createLineBorder(ModernTheme.BORDER_DEFAULT),
-                "Python 3 Code Editor",
-                TitledBorder.DEFAULT_JUSTIFICATION,
-                TitledBorder.DEFAULT_POSITION,
-                ModernTheme.FONT_REGULAR,
-                ModernTheme.FOREGROUND_PRIMARY);
-        // v2.5.9: Removed empty border to eliminate white padding
-        editorContainer.setBorder(editorTitledBorder);
+        editorContainer.setOpaque(true);
+        editorContainer.setBorder(BorderFactory.createLineBorder(ModernTheme.BORDER_DEFAULT));  // Simple line border only
 
-        // Add current script indicator at top
-        editorContainer.add(currentScriptLabel, BorderLayout.NORTH);
+        // Create header panel for title and current script label
+        JPanel editorHeaderPanel = new JPanel(new BorderLayout(0, 0));
+        editorHeaderPanel.setBackground(new Color(30, 30, 30));
+        editorHeaderPanel.setOpaque(true);
+        editorHeaderPanel.setBorder(BorderFactory.createEmptyBorder(4, 8, 4, 8));  // Small padding for text
+
+        editorTitleLabel = new JLabel("Python 3 Code Editor");  // v2.5.18: Instance variable
+        editorTitleLabel.setFont(ModernTheme.FONT_REGULAR);
+        editorTitleLabel.setForeground(ModernTheme.FOREGROUND_PRIMARY);
+
+        editorHeaderPanel.add(editorTitleLabel, BorderLayout.WEST);
+        editorHeaderPanel.add(currentScriptLabel, BorderLayout.EAST);
+
+        // Add header and editor to container
+        editorContainer.add(editorHeaderPanel, BorderLayout.NORTH);
         editorContainer.add(editorScroll, BorderLayout.CENTER);
 
         // v2.5.9: Create terminal panel for true terminal UX
@@ -553,22 +558,36 @@ public class Python3IDE extends JPanel {
         });
 
         errorTab.setClickAction(() -> {
-            errorTab.setSelected(false);
-            outputTab.setSelected(true);
+            errorTab.setSelected(true);  // v2.5.18: Fixed - was backwards
+            outputTab.setSelected(false);
             ((CardLayout) tabContentPanel.getLayout()).show(tabContentPanel, "ERRORS");
         });
 
-        // Create main output panel container
+        // v2.5.18: Remove TitledBorder (causes white rectangles), use simple border + header
         JPanel outputPanel = new JPanel(new BorderLayout(0, 0));
         outputPanel.setBackground(ModernTheme.BACKGROUND_DARKER);
         outputPanel.setOpaque(true);
-        outputPanel.setBorder(new TitledBorder(BorderFactory.createLineBorder(ModernTheme.BORDER_DEFAULT),
-                "Execution Results",
-                TitledBorder.DEFAULT_JUSTIFICATION,
-                TitledBorder.DEFAULT_POSITION,
-                ModernTheme.FONT_REGULAR,
-                ModernTheme.FOREGROUND_PRIMARY));
-        outputPanel.add(tabHeaderPanel, BorderLayout.NORTH);
+        outputPanel.setBorder(BorderFactory.createLineBorder(ModernTheme.BORDER_DEFAULT));  // Simple line border only
+
+        // Create header for "Execution Results" title
+        JPanel outputHeaderPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        outputHeaderPanel.setBackground(ModernTheme.BACKGROUND_DARKER);
+        outputHeaderPanel.setOpaque(true);
+        outputHeaderPanel.setBorder(BorderFactory.createEmptyBorder(4, 8, 0, 8));  // Small padding for text
+
+        JLabel outputTitleLabel = new JLabel("Execution Results");
+        outputTitleLabel.setFont(ModernTheme.FONT_REGULAR);
+        outputTitleLabel.setForeground(ModernTheme.FOREGROUND_PRIMARY);
+        outputHeaderPanel.add(outputTitleLabel);
+
+        // Container for title + tabs
+        JPanel outputTopPanel = new JPanel(new BorderLayout(0, 0));
+        outputTopPanel.setBackground(ModernTheme.BACKGROUND_DARKER);
+        outputTopPanel.setOpaque(true);
+        outputTopPanel.add(outputHeaderPanel, BorderLayout.NORTH);
+        outputTopPanel.add(tabHeaderPanel, BorderLayout.SOUTH);
+
+        outputPanel.add(outputTopPanel, BorderLayout.NORTH);
         outputPanel.add(tabContentPanel, BorderLayout.CENTER);
 
         // Split execution results (left 75%) and diagnostics (right 25%) with themed UI (v2.3.3)
@@ -1029,8 +1048,8 @@ public class Python3IDE extends JPanel {
             codeEditor.setCurrentLineHighlightColor(new Color(50, 50, 50));
             codeEditor.setFont(ModernTheme.FONT_MONOSPACE);  // Standard monospace
 
-            // v2.5.5/v2.5.6: Restore editor panel title and script indicator
-            editorTitledBorder.setTitle("Python 3 Code Editor");
+            // v2.5.18: Restore editor panel title and script indicator (using label instead of TitledBorder)
+            editorTitleLabel.setText("Python 3 Code Editor");
             currentScriptLabel.setVisible(true);
             // v2.5.6: Restore script label to current script or default
             if (currentScript != null) {

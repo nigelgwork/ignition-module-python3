@@ -1,6 +1,6 @@
 # Python 3 Integration Module for Ignition
 
-**Current Version: v2.5.17** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
+**Current Version: v2.5.18** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
 
 This module enables Python 3 scripting functions in Ignition 8.3+, allowing you to use modern Python 3 features and libraries alongside Ignition's built-in Jython 2.7 environment.
 
@@ -1234,6 +1234,38 @@ Built using the Ignition SDK:
 - https://www.sdk-docs.inductiveautomation.com/
 
 ## Changelog
+
+### 2.5.18 (CRITICAL FIXES - Tab Switching Bug + TitledBorder Removal)
+- **FIX 1**: Fixed CustomTabButton click action bug (tabs not switching)
+  - Error tab click action had backwards logic: was setting `errorTab.setSelected(false)` instead of `true`
+  - Python3IDE.java:556: Fixed to `errorTab.setSelected(true)`
+  - Now Output and Errors tabs switch correctly
+- **FIX 2**: Removed ALL TitledBorder instances (root cause of white rectangles)
+  - **Editor Panel**: Replaced TitledBorder with simple line border + header panel
+    - Created editorHeaderPanel with "Python 3 Code Editor" label
+    - Current script label moved to right side of header
+    - Python3IDE.java:474-495: Complete TitledBorder removal
+  - **Output Panel**: Replaced TitledBorder with simple line border + header panel
+    - Created outputHeaderPanel with "Execution Results" label
+    - Tab buttons displayed below title
+    - Python3IDE.java:566-591: Complete TitledBorder removal
+  - Replaced `editorTitledBorder` instance variable with `editorTitleLabel`
+  - Updated editor title update code to use label instead of TitledBorder
+- **ROOT CAUSE**: TitledBorder creates internal insets/padding that cannot be overridden
+  - These insets showed lighter panel backgrounds as "white rectangles"
+  - Custom header panels with EmptyBorder(4,8,4,8) give full control
+  - Simple line borders with no internal spacing
+- **RESULT**:
+  - ✅ Zero white rectangles in both editor and output panels
+  - ✅ Tab switching works correctly (Output ↔ Errors)
+  - ✅ Clean visual appearance with custom headers
+  - ✅ Complete control over all padding and spacing
+
+**FILES MODIFIED:**
+1. Python3IDE.java - Fixed tab bug (556), removed TitledBorders (474-495, 566-591), updated title code (1038)
+2. version.properties - 2.5.17 → 2.5.18
+3. DesignerHook.java - Fallback version updated
+4. Both README.md files - Version + changelog
 
 ### 2.5.17 (DEFINITIVE SOLUTION - Custom Tab Component + Zero-Gap Borders)
 - **ROOT CAUSE CONFIRMED**: Screenshot analysis revealed white rectangles are **TitledBorder internal insets** showing lighter panel backgrounds bleeding through
