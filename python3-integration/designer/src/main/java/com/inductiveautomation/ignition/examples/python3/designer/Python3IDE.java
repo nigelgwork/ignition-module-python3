@@ -192,6 +192,7 @@ public class Python3IDE extends JPanel {
         outputArea.setBackground(ModernTheme.BACKGROUND_DARKER);
         outputArea.setForeground(ModernTheme.FOREGROUND_PRIMARY);
         outputArea.setCaretColor(ModernTheme.FOREGROUND_PRIMARY);
+        outputArea.setBorder(null);  // v2.5.3: Remove default border
 
         // Error area
         errorArea = new JTextArea(8, 80);
@@ -200,6 +201,7 @@ public class Python3IDE extends JPanel {
         errorArea.setBackground(ModernTheme.BACKGROUND_DARKER);
         errorArea.setForeground(ModernTheme.ERROR);
         errorArea.setCaretColor(ModernTheme.ERROR);
+        errorArea.setBorder(null);  // v2.5.3: Remove default border
 
         // Status bar
         statusBar = new ModernStatusBar();
@@ -444,6 +446,13 @@ public class Python3IDE extends JPanel {
         RTextScrollPane editorScroll = new RTextScrollPane(codeEditor);
         editorScroll.setLineNumbersEnabled(true);
 
+        // v2.5.3: Remove default white border from editor scroll pane
+        editorScroll.setBorder(null);
+        editorScroll.setViewportBorder(null);
+        if (editorScroll.getGutter() != null) {
+            editorScroll.getGutter().setBorder(null);
+        }
+
         // v2.5.3: Apply minimal transparent scrollbars
         applyTransparentScrollBar(editorScroll.getVerticalScrollBar());
         applyTransparentScrollBar(editorScroll.getHorizontalScrollBar());
@@ -475,7 +484,11 @@ public class Python3IDE extends JPanel {
         JScrollPane outputScroll = new JScrollPane(outputArea);
         outputScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);  // Hide when not needed (Issue 4 - v1.15.1)
         outputScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        outputScroll.setBorder(BorderFactory.createEmptyBorder());  // Remove border to prevent white bars
+
+        // v2.5.3: Remove ALL borders (null, not empty)
+        outputScroll.setBorder(null);
+        outputScroll.setViewportBorder(null);
+
         outputScroll.setBackground(ModernTheme.BACKGROUND_DARKER);
         outputScroll.getViewport().setBackground(ModernTheme.BACKGROUND_DARKER);
 
@@ -488,7 +501,11 @@ public class Python3IDE extends JPanel {
         JScrollPane errorScroll = new JScrollPane(errorArea);
         errorScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);  // Hide when not needed (Issue 4 - v1.15.1)
         errorScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        errorScroll.setBorder(BorderFactory.createEmptyBorder());  // Remove border to prevent white bars
+
+        // v2.5.3: Remove ALL borders (null, not empty)
+        errorScroll.setBorder(null);
+        errorScroll.setViewportBorder(null);
+
         errorScroll.setBackground(ModernTheme.BACKGROUND_DARKER);
         errorScroll.getViewport().setBackground(ModernTheme.BACKGROUND_DARKER);
 
