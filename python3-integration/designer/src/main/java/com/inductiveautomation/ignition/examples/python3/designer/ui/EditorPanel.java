@@ -21,6 +21,7 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.FlowLayout;
 
 /**
@@ -98,63 +99,77 @@ public class EditorPanel extends JPanel {
         RTextScrollPane editorScroll = new RTextScrollPane(codeEditor);
         editorScroll.setLineNumbersEnabled(true);
 
-        // UX Fix v2.4.1: Remove ALL borders for seamless appearance
-        editorScroll.setBorder(BorderFactory.createEmptyBorder());
-        editorScroll.setViewportBorder(BorderFactory.createEmptyBorder());
+        // UX Fix v2.4.2: NULL borders for completely seamless appearance
+        editorScroll.setBorder(null);
+        editorScroll.setViewportBorder(null);
         if (editorScroll.getGutter() != null) {
-            editorScroll.getGutter().setBorder(BorderFactory.createEmptyBorder());
+            editorScroll.getGutter().setBorder(null);
         }
-        editorScroll.setBackground(ModernTheme.BACKGROUND_DARK);
-        editorScroll.getViewport().setBackground(ModernTheme.BACKGROUND_DARKER);
 
-        // UX Fix v2.4.1: Ultra-minimal Warp-style scrollbars
-        applyWarpScrollBar(editorScroll.getVerticalScrollBar());
-        applyWarpScrollBar(editorScroll.getHorizontalScrollBar());
+        // Match dark theme backgrounds
+        editorScroll.setBackground(new Color(30, 30, 30));
+        editorScroll.getViewport().setBackground(new Color(30, 30, 30));
 
-        // Output/error areas
+        // UX Fix v2.4.2: Warp-style invisible scrollbars (subtle grey thumb only)
+        applyMinimalScrollBar(editorScroll.getVerticalScrollBar());
+        applyMinimalScrollBar(editorScroll.getHorizontalScrollBar());
+
+        // Output/error areas - exact color matching per user spec
         outputArea = new JTextArea();
         outputArea.setEditable(false);
         outputArea.setFont(ModernTheme.FONT_MONOSPACE);
-        outputArea.setBackground(ModernTheme.BACKGROUND_DARKER);
-        outputArea.setForeground(ModernTheme.FOREGROUND_PRIMARY);
+        outputArea.setBackground(new Color(30, 30, 30));
+        outputArea.setForeground(new Color(200, 200, 200));
+        outputArea.setCaretColor(new Color(200, 200, 200));
+        outputArea.setBorder(null);
 
         errorArea = new JTextArea();
         errorArea.setEditable(false);
         errorArea.setFont(ModernTheme.FONT_MONOSPACE);
-        errorArea.setBackground(ModernTheme.BACKGROUND_DARKER);
+        errorArea.setBackground(new Color(30, 30, 30));
         errorArea.setForeground(ModernTheme.ERROR);
+        errorArea.setCaretColor(new Color(200, 200, 200));
+        errorArea.setBorder(null);
 
         JScrollPane outputScroll = new JScrollPane(outputArea);
         outputScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         outputScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 
-        // UX Fix v2.4.1: Remove ALL borders for seamless appearance
-        outputScroll.setBorder(BorderFactory.createEmptyBorder());
-        outputScroll.setViewportBorder(BorderFactory.createEmptyBorder());
-        outputScroll.setBackground(ModernTheme.BACKGROUND_DARK);
-        outputScroll.getViewport().setBackground(ModernTheme.BACKGROUND_DARKER);
+        // UX Fix v2.4.2: NULL borders (not empty) for seamless appearance
+        outputScroll.setBorder(null);
+        outputScroll.setViewportBorder(null);
 
-        // UX Fix v2.4.1: Ultra-minimal Warp-style scrollbars
-        applyWarpScrollBar(outputScroll.getVerticalScrollBar());
-        applyWarpScrollBar(outputScroll.getHorizontalScrollBar());
+        // Exact color matching to parent panel
+        outputScroll.setBackground(new Color(30, 30, 30));
+        outputScroll.getViewport().setBackground(new Color(30, 30, 30));
+
+        // UX Fix v2.4.2: Minimal Warp-style scrollbars
+        applyMinimalScrollBar(outputScroll.getVerticalScrollBar());
+        applyMinimalScrollBar(outputScroll.getHorizontalScrollBar());
 
         JScrollPane errorScroll = new JScrollPane(errorArea);
         errorScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         errorScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 
-        // UX Fix v2.4.1: Remove ALL borders for seamless appearance
-        errorScroll.setBorder(BorderFactory.createEmptyBorder());
-        errorScroll.setViewportBorder(BorderFactory.createEmptyBorder());
-        errorScroll.setBackground(ModernTheme.BACKGROUND_DARK);
-        errorScroll.getViewport().setBackground(ModernTheme.BACKGROUND_DARKER);
+        // UX Fix v2.4.2: NULL borders for seamless appearance
+        errorScroll.setBorder(null);
+        errorScroll.setViewportBorder(null);
 
-        // UX Fix v2.4.1: Ultra-minimal Warp-style scrollbars
-        applyWarpScrollBar(errorScroll.getVerticalScrollBar());
-        applyWarpScrollBar(errorScroll.getHorizontalScrollBar());
+        // Exact color matching
+        errorScroll.setBackground(new Color(30, 30, 30));
+        errorScroll.getViewport().setBackground(new Color(30, 30, 30));
+
+        // UX Fix v2.4.2: Minimal Warp-style scrollbars
+        applyMinimalScrollBar(errorScroll.getVerticalScrollBar());
+        applyMinimalScrollBar(errorScroll.getHorizontalScrollBar());
 
         JTabbedPane outputTabs = new JTabbedPane();
         outputTabs.addTab("Output", outputScroll);
         outputTabs.addTab("Errors", errorScroll);
+
+        // Match parent panel background to eliminate white gaps
+        outputTabs.setBackground(new Color(30, 30, 30));
+        outputTabs.setForeground(new Color(200, 200, 200));
 
         JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
         splitPane.setTopComponent(editorScroll);
@@ -258,18 +273,62 @@ public class EditorPanel extends JPanel {
     }
 
     /**
-     * Applies ultra-minimal Warp-style scrollbar UI.
+     * Applies minimal Warp-style scrollbar - invisible track with subtle grey thumb only.
      *
-     * v2.4.1: Warp-inspired - invisible with tiny indicator
+     * v2.4.2: Simplified approach per user feedback - hidden tracks, minimal grey thumb
      *
      * @param scrollBar the scrollbar to style
      */
-    private void applyWarpScrollBar(JScrollBar scrollBar) {
-        if (scrollBar != null) {
-            scrollBar.setUI(new WarpScrollBarUI());
-            scrollBar.setOpaque(false);
-            scrollBar.setUnitIncrement(16);  // Smoother scrolling
-            scrollBar.setPreferredSize(new java.awt.Dimension(6, 6));  // Minimal width
+    private void applyMinimalScrollBar(JScrollBar scrollBar) {
+        if (scrollBar == null) {
+            return;
         }
+
+        scrollBar.setOpaque(false);
+        scrollBar.setUnitIncrement(16);  // Smooth scrolling
+
+        // Custom UI: invisible track, subtle grey rounded thumb
+        scrollBar.setUI(new javax.swing.plaf.basic.BasicScrollBarUI() {
+            @Override
+            protected javax.swing.JButton createDecreaseButton(int orientation) {
+                return createInvisibleButton();
+            }
+
+            @Override
+            protected javax.swing.JButton createIncreaseButton(int orientation) {
+                return createInvisibleButton();
+            }
+
+            private javax.swing.JButton createInvisibleButton() {
+                javax.swing.JButton button = new javax.swing.JButton();
+                button.setPreferredSize(new java.awt.Dimension(0, 0));
+                button.setMinimumSize(new java.awt.Dimension(0, 0));
+                button.setMaximumSize(new java.awt.Dimension(0, 0));
+                return button;
+            }
+
+            @Override
+            protected void paintTrack(java.awt.Graphics g, javax.swing.JComponent c, java.awt.Rectangle trackBounds) {
+                // Invisible track - paint nothing
+            }
+
+            @Override
+            protected void paintThumb(java.awt.Graphics g, javax.swing.JComponent c, java.awt.Rectangle thumbBounds) {
+                if (thumbBounds.isEmpty() || !scrollbar.isEnabled()) {
+                    return;
+                }
+
+                java.awt.Graphics2D g2 = (java.awt.Graphics2D) g.create();
+                g2.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING,
+                                   java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
+
+                // Subtle grey thumb
+                g2.setColor(new java.awt.Color(80, 80, 80));
+                g2.fillRoundRect(thumbBounds.x, thumbBounds.y,
+                               thumbBounds.width, thumbBounds.height, 4, 4);
+
+                g2.dispose();
+            }
+        });
     }
 }

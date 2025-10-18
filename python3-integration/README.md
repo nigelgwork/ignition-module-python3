@@ -1,6 +1,6 @@
 # Python 3 Integration Module for Ignition
 
-**Current Version: v2.4.1** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
+**Current Version: v2.4.2** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
 
 This module enables Python 3 scripting functions in Ignition 8.3+, allowing you to use modern Python 3 features and libraries alongside Ignition's built-in Jython 2.7 environment.
 
@@ -610,6 +610,27 @@ Built using the Ignition SDK:
 - https://www.sdk-docs.inductiveautomation.com/
 
 ## Changelog
+
+### 2.4.2 (CRITICAL UX FIX - True Borderless + Simplified Scrollbars)
+- **FIXED**: Borders now completely removed using `null` (not empty borders)
+  - All scroll pane borders set to `null` (was using `createEmptyBorder()`)
+  - All viewport borders set to `null`
+  - All text area borders set to `null`
+  - Truly seamless appearance with zero border rendering
+- **FIXED**: Scrollbars simplified to minimal Warp-style
+  - Completely invisible track (no painting)
+  - Subtle grey thumb (80, 80, 80) with rounded corners
+  - No arrow buttons (size 0,0)
+  - Inline implementation (removed complex WarpScrollBarUI class)
+- **FIXED**: Exact color matching across all components
+  - All backgrounds: `new Color(30, 30, 30)` (exact match)
+  - All foregrounds: `new Color(200, 200, 200)`
+  - Caret colors: `new Color(200, 200, 200)`
+  - Parent panel backgrounds matched to eliminate white gaps
+- **SIMPLIFIED**: Removed WarpScrollBarUI.java (overcomplicated)
+  - Replaced with inline `BasicScrollBarUI` override
+  - Simpler, more direct approach per user feedback
+- **RESULT**: Completely seamless visual flow - no white boxes, no obtrusive scrollbars
 
 ### 2.4.1 (UX Perfection - Warp-Inspired Minimal Scrollbars + Borderless Design)
 - **NEW**: Ultra-minimal Warp-style scrollbars
