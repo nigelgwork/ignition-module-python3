@@ -1,6 +1,6 @@
 # Python 3 Integration Module for Ignition
 
-**Current Version: v2.5.19** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
+**Current Version: v2.5.20** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
 
 This module enables Python 3 scripting functions in Ignition 8.3+, allowing you to use modern Python 3 features and libraries alongside Ignition's built-in Jython 2.7 environment.
 
@@ -1234,6 +1234,35 @@ Built using the Ignition SDK:
 - https://www.sdk-docs.inductiveautomation.com/
 
 ## Changelog
+
+### 2.5.20 (CRITICAL FIXES - RAM/CPU Data Parsing + RTextScrollPane White Rectangle)
+- **FIX 1**: RAM and CPU metrics now display correctly
+  - **Problem**: RAM and CPU showed dashes ("—") instead of actual values
+  - **Root Cause**: Python3RestClient.java wasn't parsing new JSON fields from Gateway
+  - **Solution**: Added JSON parsing for memoryUsageMb and averageCpuTimeMs
+    - Python3RestClient.java:802-808: Parse memoryUsageMb from JSON
+    - Python3RestClient.java:806-808: Parse averageCpuTimeMs from JSON
+  - **Result**: RAM and CPU metrics now populate with actual data from Gateway
+- **FIX 2**: Removed white rectangle around code editor
+  - **Problem**: White/light grey rectangle visible around RTextScrollPane with line numbers
+  - **Root Cause**: RTextScrollPane viewport and gutter not explicitly set to opaque with dark background
+  - **Solution**: Made all scroll pane components explicitly opaque with matching backgrounds
+    - Python3IDE.java:459-472: Set editorScroll, viewport, and gutter to opaque
+    - Python3IDE.java:463-465: Set backgrounds to Color(30,30,30)
+    - Python3IDE.java:467-472: Set gutter background and opacity
+  - **Result**: Zero white rectangles - completely seamless dark background
+- **TECHNICAL DETAILS**:
+  - RTextScrollPane has multiple layers: scroll pane, viewport, gutter
+  - Each layer must be explicitly set to opaque=true for backgrounds to show
+  - Without setOpaque(true), components remain transparent/show default colors
+  - Gutter (line numbers area) also needs explicit background and opacity
+
+**FILES MODIFIED:**
+1. Python3RestClient.java - Added JSON parsing for RAM/CPU metrics (802-808)
+2. Python3IDE.java - Made RTextScrollPane components opaque with dark backgrounds (459-472)
+3. version.properties - 2.5.19 → 2.5.20
+4. DesignerHook.java - Fallback version 2.5.19 → 2.5.20
+5. README.md (both) - Updated version and changelog
 
 ### 2.5.19 (UX Enhancement - Diagnostics Panel Cleanup + RAM/CPU Metrics)
 - **CLEANUP**: Removed duplicate metrics from diagnostics panel

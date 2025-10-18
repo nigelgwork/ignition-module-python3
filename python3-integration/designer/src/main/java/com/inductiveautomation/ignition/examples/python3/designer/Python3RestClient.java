@@ -799,6 +799,14 @@ public class Python3RestClient {
             impact.setHealthScore(json.has("healthScore") ? json.get("healthScore").getAsInt() : 0);
             impact.setRecommendation(getJsonString(json, "recommendation"));
 
+            // v2.5.20: Parse RAM and CPU metrics (added in v2.5.19)
+            if (json.has("memoryUsageMb")) {
+                impact.setMemoryUsageMb(json.get("memoryUsageMb").getAsDouble());
+            }
+            if (json.has("averageCpuTimeMs")) {
+                impact.setAverageCpuTimeMs(json.get("averageCpuTimeMs").getAsDouble());
+            }
+
             return impact;
 
         } catch (Exception e) {

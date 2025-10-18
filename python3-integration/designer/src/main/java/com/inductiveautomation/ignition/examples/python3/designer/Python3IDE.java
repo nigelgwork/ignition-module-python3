@@ -456,20 +456,24 @@ public class Python3IDE extends JPanel {
         RTextScrollPane editorScroll = new RTextScrollPane(codeEditor);
         editorScroll.setLineNumbersEnabled(true);
 
-        // v2.5.3: Remove default white border from editor scroll pane
+        // v2.5.20: CRITICAL - Remove ALL borders and set backgrounds to eliminate white rectangle
         editorScroll.setBorder(null);
         editorScroll.setViewportBorder(null);
+        editorScroll.setOpaque(true);
+        editorScroll.setBackground(new Color(30, 30, 30));
+        editorScroll.getViewport().setBackground(new Color(30, 30, 30));
+        editorScroll.getViewport().setOpaque(true);
+
+        // v2.5.20: Fix gutter (line numbers) border and background
         if (editorScroll.getGutter() != null) {
             editorScroll.getGutter().setBorder(null);
+            editorScroll.getGutter().setBackground(new Color(30, 30, 30));
+            editorScroll.getGutter().setOpaque(true);
         }
 
         // v2.5.8: Hide scrollbars completely (Option A - invisible scrolling)
         editorScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
         editorScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-
-        // v2.5.11: Ensure scroll pane backgrounds match to eliminate white lines
-        editorScroll.setBackground(new Color(30, 30, 30));
-        editorScroll.getViewport().setBackground(new Color(30, 30, 30));
 
         // v2.5.18: Remove TitledBorder (causes white rectangles), use simple border + header panel
         editorContainer = new JPanel(new BorderLayout(0, 0));  // Zero gaps
