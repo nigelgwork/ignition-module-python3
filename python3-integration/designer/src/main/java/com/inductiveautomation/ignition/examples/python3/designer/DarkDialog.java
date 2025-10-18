@@ -295,7 +295,51 @@ public class DarkDialog {
         JDialog dialog = new JDialog(owner, title, Dialog.ModalityType.APPLICATION_MODAL);
         dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         dialog.getContentPane().setBackground(getBackground());
+        dialog.setIconImage(createPython3Icon());  // v2.5.4: Custom icon
         return dialog;
+    }
+
+    /**
+     * Creates a custom Python 3 icon for dialogs and windows.
+     *
+     * v2.5.4: Programmatically generates a Python-themed icon
+     *
+     * @return BufferedImage icon (64x64 pixels)
+     */
+    public static java.awt.image.BufferedImage createPython3Icon() {
+        int size = 64;
+        java.awt.image.BufferedImage icon = new java.awt.image.BufferedImage(
+            size, size, java.awt.image.BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = icon.createGraphics();
+
+        // Enable antialiasing for smooth edges
+        g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+
+        // Background: Dark circle with Python blue gradient
+        GradientPaint gradient = new GradientPaint(
+            0, 0, new Color(53, 114, 165),  // Python blue
+            size, size, new Color(48, 105, 152)
+        );
+        g.setPaint(gradient);
+        g.fillOval(2, 2, size - 4, size - 4);
+
+        // Border: Lighter blue outline
+        g.setColor(new Color(70, 130, 180));
+        g.setStroke(new BasicStroke(2.5f));
+        g.drawOval(2, 2, size - 4, size - 4);
+
+        // Draw "P3" text in white (for Python 3)
+        g.setColor(Color.WHITE);
+        g.setFont(new Font("Arial", Font.BOLD, 28));
+        FontMetrics fm = g.getFontMetrics();
+        String text = "P3";
+        int textX = (size - fm.stringWidth(text)) / 2;
+        int textY = (size - fm.getHeight()) / 2 + fm.getAscent();
+        g.drawString(text, textX, textY);
+
+        g.dispose();
+        return icon;
     }
 
     private static JButton createThemedButton(String text) {

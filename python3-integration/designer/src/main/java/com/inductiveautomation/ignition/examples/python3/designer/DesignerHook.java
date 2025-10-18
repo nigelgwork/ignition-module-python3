@@ -208,6 +208,9 @@ public class DesignerHook extends AbstractDesignerModuleHook {
                 ideFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
                 ideFrame.setContentPane(idePanel);
 
+                // Set custom Python 3 icon (v2.5.4)
+                ideFrame.setIconImage(DarkDialog.createPython3Icon());
+
                 // Set size and location (larger for sidebar layout)
                 ideFrame.setSize(1400, 800);
                 ideFrame.setLocationRelativeTo(context.getFrame());

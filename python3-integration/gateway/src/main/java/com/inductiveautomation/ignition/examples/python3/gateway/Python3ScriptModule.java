@@ -275,6 +275,19 @@ public class Python3ScriptModule implements Python3RpcFunctions {
             }
 
             try {
+                // v2.5.4: Auto-fix pip install commands for externally-managed environments (PEP 668)
+                // Detect pip install/uninstall commands and add --break-system-packages flag if needed
+                String processedCommand = command;
+                if (command.matches(".*\\bpip3?\\s+(install|uninstall)\\b.*") &&
+                    !command.contains("--break-system-packages")) {
+                    // Insert --break-system-packages after pip install/uninstall
+                    processedCommand = command.replaceFirst(
+                        "(pip3?\\s+(?:install|uninstall))",
+                        "$1 --break-system-packages"
+                    );
+                    LOGGER.info("Auto-added --break-system-packages flag to pip command: {}", processedCommand);
+                }
+
                 // Execute shell command using Python subprocess
                 String pythonCode = String.format(
                     "import subprocess\n" +
@@ -293,7 +306,7 @@ public class Python3ScriptModule implements Python3RpcFunctions {
                     "        'exitCode': -1\n" +
                     "    }\n" +
                     "result = json.dumps(output)",
-                    escapeForPython(command)
+                    escapeForPython(processedCommand)
                 );
 
                 Python3Result result = executor.execute(pythonCode, Collections.emptyMap(), "ADMIN");

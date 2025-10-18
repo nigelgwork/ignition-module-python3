@@ -353,6 +353,7 @@ public class InformationDialog {
         JDialog dialog = new JDialog(owner, title, Dialog.ModalityType.APPLICATION_MODAL);
         dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
         dialog.getContentPane().setBackground(getBackground());
+        dialog.setIconImage(DarkDialog.createPython3Icon());  // v2.5.4: Custom icon
         return dialog;
     }
 

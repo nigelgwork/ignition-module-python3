@@ -147,7 +147,7 @@ public class Python3IDE extends JPanel {
      */
     private void initComponents() {
         // Gateway URL input
-        gatewayUrlField = new JTextField("http://localhost:9088", 25);
+        gatewayUrlField = new JTextField("http://localhost:9088", 15);  // v2.5.4: Reduced by 40% (25 → 15) to make room for Save buttons
         gatewayUrlField.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
 
         connectButton = ModernButton.createPrimary("Connect");
@@ -228,11 +228,12 @@ public class Python3IDE extends JPanel {
         progressBar.setVisible(false);
 
         // Execution mode selector (v2.5.0: Shell Command mode)
-        executionModeCombo = new JComboBox<>(new String[]{"Python Code", "Shell Command"});
+        executionModeCombo = new JComboBox<>(new String[]{"Python Code", "Terminal"});  // v2.5.4: Renamed "Shell Command" to "Terminal"
         executionModeCombo.setFont(ModernTheme.FONT_REGULAR);
         executionModeCombo.setBackground(ModernTheme.PANEL_BACKGROUND);
         executionModeCombo.setForeground(ModernTheme.FOREGROUND_PRIMARY);
-        executionModeCombo.setToolTipText("Select execution mode: Python code or direct shell commands");
+        executionModeCombo.setToolTipText("Select execution mode: Python code or terminal commands");
+        executionModeCombo.addActionListener(e -> onExecutionModeChanged());  // v2.5.4: Add mode change listener
 
         // Script Browser Tree (Ignition Tag Browser style)
         rootNode = new ScriptTreeNode("Scripts");
@@ -317,8 +318,8 @@ public class Python3IDE extends JPanel {
         JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 1));  // Horizontal gap adjusted (v2.3.3)
         rightPanel.setBackground(ModernTheme.PANEL_BACKGROUND);
 
-        // Information button (v2.5.1)
-        ModernButton infoButton = ModernButton.createDefault("ℹ Info");
+        // Information button (v2.5.1, v2.5.4: Updated icon)
+        ModernButton infoButton = ModernButton.createDefault("ⓘ Info");
         infoButton.setToolTipText("View keyboard shortcuts and user guide");
         infoButton.addActionListener(e -> showInformationDialog());
         rightPanel.add(infoButton);
@@ -814,8 +815,8 @@ public class Python3IDE extends JPanel {
             currentWorker.cancel(true);
         }
 
-        // Check execution mode (v2.5.0)
-        boolean isShellMode = "Shell Command".equals(executionModeCombo.getSelectedItem());
+        // Check execution mode (v2.5.0, v2.5.4: Updated to "Terminal")
+        boolean isShellMode = "Terminal".equals(executionModeCombo.getSelectedItem());
 
         clearOutput();
 
@@ -824,7 +825,7 @@ public class Python3IDE extends JPanel {
         progressBar.setIndeterminate(true);
 
         if (isShellMode) {
-            setStatus("Executing shell command...", Color.BLUE);
+            setStatus("Executing terminal command...", Color.BLUE);  // v2.5.4: Updated terminology
         } else {
             setStatus("Executing...", Color.BLUE);
         }
@@ -876,6 +877,31 @@ public class Python3IDE extends JPanel {
         setStatus("Execution failed", Color.RED);
 
         LOGGER.error("Execution error", error);
+    }
+
+    /**
+     * Handles execution mode change between Python Code and Terminal.
+     *
+     * v2.5.4: Visual differentiation between modes - Terminal mode uses plain text style
+     */
+    private void onExecutionModeChanged() {
+        boolean isTerminalMode = "Terminal".equals(executionModeCombo.getSelectedItem());
+
+        if (isTerminalMode) {
+            // Terminal mode: Switch to plain text style (no syntax highlighting)
+            codeEditor.setSyntaxEditingStyle(org.fife.ui.rsyntaxtextarea.SyntaxConstants.SYNTAX_STYLE_NONE);
+            codeEditor.setBackground(new Color(10, 10, 10));  // Darker background for terminal feel
+            codeEditor.setCurrentLineHighlightColor(new Color(20, 20, 20));
+            setStatus("Terminal mode: Enter shell commands (e.g., pip install pandas)", new Color(100, 149, 237));  // Cornflower blue
+        } else {
+            // Python Code mode: Restore Python syntax highlighting
+            codeEditor.setSyntaxEditingStyle(org.fife.ui.rsyntaxtextarea.SyntaxConstants.SYNTAX_STYLE_PYTHON);
+            codeEditor.setBackground(new Color(30, 30, 30));  // Standard background
+            codeEditor.setCurrentLineHighlightColor(new Color(50, 50, 50));
+            setStatus("Python Code mode: Write Python 3 code", new Color(100, 149, 237));
+        }
+
+        codeEditor.repaint();
     }
 
     /**
