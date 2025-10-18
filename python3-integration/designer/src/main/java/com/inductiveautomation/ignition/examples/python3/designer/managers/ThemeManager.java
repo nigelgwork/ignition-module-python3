@@ -354,7 +354,8 @@ public class ThemeManager {
         if (comp instanceof JSplitPane) {
             JSplitPane splitPane = (JSplitPane) comp;
             if (splitPane.getUI() instanceof BasicSplitPaneUI) {
-                Color dividerColor = isDarkTheme ? ModernTheme.BACKGROUND_DARKER : new Color(200, 200, 200);
+                // v2.5.7: Changed from BACKGROUND_DARKER to BORDER_DEFAULT for subtle grey dividers
+                Color dividerColor = isDarkTheme ? ModernTheme.BORDER_DEFAULT : new Color(200, 200, 200);
                 ((BasicSplitPaneUI) splitPane.getUI()).getDivider().setBackground(dividerColor);
             }
         }

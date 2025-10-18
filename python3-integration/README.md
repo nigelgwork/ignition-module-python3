@@ -1,6 +1,6 @@
 # Python 3 Integration Module for Ignition
 
-**Current Version: v2.5.3** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
+**Current Version: v2.5.7** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
 
 This module enables Python 3 scripting functions in Ignition 8.3+, allowing you to use modern Python 3 features and libraries alongside Ignition's built-in Jython 2.7 environment.
 
@@ -1004,6 +1004,30 @@ Built using the Ignition SDK:
 - https://www.sdk-docs.inductiveautomation.com/
 
 ## Changelog
+
+### 2.5.7 (Critical UX Fix - Restored Grey Borders + Fixed Split Pane Dividers)
+- **CRITICAL FIX**: Restored user-preferred grey borders
+  - REVERTED BORDER_DEFAULT from Color(30,30,30) back to Color(64,64,64)
+  - User feedback: "You removed all of the nice grey borders that I liked"
+  - Grey borders (64,64,64) provide subtle visual structure
+- **CRITICAL FIX**: Fixed "white lines" in split panes
+  - Changed JSplitPane dividers from BACKGROUND_DARKER to BORDER_DEFAULT
+  - Dividers now use Color(64,64,64) instead of Color(23,23,23)
+  - Very dark dividers (23,23,23) appeared as white/light lines by contrast
+  - Now subtle grey dividers blend better with dark theme
+- **IMPROVED**: Consistent split pane styling
+  - mainSplit divider: now grey (was nearly black)
+  - sidebarSplit divider: now grey (was nearly black)
+  - bottomSplit divider: now grey (was nearly black)
+  - ThemeManager updateSplitPaneDividers() also updated
+- **TECHNICAL**: Modified 5 locations
+  - ModernTheme.java: Reverted BORDER_DEFAULT and related colors
+  - Python3IDE.java: 3 JSplitPane constructors + updateSplitPaneDividers()
+  - ThemeManager.java: updateSplitPaneDividers()
+- **UX**: User experience improvements
+  - Subtle grey outlines/dividers instead of harsh dark lines
+  - Better visual hierarchy in dark theme
+  - Borders now match user's aesthetic preferences
 
 ### 2.5.3 (UX Perfection - Transparent Scrollbars)
 - **FIXED**: Scrollbars completely transparent with small grey rounded slider only

@@ -350,7 +350,7 @@ public class Python3IDE extends JPanel {
 
         // Create main split pane (sidebar | editor) with themed UI (v2.3.3 - direct paint approach)
         mainSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
-        mainSplit.setUI(new ThemedSplitPaneUI(useDarkTheme ? ModernTheme.BACKGROUND_DARKER : new Color(200, 200, 200)));
+        mainSplit.setUI(new ThemedSplitPaneUI(useDarkTheme ? ModernTheme.BORDER_DEFAULT : new Color(200, 200, 200)));  // v2.5.7: Use BORDER_DEFAULT instead of BACKGROUND_DARKER
         mainSplit.setDividerLocation(250);
         mainSplit.setBackground(ModernTheme.BACKGROUND_DARK);
         mainSplit.setBorder(null);
@@ -426,7 +426,7 @@ public class Python3IDE extends JPanel {
 
         // Split tree and bottom panel (metadata only) with themed UI (v2.3.3)
         sidebarSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
-        sidebarSplit.setUI(new ThemedSplitPaneUI(useDarkTheme ? ModernTheme.BACKGROUND_DARKER : new Color(200, 200, 200)));
+        sidebarSplit.setUI(new ThemedSplitPaneUI(useDarkTheme ? ModernTheme.BORDER_DEFAULT : new Color(200, 200, 200)));  // v2.5.7: Use BORDER_DEFAULT instead of BACKGROUND_DARKER
         sidebarSplit.setTopComponent(treePanel);
         sidebarSplit.setBottomComponent(bottomPanel);
         sidebarSplit.setDividerLocation(400);  // More space for tree since diagnostics moved (v1.17.2)
@@ -537,7 +537,7 @@ public class Python3IDE extends JPanel {
 
         // Split execution results (left 75%) and diagnostics (right 25%) with themed UI (v2.3.3)
         bottomSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
-        bottomSplit.setUI(new ThemedSplitPaneUI(useDarkTheme ? ModernTheme.BACKGROUND_DARKER : new Color(200, 200, 200)));
+        bottomSplit.setUI(new ThemedSplitPaneUI(useDarkTheme ? ModernTheme.BORDER_DEFAULT : new Color(200, 200, 200)));  // v2.5.7: Use BORDER_DEFAULT instead of BACKGROUND_DARKER
         bottomSplit.setLeftComponent(outputPanel);
         bottomSplit.setRightComponent(diagnosticsPanel);
         bottomSplit.setResizeWeight(0.75);  // 75% for execution results, 25% for diagnostics
@@ -2983,8 +2983,9 @@ public class Python3IDE extends JPanel {
         if (comp instanceof JSplitPane) {
             JSplitPane splitPane = (JSplitPane) comp;
 
-            // Set custom UI with direct paint control (v2.3.3)
-            Color dividerColor = isDarkTheme ? ModernTheme.BACKGROUND_DARKER : new Color(200, 200, 200);
+            // Set custom UI with direct paint control (v2.3.3/v2.5.7)
+            // v2.5.7: Changed from BACKGROUND_DARKER to BORDER_DEFAULT for subtle grey dividers
+            Color dividerColor = isDarkTheme ? ModernTheme.BORDER_DEFAULT : new Color(200, 200, 200);
             splitPane.setUI(new ThemedSplitPaneUI(dividerColor));
             splitPane.setBorder(null);
             splitPane.setDividerSize(4);  // Maintain consistent size
