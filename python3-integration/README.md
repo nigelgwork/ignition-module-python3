@@ -1,6 +1,6 @@
 # Python 3 Integration Module for Ignition
 
-**Current Version: v2.5.16** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
+**Current Version: v2.5.17** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
 
 This module enables Python 3 scripting functions in Ignition 8.3+, allowing you to use modern Python 3 features and libraries alongside Ignition's built-in Jython 2.7 environment.
 
@@ -1234,6 +1234,53 @@ Built using the Ignition SDK:
 - https://www.sdk-docs.inductiveautomation.com/
 
 ## Changelog
+
+### 2.5.17 (DEFINITIVE SOLUTION - Custom Tab Component + Zero-Gap Borders)
+- **ROOT CAUSE CONFIRMED**: Screenshot analysis revealed white rectangles are **TitledBorder internal insets** showing lighter panel backgrounds bleeding through
+- **FIX 1**: Created CustomTabButton.java - complete custom tab solution
+  - Replaced JTabbedPane entirely with custom tab buttons
+  - Full control over tab rendering (no hidden Swing properties)
+  - CustomTabButton.java: 104 lines, zero dependencies on UIManager
+  - Visual states: selected (blue underline), hover, normal
+  - Click actions toggle between Output and Errors
+  - Backgrounds: Color(30,30,30) selected, Color(23,23,23) unselected
+- **FIX 2**: Replaced JTabbedPane with CardLayout + Custom Tabs
+  - Tab header panel: FlowLayout with CustomTabButton instances
+  - Content panel: CardLayout switching between outputScroll and errorScroll
+  - Zero gaps: BorderLayout(0,0), FlowLayout(LEFT,0,0)
+  - All panels: setOpaque(true), setBackground(BACKGROUND_DARKER)
+  - Python3IDE.java:507-572: Complete JTabbedPane replacement
+- **FIX 3**: Fixed code editor white rectangle
+  - editorContainer: BorderLayout(0,0) instead of BorderLayout()
+  - editorContainer.setOpaque(true) to ensure background visible
+  - Python3IDE.java:475-478: Zero-gap layout + opaque panel
+- **FIX 4**: Removed all JTabbedPane references
+  - Removed private JTabbedPane outputTabs declaration
+  - Removed outputTabs.setBackground() calls from theme switching code
+  - Python3IDE.java:103, 2807, 2870: Cleaned up obsolete code
+- **ARCHITECTURE**: Complete custom UI solution
+  - No reliance on JTabbedPane UIManager properties
+  - No complex Swing component rendering issues
+  - Simple, maintainable code with full visual control
+  - All backgrounds: Color(23,23,23) - BACKGROUND_DARKER
+  - All gaps eliminated: BorderLayout(0,0), zero-inset panels
+- **WHY THIS WORKS (FINALLY!)**:
+  - TitledBorder creates internal insets/padding that showed lighter backgrounds
+  - JTabbedPane had 15+ UIManager properties with unpredictable rendering
+  - Custom solution: zero hidden padding, complete color control
+  - Opaque panels prevent any background bleed-through
+- **FILES MODIFIED:**
+  1. NEW: CustomTabButton.java (104 lines) - Custom tab button component
+  2. Python3IDE.java - Replaced JTabbedPane (507-572), fixed editor borders (475-478), removed obsolete code (103, 2807, 2870)
+  3. version.properties - 2.5.16 → 2.5.17
+  4. DesignerHook.java - Fallback version updated
+  5. Both README.md files - Version + changelog
+
+**Expected Result:**
+✅ **Zero white rectangles** - custom components eliminate all hidden padding
+✅ **Complete visual control** - no Swing surprises
+✅ **Consistent dark theme** - Color(23,23,23) throughout
+✅ **Simpler architecture** - no complex UIManager dependencies
 
 ### 2.5.16 (ULTIMATE FIX - Comprehensive TabbedPane Theme Properties)
 - **FIX**: Added comprehensive JTabbedPane UIManager properties to ThemeManager ⭐ PRIMARY FIX

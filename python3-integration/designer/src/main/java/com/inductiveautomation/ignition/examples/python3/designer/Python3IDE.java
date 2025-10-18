@@ -99,8 +99,7 @@ public class Python3IDE extends JPanel {
     private ModernButton newScriptBtn;
     private ModernButton refreshBtn;
 
-    // Output tabs (v2.0.15 - made instance var for theme updates)
-    private JTabbedPane outputTabs;
+    // v2.5.17: Removed JTabbedPane, replaced with custom tab solution
 
     // Editor container (v2.5.5 - made instance var for dynamic title updates)
     private JPanel editorContainer;
@@ -473,9 +472,10 @@ public class Python3IDE extends JPanel {
         editorScroll.getViewport().setBackground(new Color(30, 30, 30));
 
         // v2.5.5: Made instance variable to allow dynamic title updates
-        editorContainer = new JPanel(new BorderLayout());
+        editorContainer = new JPanel(new BorderLayout(0, 0));  // v2.5.17: Zero gaps
         // v2.5.11: Match codeEditor background (30,30,30) to eliminate white lines
         editorContainer.setBackground(new Color(30, 30, 30));
+        editorContainer.setOpaque(true);  // v2.5.17: Ensure background is visible
         editorTitledBorder = new TitledBorder(BorderFactory.createLineBorder(ModernTheme.BORDER_DEFAULT),
                 "Python 3 Code Editor",
                 TitledBorder.DEFAULT_JUSTIFICATION,
@@ -504,61 +504,72 @@ public class Python3IDE extends JPanel {
         // Toolbar removed - buttons moved to top toolbar (v2.0.16 UX improvement)
         panel.add(centerPanel, BorderLayout.CENTER);
 
-        // Output tabs (v2.5.16: Comprehensive TabbedPane properties now in ThemeManager)
-        outputTabs = new JTabbedPane();
-        outputTabs.setBackground(ModernTheme.BACKGROUND_DARKER);  // v2.5.13: Match output content background
-        outputTabs.setForeground(ModernTheme.FOREGROUND_PRIMARY);
-        outputTabs.setOpaque(true);  // v2.5.14: Make background visible
-        // v2.5.16: Set client properties to ensure opaque rendering
-        outputTabs.putClientProperty("TabbedPane.contentOpaque", Boolean.TRUE);
-        outputTabs.putClientProperty("TabbedPane.tabsOpaque", Boolean.TRUE);
-
+        // v2.5.17: Custom tab solution to eliminate white rectangles
+        // Create scroll panes for output and error
         JScrollPane outputScroll = new JScrollPane(outputArea);
-
-        // v2.5.8: Hide scrollbars completely (Option A - invisible scrolling)
         outputScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
         outputScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-
-        // v2.5.3: Remove ALL borders (null, not empty)
         outputScroll.setBorder(null);
         outputScroll.setViewportBorder(null);
-
         outputScroll.setBackground(ModernTheme.BACKGROUND_DARKER);
         outputScroll.getViewport().setBackground(ModernTheme.BACKGROUND_DARKER);
-        outputScroll.setOpaque(true);  // v2.5.15: Make scroll pane opaque
-
-        outputTabs.addTab("Output", outputScroll);
-        outputTabs.setBackgroundAt(0, ModernTheme.BACKGROUND_DARKER);  // v2.5.15: Set tab content background
+        outputScroll.setOpaque(true);
 
         JScrollPane errorScroll = new JScrollPane(errorArea);
-
-        // v2.5.8: Hide scrollbars completely (Option A - invisible scrolling)
         errorScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
         errorScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-
-        // v2.5.3: Remove ALL borders (null, not empty)
         errorScroll.setBorder(null);
         errorScroll.setViewportBorder(null);
-
         errorScroll.setBackground(ModernTheme.BACKGROUND_DARKER);
         errorScroll.getViewport().setBackground(ModernTheme.BACKGROUND_DARKER);
-        errorScroll.setOpaque(true);  // v2.5.15: Make scroll pane opaque
+        errorScroll.setOpaque(true);
 
-        outputTabs.addTab("Errors", errorScroll);
-        outputTabs.setBackgroundAt(1, ModernTheme.BACKGROUND_DARKER);  // v2.5.15: Set tab content background
+        // Create custom tab buttons
+        CustomTabButton outputTab = new CustomTabButton("Output");
+        CustomTabButton errorTab = new CustomTabButton("Errors");
+        outputTab.setSelected(true);  // Output selected by default
 
-        JPanel outputPanel = new JPanel(new BorderLayout());
-        // v2.5.11: Match outputScroll background (23,23,23) to eliminate white lines
+        // Create tab header panel
+        JPanel tabHeaderPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        tabHeaderPanel.setBackground(ModernTheme.BACKGROUND_DARKER);
+        tabHeaderPanel.setOpaque(true);
+        tabHeaderPanel.setBorder(null);
+        tabHeaderPanel.add(outputTab);
+        tabHeaderPanel.add(errorTab);
+
+        // Create content panel with CardLayout
+        JPanel tabContentPanel = new JPanel(new CardLayout());
+        tabContentPanel.setBackground(ModernTheme.BACKGROUND_DARKER);
+        tabContentPanel.setOpaque(true);
+        tabContentPanel.setBorder(null);
+        tabContentPanel.add(outputScroll, "OUTPUT");
+        tabContentPanel.add(errorScroll, "ERRORS");
+
+        // Set tab click actions
+        outputTab.setClickAction(() -> {
+            outputTab.setSelected(true);
+            errorTab.setSelected(false);
+            ((CardLayout) tabContentPanel.getLayout()).show(tabContentPanel, "OUTPUT");
+        });
+
+        errorTab.setClickAction(() -> {
+            errorTab.setSelected(false);
+            outputTab.setSelected(true);
+            ((CardLayout) tabContentPanel.getLayout()).show(tabContentPanel, "ERRORS");
+        });
+
+        // Create main output panel container
+        JPanel outputPanel = new JPanel(new BorderLayout(0, 0));
         outputPanel.setBackground(ModernTheme.BACKGROUND_DARKER);
-        outputPanel.setOpaque(true);  // v2.5.16: Ensure panel background is visible
-        // v2.5.9: Removed empty border to eliminate white padding
+        outputPanel.setOpaque(true);
         outputPanel.setBorder(new TitledBorder(BorderFactory.createLineBorder(ModernTheme.BORDER_DEFAULT),
                 "Execution Results",
                 TitledBorder.DEFAULT_JUSTIFICATION,
                 TitledBorder.DEFAULT_POSITION,
                 ModernTheme.FONT_REGULAR,
                 ModernTheme.FOREGROUND_PRIMARY));
-        outputPanel.add(outputTabs, BorderLayout.CENTER);
+        outputPanel.add(tabHeaderPanel, BorderLayout.NORTH);
+        outputPanel.add(tabContentPanel, BorderLayout.CENTER);
 
         // Split execution results (left 75%) and diagnostics (right 25%) with themed UI (v2.3.3)
         bottomSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
@@ -2794,9 +2805,7 @@ public class Python3IDE extends JPanel {
                 updateButtonTheme(newScriptBtn, ModernTheme.BUTTON_BACKGROUND, ModernTheme.BUTTON_HOVER, ModernTheme.BUTTON_ACTIVE);
                 updateButtonTheme(refreshBtn, ModernTheme.BUTTON_BACKGROUND, ModernTheme.BUTTON_HOVER, ModernTheme.BUTTON_ACTIVE);
 
-                // Update outputTabs background/foreground
-                outputTabs.setBackground(ModernTheme.PANEL_BACKGROUND);
-                outputTabs.setForeground(ModernTheme.FOREGROUND_PRIMARY);
+                // v2.5.17: outputTabs removed, replaced with custom tab solution
 
                 // Update metadata panel theme
                 metadataPanel.applyTheme(true);
@@ -2859,9 +2868,7 @@ public class Python3IDE extends JPanel {
                 updateButtonTheme(newScriptBtn, lightDefault, lightDefaultHover, lightDefaultActive);
                 updateButtonTheme(refreshBtn, lightDefault, lightDefaultHover, lightDefaultActive);
 
-                // Update outputTabs background/foreground
-                outputTabs.setBackground(Color.WHITE);
-                outputTabs.setForeground(Color.BLACK);
+                // v2.5.17: outputTabs removed, replaced with custom tab solution
 
                 // Update metadata panel theme
                 metadataPanel.applyTheme(false);
