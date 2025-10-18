@@ -72,7 +72,7 @@ public class DiagnosticsPanel extends JPanel {
         fieldsPanel.add(createKeyLabel("RAM Usage (MB):"));  // v2.5.19: NEW
         fieldsPanel.add(ramUsageLabel);
 
-        fieldsPanel.add(createKeyLabel("CPU Time (ms):"));   // v2.5.19: NEW
+        fieldsPanel.add(createKeyLabel("CPU Usage (%):"));   // v2.5.21: Changed from ms to %
         fieldsPanel.add(cpuUsageLabel);
 
         fieldsPanel.add(createKeyLabel("Impact Level:"));
@@ -206,13 +206,13 @@ public class DiagnosticsPanel extends JPanel {
                 ramUsageLabel.setForeground(ModernTheme.FOREGROUND_PRIMARY);
             }
 
-            // CPU time - from impact.getAverageCpuTimeMs()
-            if (impact.getAverageCpuTimeMs() != null && impact.getAverageCpuTimeMs() > 0) {
-                cpuUsageLabel.setText(String.format("%.1f", impact.getAverageCpuTimeMs()));
-                cpuUsageLabel.setForeground(getCpuUsageColor(impact.getAverageCpuTimeMs()));
+            // v2.5.21: CPU usage percentage - from impact.getCpuUsagePercent()
+            if (impact.getCpuUsagePercent() != null) {
+                cpuUsageLabel.setText(String.format("%.2f%%", impact.getCpuUsagePercent()));
+                cpuUsageLabel.setForeground(getCpuUsageColor(impact.getCpuUsagePercent()));
             } else {
-                cpuUsageLabel.setText("—");
-                cpuUsageLabel.setForeground(ModernTheme.FOREGROUND_PRIMARY);
+                cpuUsageLabel.setText("0.00%");
+                cpuUsageLabel.setForeground(ModernTheme.SUCCESS);
             }
 
             // Impact level
@@ -272,18 +272,18 @@ public class DiagnosticsPanel extends JPanel {
     }
 
     /**
-     * Gets color for CPU usage display (v2.5.19).
+     * Gets color for CPU usage display (v2.5.21).
      *
-     * @param cpuTimeMs average CPU time in milliseconds
-     * @return color based on CPU time
+     * @param cpuPercent CPU usage percentage (0-100)
+     * @return color based on CPU usage level
      */
-    private Color getCpuUsageColor(double cpuTimeMs) {
-        if (cpuTimeMs <= 100) {
-            return ModernTheme.SUCCESS;      // Fast execution (< 100ms)
-        } else if (cpuTimeMs <= 500) {
-            return ModernTheme.WARNING;      // Moderate execution (100-500ms)
+    private Color getCpuUsageColor(double cpuPercent) {
+        if (cpuPercent <= 25) {
+            return ModernTheme.SUCCESS;      // Low usage (< 25%)
+        } else if (cpuPercent <= 50) {
+            return ModernTheme.WARNING;      // Moderate usage (25-50%)
         } else {
-            return ModernTheme.ERROR;        // Slow execution (> 500ms)
+            return ModernTheme.ERROR;        // High usage (> 50%)
         }
     }
 

@@ -1,6 +1,6 @@
 # Python 3 Integration Module for Ignition
 
-**Current Version: v2.5.20** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
+**Current Version: v2.5.21** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
 
 This module enables Python 3 scripting functions in Ignition 8.3+, allowing you to use modern Python 3 features and libraries alongside Ignition's built-in Jython 2.7 environment.
 
@@ -1234,6 +1234,44 @@ Built using the Ignition SDK:
 - https://www.sdk-docs.inductiveautomation.com/
 
 ## Changelog
+
+### 2.5.21 (UX Enhancement - Execution Mode Tabs + CPU Percentage Fix)
+- **FIX 1**: CPU metric now shows percentage instead of milliseconds
+  - **Problem**: User reported "Ok CPU is still not showing anything. Can you make it a %?"
+  - **Root Cause**: CPU time in milliseconds was too small to display meaningfully
+  - **Solution**: Changed to percentage calculation (totalExecutionTime / uptimeMs) * 100
+    - Python3MetricsCollector.java:235-243: Calculate CPU usage as percentage
+    - GatewayImpact.java:13,65-72: Added cpuUsagePercent field with getters/setters
+    - Python3RestClient.java:809-812: Parse cpuUsagePercent from JSON response
+    - DiagnosticsPanel.java:75: Changed label from "CPU Time (ms)" to "CPU Usage (%)"
+    - DiagnosticsPanel.java:209-216: Display as "%.2f%%" with 0.00% default
+    - DiagnosticsPanel.java:280-288: Color thresholds: <25% green, 25-50% yellow, >50% red
+  - **Result**: CPU metric now displays meaningful percentage values
+- **FIX 2**: Different approach to white rectangles around code editor
+  - **Attempt**: Removed editorContainer border entirely (set to null)
+  - **Attempt**: Explicitly set codeEditor.setBackground() and setOpaque(true)
+  - Python3IDE.java:482: editorContainer.setBorder(null)
+  - Python3IDE.java:497-499: codeEditor background and opacity
+- **ENHANCEMENT**: Replaced execution mode dropdown with tabs
+  - **User Request**: "Can you do tabs at the top there just like you did for the output and Errors? One for Python IDE and one for Terminal instead of the drop down"
+  - **Implementation**: CustomTabButton tabs like Output/Errors tabs
+    - Python3IDE.java:89-91: Replaced executionModeCombo with pythonIdeTab/terminalTab
+    - Python3IDE.java:244-247: Created CustomTabButton instances ("Python IDE", "Terminal")
+    - Python3IDE.java:313-328: Removed dropdown/label, added tab panel to toolbar
+    - Python3IDE.java:521-532: Set click actions for mode switching
+    - Python3IDE.java:905: Check terminalTab.isSelected() instead of dropdown value
+    - Python3IDE.java:1025-1031: Renamed onExecutionModeChanged() to onModeTabChanged(boolean)
+  - **Result**: Clean tab-based mode switching, consistent with Output/Errors UI pattern
+
+**FILES MODIFIED:**
+1. Python3MetricsCollector.java - CPU percentage calculation (235-243)
+2. GatewayImpact.java - Added cpuUsagePercent field (13,65-72)
+3. Python3RestClient.java - Parse cpuUsagePercent from JSON (809-812)
+4. DiagnosticsPanel.java - Display CPU as percentage (75,209-216,280-288)
+5. Python3IDE.java - Execution mode tabs + white rectangle fix (89-91,244-247,313-328,482,497-499,521-532,905,1025-1031)
+6. DesignerHook.java - Fallback version 2.5.20 → 2.5.21 (183)
+7. version.properties - 2.5.20 → 2.5.21
+8. README.md (both) - Updated version and changelog
 
 ### 2.5.20 (CRITICAL FIXES - RAM/CPU Data Parsing + RTextScrollPane White Rectangle)
 - **FIX 1**: RAM and CPU metrics now display correctly

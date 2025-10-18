@@ -85,7 +85,10 @@ public class Python3IDE extends JPanel {
     private JButton fontIncreaseButton;
     private JButton fontDecreaseButton;
     private JProgressBar progressBar;
-    private JComboBox<String> executionModeCombo;  // v2.5.0: Execution mode selector
+
+    // v2.5.21: Execution mode tabs (replaced dropdown with tabs like Output/Errors)
+    private CustomTabButton pythonIdeTab;
+    private CustomTabButton terminalTab;
 
     // Script Browser Components
     private JTree scriptTree;
@@ -238,13 +241,10 @@ public class Python3IDE extends JPanel {
         progressBar.setIndeterminate(false);
         progressBar.setVisible(false);
 
-        // Execution mode selector (v2.5.0: Shell Command mode)
-        executionModeCombo = new JComboBox<>(new String[]{"Python Code", "Terminal"});  // v2.5.4: Renamed "Shell Command" to "Terminal"
-        executionModeCombo.setFont(ModernTheme.FONT_REGULAR);
-        executionModeCombo.setBackground(ModernTheme.PANEL_BACKGROUND);
-        executionModeCombo.setForeground(ModernTheme.FOREGROUND_PRIMARY);
-        executionModeCombo.setToolTipText("Select execution mode: Python code or terminal commands");
-        executionModeCombo.addActionListener(e -> onExecutionModeChanged());  // v2.5.4: Add mode change listener
+        // v2.5.21: Create execution mode tabs (Python IDE / Terminal)
+        pythonIdeTab = new CustomTabButton("Python IDE");
+        terminalTab = new CustomTabButton("Terminal");
+        pythonIdeTab.setSelected(true);  // Python IDE mode selected by default
 
         // Script Browser Tree (Ignition Tag Browser style)
         rootNode = new ScriptTreeNode("Scripts");
@@ -306,14 +306,18 @@ public class Python3IDE extends JPanel {
         leftPanel.add(connectButton);
         gatewayPanel.add(leftPanel, BorderLayout.WEST);
 
-        // Center: Action buttons (Execute, Clear, Save, etc.) - v2.0.16 UX improvement
+        // Center: Execution mode tabs and action buttons - v2.5.21 UX improvement (tabs instead of dropdown)
         JPanel centerPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 1));
         centerPanel.setBackground(ModernTheme.PANEL_BACKGROUND);
-        JLabel modeLabel = new JLabel("Mode:");
-        modeLabel.setForeground(ModernTheme.FOREGROUND_PRIMARY);
-        modeLabel.setFont(ModernTheme.FONT_REGULAR);
-        centerPanel.add(modeLabel);
-        centerPanel.add(executionModeCombo);  // v2.5.0: Execution mode selector
+
+        // v2.5.21: Mode tabs panel (like Output/Errors tabs)
+        JPanel modeTabsPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        modeTabsPanel.setBackground(ModernTheme.PANEL_BACKGROUND);
+        modeTabsPanel.setBorder(null);
+        modeTabsPanel.add(pythonIdeTab);
+        modeTabsPanel.add(terminalTab);
+
+        centerPanel.add(modeTabsPanel);
         centerPanel.add(executeButton);
         centerPanel.add(clearButton);
         centerPanel.add(saveButton);
@@ -475,11 +479,11 @@ public class Python3IDE extends JPanel {
         editorScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
         editorScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
-        // v2.5.18: Remove TitledBorder (causes white rectangles), use simple border + header panel
+        // v2.5.21: Remove ALL borders to eliminate white rectangles
         editorContainer = new JPanel(new BorderLayout(0, 0));  // Zero gaps
         editorContainer.setBackground(new Color(30, 30, 30));
         editorContainer.setOpaque(true);
-        editorContainer.setBorder(BorderFactory.createLineBorder(ModernTheme.BORDER_DEFAULT));  // Simple line border only
+        editorContainer.setBorder(null);  // v2.5.21: NO border at all
 
         // Create header panel for title and current script label
         JPanel editorHeaderPanel = new JPanel(new BorderLayout(0, 0));
@@ -493,6 +497,10 @@ public class Python3IDE extends JPanel {
 
         editorHeaderPanel.add(editorTitleLabel, BorderLayout.WEST);
         editorHeaderPanel.add(currentScriptLabel, BorderLayout.EAST);
+
+        // v2.5.21: Ensure code editor itself has dark background
+        codeEditor.setBackground(new Color(30, 30, 30));
+        codeEditor.setOpaque(true);
 
         // Add header and editor to container
         editorContainer.add(editorHeaderPanel, BorderLayout.NORTH);
@@ -509,6 +517,19 @@ public class Python3IDE extends JPanel {
 
         // Start with editor view
         ((CardLayout) centerPanel.getLayout()).show(centerPanel, "EDITOR");
+
+        // v2.5.21: Set tab click actions for execution mode switching
+        pythonIdeTab.setClickAction(() -> {
+            pythonIdeTab.setSelected(true);
+            terminalTab.setSelected(false);
+            onModeTabChanged(false);  // false = Python IDE mode
+        });
+
+        terminalTab.setClickAction(() -> {
+            terminalTab.setSelected(true);
+            pythonIdeTab.setSelected(false);
+            onModeTabChanged(true);  // true = Terminal mode
+        });
 
         // Toolbar removed - buttons moved to top toolbar (v2.0.16 UX improvement)
         panel.add(centerPanel, BorderLayout.CENTER);
@@ -880,8 +901,8 @@ public class Python3IDE extends JPanel {
             currentWorker.cancel(true);
         }
 
-        // Check execution mode (v2.5.0, v2.5.4, v2.5.8: Updated to "Terminal" with interactive shell)
-        boolean isShellMode = "Terminal".equals(executionModeCombo.getSelectedItem());
+        // Check execution mode (v2.5.21: Use tab selected state instead of dropdown)
+        boolean isShellMode = terminalTab.isSelected();
 
         clearOutput();
 
@@ -1003,11 +1024,11 @@ public class Python3IDE extends JPanel {
 
     /**
      * Handles execution mode change between Python Code and Terminal.
+     * v2.5.21: Changed from dropdown to tabs, now accepts boolean parameter
      *
-     * v2.5.4/v2.5.5: Visual differentiation between modes - Terminal mode uses plain text style
+     * @param isTerminalMode true for Terminal mode, false for Python IDE mode
      */
-    private void onExecutionModeChanged() {
-        boolean isTerminalMode = "Terminal".equals(executionModeCombo.getSelectedItem());
+    private void onModeTabChanged(boolean isTerminalMode) {
 
         if (isTerminalMode) {
             // v2.5.9: Switch to terminal panel view

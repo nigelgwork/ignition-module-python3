@@ -10,6 +10,7 @@ public class GatewayImpact {
     private String recommendation;
     private Double memoryUsageMb;        // v2.5.19: RAM usage in MB
     private Double averageCpuTimeMs;     // v2.5.19: Average CPU time in milliseconds
+    private Double cpuUsagePercent;      // v2.5.21: CPU usage as percentage
 
     public GatewayImpact() {
     }
@@ -61,6 +62,15 @@ public class GatewayImpact {
         this.averageCpuTimeMs = averageCpuTimeMs;
     }
 
+    // v2.5.21: Getters and setters for CPU usage percentage
+    public Double getCpuUsagePercent() {
+        return cpuUsagePercent;
+    }
+
+    public void setCpuUsagePercent(Double cpuUsagePercent) {
+        this.cpuUsagePercent = cpuUsagePercent;
+    }
+
     @Override
     public String toString() {
         return "GatewayImpact{" +
@@ -69,6 +79,7 @@ public class GatewayImpact {
                 ", recommendation='" + recommendation + '\'' +
                 ", memoryUsageMb=" + memoryUsageMb +
                 ", averageCpuTimeMs=" + averageCpuTimeMs +
+                ", cpuUsagePercent=" + cpuUsagePercent +
                 '}';
     }
 }

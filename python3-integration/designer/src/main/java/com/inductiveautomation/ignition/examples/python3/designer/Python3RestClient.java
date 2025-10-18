@@ -806,6 +806,10 @@ public class Python3RestClient {
             if (json.has("averageCpuTimeMs")) {
                 impact.setAverageCpuTimeMs(json.get("averageCpuTimeMs").getAsDouble());
             }
+            // v2.5.21: Parse CPU usage percentage
+            if (json.has("cpuUsagePercent")) {
+                impact.setCpuUsagePercent(json.get("cpuUsagePercent").getAsDouble());
+            }
 
             return impact;
 

@@ -232,7 +232,17 @@ public class Python3MetricsCollector {
         double executionRate = uptimeMs > 0 ? (double) total / (uptimeMs / 60000.0) : 0.0;
         impact.put("executions_per_minute", Math.round(executionRate * 100.0) / 100.0);
 
-        // Average CPU time consumed
+        // v2.5.21: CPU usage percentage - calculate as time spent in Python vs uptime
+        double cpuUsagePercent = 0.0;
+        if (uptimeMs > 0) {
+            // Calculate what % of time was spent executing Python code
+            cpuUsagePercent = ((double) totalTime / (double) uptimeMs) * 100.0;
+            cpuUsagePercent = Math.min(100.0, cpuUsagePercent);  // Cap at 100%
+        }
+        impact.put("cpu_usage_percent", Math.round(cpuUsagePercent * 100.0) / 100.0);
+        impact.put("cpuUsagePercent", Math.round(cpuUsagePercent * 100.0) / 100.0);  // v2.5.21: Camel case for JSON parsing
+
+        // Average CPU time consumed (kept for compatibility)
         long avgCpuTime = total > 0 ? totalTime / total : 0;
         impact.put("average_cpu_time_ms", avgCpuTime);
         impact.put("averageCpuTimeMs", (double) avgCpuTime);  // v2.5.19: Camel case for JSON parsing
