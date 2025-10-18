@@ -193,6 +193,8 @@ public class Python3IDE extends JPanel {
         currentScriptLabel = new JLabel("No script selected");
         currentScriptLabel.setFont(ModernTheme.withSize(ModernTheme.FONT_BOLD, 11));
         currentScriptLabel.setForeground(ModernTheme.FOREGROUND_SECONDARY);
+        currentScriptLabel.setBackground(new Color(30, 30, 30));  // v2.5.13: Match editor background
+        currentScriptLabel.setOpaque(true);  // v2.5.13: Make background visible
         currentScriptLabel.setBorder(BorderFactory.createEmptyBorder(3, 5, 3, 5));
 
         // Output area
@@ -491,6 +493,7 @@ public class Python3IDE extends JPanel {
 
         // v2.5.9: Create center panel with CardLayout to switch between editor and terminal
         centerPanel = new JPanel(new CardLayout());
+        centerPanel.setBackground(new Color(30, 30, 30));  // v2.5.13: Match editor background
         centerPanel.add(editorContainer, "EDITOR");
         centerPanel.add(terminalPanel, "TERMINAL");
 
@@ -502,7 +505,7 @@ public class Python3IDE extends JPanel {
 
         // Output tabs
         outputTabs = new JTabbedPane();
-        outputTabs.setBackground(ModernTheme.PANEL_BACKGROUND);
+        outputTabs.setBackground(ModernTheme.BACKGROUND_DARKER);  // v2.5.13: Match output content background
         outputTabs.setForeground(ModernTheme.FOREGROUND_PRIMARY);
 
         JScrollPane outputScroll = new JScrollPane(outputArea);

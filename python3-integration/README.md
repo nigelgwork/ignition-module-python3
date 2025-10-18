@@ -1,6 +1,6 @@
 # Python 3 Integration Module for Ignition
 
-**Current Version: v2.5.11** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
+**Current Version: v2.5.13** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
 
 This module enables Python 3 scripting functions in Ignition 8.3+, allowing you to use modern Python 3 features and libraries alongside Ignition's built-in Jython 2.7 environment.
 
@@ -1234,6 +1234,37 @@ Built using the Ignition SDK:
 - https://www.sdk-docs.inductiveautomation.com/
 
 ## Changelog
+
+### 2.5.13 (Component Background Fix - White Line Seams Eliminated)
+- **FIX**: Eliminated white lines at component seams (targeted background fix)
+  - User feedback: "The white lines are still not resolved" + "White lines where components meet"
+  - **Root Cause**: Child components (JLabel, CardLayout panel, JTabbedPane) had no background colors set, showing default white backgrounds at component boundaries
+  - v2.5.12 was reverted (custom ZeroInsetTitledBorder broke functionality)
+  - v2.5.13 takes simpler approach: ensure ALL components have matching backgrounds
+- **FIX 1**: currentScriptLabel background (Python3IDE.java:196-197)
+  - Added `setBackground(new Color(30, 30, 30))` to match editor background
+  - Added `setOpaque(true)` to make background visible
+  - Label sits at top of editor panel (BorderLayout.NORTH), was showing white
+- **FIX 2**: centerPanel background (Python3IDE.java:496)
+  - Added `setBackground(new Color(30, 30, 30))` to CardLayout container
+  - Container switches between editor and terminal views, was showing white gaps
+- **FIX 3**: outputTabs background (Python3IDE.java:508)
+  - Changed from `ModernTheme.PANEL_BACKGROUND` (37,37,38) to `ModernTheme.BACKGROUND_DARKER` (23,23,23)
+  - Matches output/error text area backgrounds, eliminates color mismatch
+- **APPROACH**: Simple, targeted fix - no architectural changes
+  - No custom border implementations
+  - No panel replacements
+  - Just proper background color assignment on all child components
+  - Ensures no white showing through at component seams
+- **REVERTED v2.5.12**: Custom ZeroInsetTitledBorder removed
+  - User feedback: "broken a pile of stuff and still not fixed the white lines"
+  - Custom border approach was too invasive, caused functional issues
+  - Simpler solution (set component backgrounds) is more stable
+
+### 2.5.12 (REVERTED - Custom border broke functionality)
+- Attempted custom ZeroInsetTitledBorder to override TitledBorder insets
+- Broke functionality, did not fix white lines
+- Fully reverted in commit 60c89c5
 
 ### 2.5.11 (CRITICAL UX FIX - Definitive White Lines Solution)
 - **CRITICAL FIX**: Eliminated white lines around IDE input and Output panel (DEFINITIVE SOLUTION)
