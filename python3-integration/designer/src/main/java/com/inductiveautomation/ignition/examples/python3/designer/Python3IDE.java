@@ -281,9 +281,10 @@ public class Python3IDE extends JPanel {
      * Lays out all components in the panel.
      */
     private void layoutComponents() {
-        setLayout(new BorderLayout(5, 5));
-        setBorder(new EmptyBorder(10, 10, 10, 10));
-        setBackground(ModernTheme.BACKGROUND_DARK);
+        // v2.5.22: NUCLEAR FIX - Remove ALL gaps and borders
+        setLayout(new BorderLayout(0, 0));  // Zero gaps (was 5,5)
+        setBorder(new EmptyBorder(5, 5, 5, 5));  // Minimal padding (was 10,10,10,10)
+        setBackground(new Color(30, 30, 30));  // Match all child panels exactly
 
         // Top area: Gateway Connection with theme selector
         JPanel gatewayPanel = new JPanel(new BorderLayout(10, 0));
@@ -479,46 +480,66 @@ public class Python3IDE extends JPanel {
         editorScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
         editorScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
-        // v2.5.21: Remove ALL borders to eliminate white rectangles
-        editorContainer = new JPanel(new BorderLayout(0, 0));  // Zero gaps
-        editorContainer.setBackground(new Color(30, 30, 30));
-        editorContainer.setOpaque(true);
-        editorContainer.setBorder(null);  // v2.5.21: NO border at all
-
-        // Create header panel for title and current script label
-        JPanel editorHeaderPanel = new JPanel(new BorderLayout(0, 0));
-        editorHeaderPanel.setBackground(new Color(30, 30, 30));
-        editorHeaderPanel.setOpaque(true);
-        editorHeaderPanel.setBorder(BorderFactory.createEmptyBorder(4, 8, 4, 8));  // Small padding for text
-
-        editorTitleLabel = new JLabel("Python 3 Code Editor");  // v2.5.18: Instance variable
-        editorTitleLabel.setFont(ModernTheme.FONT_REGULAR);
-        editorTitleLabel.setForeground(ModernTheme.FOREGROUND_PRIMARY);
-
-        editorHeaderPanel.add(editorTitleLabel, BorderLayout.WEST);
-        editorHeaderPanel.add(currentScriptLabel, BorderLayout.EAST);
-
-        // v2.5.21: Ensure code editor itself has dark background
+        // v2.5.22: NUCLEAR FIX - Ensure code editor has zero margin and dark background
         codeEditor.setBackground(new Color(30, 30, 30));
         codeEditor.setOpaque(true);
+        codeEditor.setMargin(new java.awt.Insets(0, 0, 0, 0));  // ZERO internal margin
 
-        // Add header and editor to container
-        editorContainer.add(editorHeaderPanel, BorderLayout.NORTH);
+        // v2.5.22: Create simple editor container (just the scroll pane, no header)
+        editorContainer = new JPanel(new BorderLayout(0, 0));
+        editorContainer.setBackground(new Color(30, 30, 30));
+        editorContainer.setOpaque(true);
+        editorContainer.setBorder(null);
         editorContainer.add(editorScroll, BorderLayout.CENTER);
 
         // v2.5.9: Create terminal panel for true terminal UX
         terminalPanel = new TerminalPanel(this::executeTerminalCommand);
 
-        // v2.5.9: Create center panel with CardLayout to switch between editor and terminal
+        // v2.5.22: Create centerPanel with CardLayout to switch between editor and terminal
         centerPanel = new JPanel(new CardLayout());
-        centerPanel.setBackground(new Color(30, 30, 30));  // v2.5.13: Match editor background
+        centerPanel.setBackground(new Color(30, 30, 30));
+        centerPanel.setOpaque(true);  // v2.5.22: Ensure opaque
+        centerPanel.setBorder(null);  // v2.5.22: No border
         centerPanel.add(editorContainer, "EDITOR");
         centerPanel.add(terminalPanel, "TERMINAL");
+
+        // v2.5.22: Create title panel (for "Python 3 Code Editor / Terminal" text)
+        JPanel editorTitlePanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        editorTitlePanel.setBackground(new Color(30, 30, 30));
+        editorTitlePanel.setOpaque(true);
+        editorTitlePanel.setBorder(BorderFactory.createEmptyBorder(4, 8, 4, 8));  // Padding for text only
+
+        editorTitleLabel = new JLabel("Python 3 Code Editor");
+        editorTitleLabel.setFont(ModernTheme.FONT_REGULAR);
+        editorTitleLabel.setForeground(ModernTheme.FOREGROUND_PRIMARY);
+        editorTitlePanel.add(editorTitleLabel);
+
+        // v2.5.22: Create execution mode tab panel (Python IDE / Terminal tabs) - OUTSIDE CardLayout
+        JPanel modeTabPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        modeTabPanel.setBackground(new Color(30, 30, 30));
+        modeTabPanel.setOpaque(true);
+        modeTabPanel.setBorder(null);
+        modeTabPanel.add(pythonIdeTab);
+        modeTabPanel.add(terminalTab);
+
+        // v2.5.22: Create header panel (title + tabs) - stays visible in both modes
+        JPanel topHeaderPanel = new JPanel(new BorderLayout(0, 0));
+        topHeaderPanel.setBackground(new Color(30, 30, 30));
+        topHeaderPanel.setOpaque(true);
+        topHeaderPanel.setBorder(null);  // v2.5.22: NO border
+        topHeaderPanel.add(editorTitlePanel, BorderLayout.NORTH);
+        topHeaderPanel.add(modeTabPanel, BorderLayout.SOUTH);
+
+        // v2.5.22: Assemble panel with header (NORTH) + centerPanel with CardLayout (CENTER)
+        panel.setBorder(null);  // v2.5.22: NO border on main panel
+        panel.setOpaque(true);  // v2.5.22: Ensure opaque
+        panel.add(topHeaderPanel, BorderLayout.NORTH);
+        panel.add(centerPanel, BorderLayout.CENTER);
 
         // Start with editor view
         ((CardLayout) centerPanel.getLayout()).show(centerPanel, "EDITOR");
 
-        // v2.5.21: Set tab click actions for execution mode switching
+        // v2.5.22: Set tab click actions for execution mode switching
         pythonIdeTab.setClickAction(() -> {
             pythonIdeTab.setSelected(true);
             terminalTab.setSelected(false);
@@ -530,9 +551,6 @@ public class Python3IDE extends JPanel {
             pythonIdeTab.setSelected(false);
             onModeTabChanged(true);  // true = Terminal mode
         });
-
-        // Toolbar removed - buttons moved to top toolbar (v2.0.16 UX improvement)
-        panel.add(centerPanel, BorderLayout.CENTER);
 
         // v2.5.17: Custom tab solution to eliminate white rectangles
         // Create scroll panes for output and error
@@ -1049,6 +1067,10 @@ public class Python3IDE extends JPanel {
 
             // Focus the terminal command input
             terminalPanel.focusCommandInput();
+
+            // v2.5.22: Update title label for Terminal mode
+            editorTitleLabel.setText("Terminal");
+            currentScriptLabel.setVisible(false);  // Hide script label in terminal mode
 
             setStatus("Terminal mode: Interactive shell (type commands and press Enter)", new Color(100, 149, 237));
         } else {

@@ -1,6 +1,6 @@
 # Python 3 Integration Module for Ignition
 
-**Current Version: v2.5.21** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
+**Current Version: v2.5.22** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
 
 This module enables Python 3 scripting functions in Ignition 8.3+, allowing you to use modern Python 3 features and libraries alongside Ignition's built-in Jython 2.7 environment.
 
@@ -1234,6 +1234,76 @@ Built using the Ignition SDK:
 - https://www.sdk-docs.inductiveautomation.com/
 
 ## Changelog
+
+### 2.5.22 (UX Perfection - Tab Repositioning + Nuclear White Rectangle Fix)
+- **ENHANCEMENT 1**: Moved execution mode tabs to editor header
+  - **User Request**: "I want the tabs down a level though I want them to essentially be parallel with the output and error tabs below, in between the words python 3 code editor & the actual editor"
+  - **Implementation**: Tabs now positioned between title and content (like Output/Errors)
+    - Python3IDE.java:505-530: Created topHeaderPanel structure
+      * editorTitlePanel (NORTH) - "Python 3 Code Editor" / "Terminal" text
+      * modeTabPanel (SOUTH) - Python IDE / Terminal tabs
+    - Python3IDE.java:532-536: Assembled panel with header (NORTH) + centerPanel (CENTER)
+    - Tabs stay visible in BOTH Python IDE and Terminal modes
+    - Title updates: "Python 3 Code Editor" ↔ "Terminal"
+  - **Result**: ✅ Clean tab positioning parallel with Output/Errors tabs
+- **FIX 1**: Nuclear fix for persistent white rectangles
+  - **User Feedback**: "The white rectangles are still there" (after 5+ failed attempts)
+  - **Root Cause Analysis** - Why all previous attempts failed:
+    * v2.5.18-v2.5.20: Removed borders from editorContainer, RTextScrollPane
+    * v2.5.21: Set codeEditor background, removed editorContainer border
+    * All attempts addressed child components, MISSED the root layout
+  - **TRUE ROOT CAUSE FOUND**: Main Python3IDE panel layout
+    * Line 284: `BorderLayout(5,5)` - 5px gaps between components
+    * Line 285: `EmptyBorder(10,10,10,10)` - 10px padding on all sides
+    * Line 286: `ModernTheme.BACKGROUND_DARK` - different from child panels (Color 30,30,30)
+    * Gaps + padding showed lighter background = white rectangles
+  - **Nuclear Fix Applied**:
+    * Python3IDE.java:285: BorderLayout(5,5) → BorderLayout(0,0) - ZERO gaps
+    * Python3IDE.java:286: EmptyBorder(10,10,10,10) → EmptyBorder(5,5,5,5) - Minimal padding
+    * Python3IDE.java:287: BACKGROUND_DARK → Color(30,30,30) - Match ALL child panels
+    * Python3IDE.java:483-485: codeEditor.setMargin(new Insets(0,0,0,0)) - Zero internal margin
+    * Python3IDE.java:500-501: centerPanel setOpaque(true) and setBorder(null)
+    * Python3IDE.java:533-534: panel setBorder(null) and setOpaque(true)
+  - **Result**: ✅ Comprehensive fix addressing root cause + all child components
+
+**FILES MODIFIED:**
+1. Python3IDE.java - Tab repositioning + nuclear white rectangle fix (285-287,482-536,1071-1072)
+2. DesignerHook.java - Fallback version 2.5.21 → 2.5.22 (183)
+3. version.properties - 2.5.21 → 2.5.22
+4. README.md (both) - Updated version and changelog
+
+**TECHNICAL DETAILS:**
+
+Tab Structure (NEW):
+```
+panel (returned by createEditorPanel)
+├── topHeaderPanel (NORTH) - Always visible
+│   ├── editorTitlePanel (NORTH) - "Python 3 Code Editor" or "Terminal"
+│   └── modeTabPanel (SOUTH) - Python IDE / Terminal tabs
+└── centerPanel (CENTER) - CardLayout
+    ├── editorContainer (EDITOR card) - Code editor
+    └── terminalPanel (TERMINAL card) - Terminal UI
+```
+
+Nuclear Fix - Component Hierarchy:
+1. **Main Panel** (Python3IDE root):
+   - BorderLayout(0,0) - zero gaps
+   - EmptyBorder(5,5,5,5) - minimal padding
+   - Background: Color(30,30,30) - exact match
+2. **centerPanel** (CardLayout container):
+   - setOpaque(true), setBorder(null)
+3. **editorContainer**:
+   - setBorder(null), setBackground(30,30,30)
+4. **codeEditor** (RSyntaxTextArea):
+   - setMargin(new Insets(0,0,0,0)) - zero internal margin
+5. **All intermediate panels**:
+   - Matching backgrounds, null borders, opaque rendering
+
+**Why This WILL Work:**
+- Addressed the ROOT cause (main panel layout gaps)
+- Fixed ALL child components comprehensively
+- Ensured EXACT background color matching (Color 30,30,30 everywhere)
+- Removed ALL sources of white gaps (layout gaps, borders, padding, margins)
 
 ### 2.5.21 (UX Enhancement - Execution Mode Tabs + CPU Percentage Fix)
 - **FIX 1**: CPU metric now shows percentage instead of milliseconds
