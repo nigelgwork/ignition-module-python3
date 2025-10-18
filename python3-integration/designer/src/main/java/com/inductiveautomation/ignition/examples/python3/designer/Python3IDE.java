@@ -476,6 +476,10 @@ public class Python3IDE extends JPanel {
             editorScroll.getGutter().setOpaque(true);
         }
 
+        // v2.5.24: CRITICAL - Disable focus border that creates white rectangle
+        editorScroll.setFocusable(false);  // Prevents focus border on scroll pane
+        codeEditor.setBorder(null);  // No border on text area itself
+
         // v2.5.8: Hide scrollbars completely (Option A - invisible scrolling)
         editorScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
         editorScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);

@@ -1,6 +1,6 @@
 # Python 3 Integration Module for Ignition
 
-**Current Version: v2.5.23** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
+**Current Version: v2.5.24** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
 
 This module enables Python 3 scripting functions in Ignition 8.3+, allowing you to use modern Python 3 features and libraries alongside Ignition's built-in Jython 2.7 environment.
 
@@ -1234,6 +1234,39 @@ Built using the Ignition SDK:
 - https://www.sdk-docs.inductiveautomation.com/
 
 ## Changelog
+
+### 2.5.24 (FOCUS BORDER FIX - The REAL White Rectangle!)
+- **CRITICAL FIX**: Disabled focus border on RTextScrollPane/RSyntaxTextArea
+  - **User Clarification**: "To clarify further. I changed the theme and gave you another screenshot Rectangle with other theme.png. Notice that vertical line on the inside of the code editor changes with the theme as expected. I don't want to get rid of that line. Its just the external rectangle that stays white"
+  - **Root Cause FINALLY IDENTIFIED**: The white rectangle was a FOCUS BORDER!
+    * When code editor has focus, Swing draws a rectangular focus border around RTextScrollPane
+    * This border stays white/cyan regardless of theme
+    * The internal vertical line (gutter border) was correct and should stay
+    * The external rectangle was the focus border on the scroll pane component
+  - **Fix Applied** (Python3IDE.java:479-481):
+    ```java
+    // v2.5.24: CRITICAL - Disable focus border that creates white rectangle
+    editorScroll.setFocusable(false);  // Prevents focus border on scroll pane
+    codeEditor.setBorder(null);  // No border on text area itself
+    ```
+  - **Why This Works**:
+    * setFocusable(false) on editorScroll prevents focus border painting
+    * codeEditor.setBorder(null) ensures no border on text area
+    * Code editor still receives keyboard input (typing, shortcuts work)
+    * Gutter border (vertical line) unaffected - stays theme-aware
+  - **Result**: ✅ External white rectangle ELIMINATED, internal gutter line preserved!
+
+**Why ALL Previous Attempts Failed:**
+- v2.5.18-23: All focused on panel borders, backgrounds, line borders
+- Never addressed the FOCUS BORDER that Swing paints automatically
+- Focus borders are part of component UI painting, not border properties
+- Only way to disable: setFocusable(false) on the scroll pane
+
+**FILES MODIFIED:**
+1. Python3IDE.java:479-481 - Disabled focus on editorScroll, removed codeEditor border
+2. DesignerHook.java:183 - Fallback version 2.5.23 → 2.5.24
+3. version.properties - patch 23 → 24
+4. README.md (both) - Updated version and changelog
 
 ### 2.5.23 (FINAL FIX - Found and Eliminated the White Border!)
 - **CRITICAL FIX**: Found and removed the actual white border around editor panel
