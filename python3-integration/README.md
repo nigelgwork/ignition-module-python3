@@ -1,6 +1,6 @@
 # Python 3 Integration Module for Ignition
 
-**Current Version: v2.5.14** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
+**Current Version: v2.5.15** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
 
 This module enables Python 3 scripting functions in Ignition 8.3+, allowing you to use modern Python 3 features and libraries alongside Ignition's built-in Jython 2.7 environment.
 
@@ -1234,6 +1234,21 @@ Built using the Ignition SDK:
 - https://www.sdk-docs.inductiveautomation.com/
 
 ## Changelog
+
+### 2.5.15 (JTabbedPane Opaque Fix + Info Button Repositioned)
+- **FIX**: JTabbedPane white rectangle - made scroll panes opaque + set tab backgrounds
+  - User feedback: "The white rectangle is still there"
+  - Made outputScroll and errorScroll opaque: `setOpaque(true)`
+  - Set individual tab backgrounds: `setBackgroundAt(0/1, ModernTheme.BACKGROUND_DARKER)`
+  - Background color must propagate through opaque components to be visible
+  - Lines 527, 530, 544, 547 in Python3IDE.java
+- **UX**: Moved Information button to right of Theme section
+  - User feedback: "Can you move the information button over to the right hand side, the other side of the Theme section"
+  - Toolbar order was: Info → Font → Theme
+  - Toolbar order now: Font → Theme → Info
+  - Makes logical sense: settings (Font/Theme) grouped together, help (Info) on far right
+- **VERSION**: Updated DesignerHook.java fallback version 2.5.14 → 2.5.15
+  - Maintains IDE header version workflow from v2.5.14
 
 ### 2.5.14 (JTabbedPane Content Area Fix + IDE Header Version)
 - **FIX**: White rectangle in Output/Errors tabbed pane eliminated

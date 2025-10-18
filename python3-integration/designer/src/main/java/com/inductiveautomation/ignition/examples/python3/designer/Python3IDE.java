@@ -324,15 +324,9 @@ public class Python3IDE extends JPanel {
         centerPanel.add(progressBar);
         gatewayPanel.add(centerPanel, BorderLayout.CENTER);
 
-        // Right side: Information button, Font size controls and Theme selector (v2.5.1)
+        // Right side: Font size controls, Theme selector, and Information button (v2.5.15: Info moved to right)
         JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 1));  // Horizontal gap adjusted (v2.3.3)
         rightPanel.setBackground(ModernTheme.PANEL_BACKGROUND);
-
-        // Information button (v2.5.1, v2.5.4: Updated icon)
-        ModernButton infoButton = ModernButton.createDefault("ⓘ Info");
-        infoButton.setToolTipText("View keyboard shortcuts and user guide");
-        infoButton.addActionListener(e -> showInformationDialog());
-        rightPanel.add(infoButton);
 
         // Font size controls
         JLabel fontLabel = new JLabel("Font:");
@@ -350,6 +344,13 @@ public class Python3IDE extends JPanel {
         themeLabel.setMinimumSize(new Dimension(55, 28));
         rightPanel.add(themeLabel);
         rightPanel.add(themeSelector);
+
+        // Information button (v2.5.1, v2.5.4: Updated icon, v2.5.15: Moved to right of Theme)
+        ModernButton infoButton = ModernButton.createDefault("ⓘ Info");
+        infoButton.setToolTipText("View keyboard shortcuts and user guide");
+        infoButton.addActionListener(e -> showInformationDialog());
+        rightPanel.add(infoButton);
+
         gatewayPanel.add(rightPanel, BorderLayout.EAST);
 
         add(gatewayPanel, BorderLayout.NORTH);
@@ -524,8 +525,10 @@ public class Python3IDE extends JPanel {
 
         outputScroll.setBackground(ModernTheme.BACKGROUND_DARKER);
         outputScroll.getViewport().setBackground(ModernTheme.BACKGROUND_DARKER);
+        outputScroll.setOpaque(true);  // v2.5.15: Make scroll pane opaque
 
         outputTabs.addTab("Output", outputScroll);
+        outputTabs.setBackgroundAt(0, ModernTheme.BACKGROUND_DARKER);  // v2.5.15: Set tab content background
 
         JScrollPane errorScroll = new JScrollPane(errorArea);
 
@@ -539,8 +542,10 @@ public class Python3IDE extends JPanel {
 
         errorScroll.setBackground(ModernTheme.BACKGROUND_DARKER);
         errorScroll.getViewport().setBackground(ModernTheme.BACKGROUND_DARKER);
+        errorScroll.setOpaque(true);  // v2.5.15: Make scroll pane opaque
 
         outputTabs.addTab("Errors", errorScroll);
+        outputTabs.setBackgroundAt(1, ModernTheme.BACKGROUND_DARKER);  // v2.5.15: Set tab content background
 
         JPanel outputPanel = new JPanel(new BorderLayout());
         // v2.5.11: Match outputScroll background (23,23,23) to eliminate white lines
