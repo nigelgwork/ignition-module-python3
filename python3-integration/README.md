@@ -1,6 +1,6 @@
 # Python 3 Integration Module for Ignition
 
-**Current Version: v2.4.0** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
+**Current Version: v2.4.1** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
 
 This module enables Python 3 scripting functions in Ignition 8.3+, allowing you to use modern Python 3 features and libraries alongside Ignition's built-in Jython 2.7 environment.
 
@@ -610,6 +610,27 @@ Built using the Ignition SDK:
 - https://www.sdk-docs.inductiveautomation.com/
 
 ## Changelog
+
+### 2.4.1 (UX Perfection - Warp-Inspired Minimal Scrollbars + Borderless Design)
+- **NEW**: Ultra-minimal Warp-style scrollbars
+  - Completely invisible track (no background at all)
+  - Tiny 3px indicator (expands to 6px on hover)
+  - Auto-hides after 1.5 seconds of inactivity
+  - Smooth fade-in/fade-out animations
+  - Only appears when scrolling or on hover
+  - Extremely subtle - doesn't distract from content
+- **FIXED**: Removed ALL borders from scroll panes
+  - Empty borders on scroll panes (was using line borders)
+  - Empty viewport borders
+  - Empty gutter borders (line number area)
+  - Completely seamless, borderless appearance
+  - Perfect visual harmony with rest of IDE
+- **NOTE**: Jedi auto-installs at Gateway startup (not via IDE execute panel)
+  - Check Gateway logs (`wrapper.log`) if autocomplete unavailable
+  - Pre-bundled wheels install automatically on first startup
+  - Manual pip install not needed
+- **UX**: Sleek, distraction-free coding environment
+- **UX**: Matches modern terminal aesthetics (Warp, VS Code, IntelliJ)
 
 ### 2.4.0 (Modern UX Polish - Sleek Scrollbars & Autocomplete Diagnostics)
 - **NEW**: Modern sleek scrollbars with minimal design
