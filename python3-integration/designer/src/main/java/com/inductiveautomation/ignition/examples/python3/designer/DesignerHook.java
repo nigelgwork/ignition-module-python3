@@ -173,14 +173,14 @@ public class DesignerHook extends AbstractDesignerModuleHook {
                 Properties props = new Properties();
                 props.load(is);
                 String major = props.getProperty("version.major", "2");
-                String minor = props.getProperty("version.minor", "0");
-                String patch = props.getProperty("version.patch", "13");
+                String minor = props.getProperty("version.minor", "3");
+                String patch = props.getProperty("version.patch", "3");
                 return major + "." + minor + "." + patch;
             }
         } catch (IOException e) {
             LOGGER.warn("Failed to load version.properties, using fallback version", e);
         }
-        return "2.2.0";  // ALWAYS UPDATE THIS WITH NEW RELEASES
+        return "2.3.3";  // ALWAYS UPDATE THIS WITH NEW RELEASES (v2.3.3)
     }
 
     /**

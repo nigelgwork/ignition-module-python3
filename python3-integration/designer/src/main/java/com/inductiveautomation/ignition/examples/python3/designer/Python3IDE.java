@@ -19,8 +19,6 @@ import org.slf4j.LoggerFactory;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
-import javax.swing.plaf.basic.BasicSplitPaneUI;
-import javax.swing.plaf.basic.BasicSplitPaneDivider;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
@@ -300,7 +298,7 @@ public class Python3IDE extends JPanel {
         gatewayPanel.add(centerPanel, BorderLayout.CENTER);
 
         // Right side: Font size controls and Theme selector (v2.0.28)
-        JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 1));  // Reduced vertical gap for 25% height reduction (Issue 5 - v1.15.1)
+        JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 1));  // Horizontal gap adjusted (v2.3.3)
         rightPanel.setBackground(ModernTheme.PANEL_BACKGROUND);
 
         // Font size controls
@@ -311,34 +309,25 @@ public class Python3IDE extends JPanel {
         rightPanel.add(fontDecreaseButton);
         rightPanel.add(fontIncreaseButton);
 
-        // Theme selector
+        // Theme selector with fixed label size to prevent cutoff (v2.3.3)
         JLabel themeLabel = new JLabel("Theme:");
         themeLabel.setForeground(ModernTheme.FOREGROUND_PRIMARY);
         themeLabel.setFont(ModernTheme.FONT_REGULAR);
+        themeLabel.setPreferredSize(new Dimension(55, 28));  // Fixed width to prevent cutoff on initial load
+        themeLabel.setMinimumSize(new Dimension(55, 28));
         rightPanel.add(themeLabel);
         rightPanel.add(themeSelector);
         gatewayPanel.add(rightPanel, BorderLayout.EAST);
 
         add(gatewayPanel, BorderLayout.NORTH);
 
-        // Create main split pane (sidebar | editor)
+        // Create main split pane (sidebar | editor) with themed UI (v2.3.3 - direct paint approach)
         mainSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
+        mainSplit.setUI(new ThemedSplitPaneUI(useDarkTheme ? ModernTheme.BACKGROUND_DARKER : new Color(200, 200, 200)));
         mainSplit.setDividerLocation(250);
         mainSplit.setBackground(ModernTheme.BACKGROUND_DARK);
         mainSplit.setBorder(null);
         mainSplit.setDividerSize(4);  // Reduced from 8 to 4 for cleaner look
-
-        // Fix divider color to respect current theme (v2.0.22 - fixed hardcoded dark color)
-        final boolean isDark = useDarkTheme;
-        mainSplit.setUI(new BasicSplitPaneUI() {
-            @Override
-            public BasicSplitPaneDivider createDefaultDivider() {
-                BasicSplitPaneDivider divider = new BasicSplitPaneDivider(this);
-                divider.setBackground(isDark ? ModernTheme.BACKGROUND_DARKER : new Color(200, 200, 200));
-                divider.setBorder(null);
-                return divider;
-            }
-        });
 
         // Left sidebar: Script browser + metadata
         JPanel sidebar = createSidebar();
@@ -408,8 +397,9 @@ public class Python3IDE extends JPanel {
         bottomPanel.setBackground(ModernTheme.BACKGROUND_DARK);
         bottomPanel.add(metadataPanel, BorderLayout.CENTER);
 
-        // Split tree and bottom panel (metadata only)
+        // Split tree and bottom panel (metadata only) with themed UI (v2.3.3)
         sidebarSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
+        sidebarSplit.setUI(new ThemedSplitPaneUI(useDarkTheme ? ModernTheme.BACKGROUND_DARKER : new Color(200, 200, 200)));
         sidebarSplit.setTopComponent(treePanel);
         sidebarSplit.setBottomComponent(bottomPanel);
         sidebarSplit.setDividerLocation(400);  // More space for tree since diagnostics moved (v1.17.2)
@@ -417,18 +407,6 @@ public class Python3IDE extends JPanel {
         sidebarSplit.setBackground(ModernTheme.BACKGROUND_DARK);
         sidebarSplit.setBorder(null);
         sidebarSplit.setDividerSize(4);  // Reduced from 8 to 4 for cleaner look
-
-        // Fix divider color to respect current theme (v2.0.22 - fixed hardcoded dark color)
-        final boolean isDark = useDarkTheme;
-        sidebarSplit.setUI(new BasicSplitPaneUI() {
-            @Override
-            public BasicSplitPaneDivider createDefaultDivider() {
-                BasicSplitPaneDivider divider = new BasicSplitPaneDivider(this);
-                divider.setBackground(isDark ? ModernTheme.BACKGROUND_DARKER : new Color(200, 200, 200));
-                divider.setBorder(null);
-                return divider;
-            }
-        });
 
         sidebar.add(sidebarSplit, BorderLayout.CENTER);
 
@@ -499,8 +477,9 @@ public class Python3IDE extends JPanel {
         ));
         outputPanel.add(outputTabs, BorderLayout.CENTER);
 
-        // Split execution results (left 75%) and diagnostics (right 25%) - v1.17.2
+        // Split execution results (left 75%) and diagnostics (right 25%) with themed UI (v2.3.3)
         bottomSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
+        bottomSplit.setUI(new ThemedSplitPaneUI(useDarkTheme ? ModernTheme.BACKGROUND_DARKER : new Color(200, 200, 200)));
         bottomSplit.setLeftComponent(outputPanel);
         bottomSplit.setRightComponent(diagnosticsPanel);
         bottomSplit.setResizeWeight(0.75);  // 75% for execution results, 25% for diagnostics
@@ -508,18 +487,6 @@ public class Python3IDE extends JPanel {
         bottomSplit.setBorder(null);
         bottomSplit.setDividerSize(4);  // Reduced from 8 to 4 for cleaner look
         bottomSplit.setPreferredSize(new Dimension(600, 200));
-
-        // Fix divider color to respect current theme (v2.0.22 - fixed hardcoded dark color)
-        final boolean isDark = useDarkTheme;
-        bottomSplit.setUI(new BasicSplitPaneUI() {
-            @Override
-            public BasicSplitPaneDivider createDefaultDivider() {
-                BasicSplitPaneDivider divider = new BasicSplitPaneDivider(this);
-                divider.setBackground(isDark ? ModernTheme.BACKGROUND_DARKER : new Color(200, 200, 200));
-                divider.setBorder(null);
-                return divider;
-            }
-        });
 
         panel.add(bottomSplit, BorderLayout.SOUTH);
 
@@ -1679,7 +1646,7 @@ public class Python3IDE extends JPanel {
     }
 
     /**
-     * Edit metadata for a script (v2.3.1).
+     * Edit metadata for a script (v2.3.3 - properly themed dialog).
      * Allows editing: name, description, author, version.
      *
      * @param scriptNode the script node to edit
@@ -1688,9 +1655,19 @@ public class Python3IDE extends JPanel {
         ScriptMetadata metadata = scriptNode.getScriptMetadata();
         String oldName = metadata.getName();
 
-        // Create dialog with input fields
-        JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBackground(ModernTheme.PANEL_BACKGROUND);
+        // Create custom themed dialog (v2.3.3 - matches Save Script popup)
+        Window owner = SwingUtilities.getWindowAncestor(this);
+        JDialog dialog = new JDialog(owner, "Edit Metadata", Dialog.ModalityType.APPLICATION_MODAL);
+        dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+
+        // Main content panel
+        JPanel contentPanel = new JPanel(new BorderLayout(10, 10));
+        contentPanel.setBackground(useDarkTheme ? ModernTheme.BACKGROUND_DARK : Color.WHITE);
+        contentPanel.setBorder(new EmptyBorder(15, 15, 15, 15));
+
+        // Fields panel
+        JPanel fieldsPanel = new JPanel(new GridBagLayout());
+        fieldsPanel.setBackground(useDarkTheme ? ModernTheme.BACKGROUND_DARK : Color.WHITE);
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 5, 5, 5);
         gbc.fill = GridBagConstraints.HORIZONTAL;
@@ -1700,79 +1677,117 @@ public class Python3IDE extends JPanel {
         gbc.gridy = 0;
         gbc.weightx = 0;
         JLabel nameLabel = new JLabel("Name:");
-        nameLabel.setForeground(ModernTheme.FOREGROUND_PRIMARY);
-        panel.add(nameLabel, gbc);
+        nameLabel.setForeground(useDarkTheme ? ModernTheme.FOREGROUND_PRIMARY : Color.BLACK);
+        nameLabel.setFont(ModernTheme.FONT_REGULAR);
+        fieldsPanel.add(nameLabel, gbc);
 
         gbc.gridx = 1;
         gbc.weightx = 1;
         JTextField nameField = new JTextField(oldName, 30);
-        nameField.setBackground(ModernTheme.BACKGROUND_DARKER);
-        nameField.setForeground(ModernTheme.FOREGROUND_PRIMARY);
-        nameField.setCaretColor(ModernTheme.FOREGROUND_PRIMARY);
-        panel.add(nameField, gbc);
+        nameField.setBackground(useDarkTheme ? ModernTheme.BACKGROUND_DARKER : new Color(245, 245, 245));
+        nameField.setForeground(useDarkTheme ? ModernTheme.FOREGROUND_PRIMARY : Color.BLACK);
+        nameField.setCaretColor(useDarkTheme ? ModernTheme.FOREGROUND_PRIMARY : Color.BLACK);
+        nameField.setFont(ModernTheme.FONT_REGULAR);
+        nameField.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(useDarkTheme ? ModernTheme.BORDER_DEFAULT : new Color(200, 200, 200), 1),
+            new EmptyBorder(5, 5, 5, 5)
+        ));
+        fieldsPanel.add(nameField, gbc);
 
         // Description field
         gbc.gridx = 0;
         gbc.gridy = 1;
         gbc.weightx = 0;
         JLabel descLabel = new JLabel("Description:");
-        descLabel.setForeground(ModernTheme.FOREGROUND_PRIMARY);
-        panel.add(descLabel, gbc);
+        descLabel.setForeground(useDarkTheme ? ModernTheme.FOREGROUND_PRIMARY : Color.BLACK);
+        descLabel.setFont(ModernTheme.FONT_REGULAR);
+        fieldsPanel.add(descLabel, gbc);
 
         gbc.gridx = 1;
         gbc.weightx = 1;
         JTextArea descArea = new JTextArea(metadata.getDescription() != null ? metadata.getDescription() : "", 4, 30);
         descArea.setLineWrap(true);
         descArea.setWrapStyleWord(true);
-        descArea.setBackground(ModernTheme.BACKGROUND_DARKER);
-        descArea.setForeground(ModernTheme.FOREGROUND_PRIMARY);
-        descArea.setCaretColor(ModernTheme.FOREGROUND_PRIMARY);
+        descArea.setBackground(useDarkTheme ? ModernTheme.BACKGROUND_DARKER : new Color(245, 245, 245));
+        descArea.setForeground(useDarkTheme ? ModernTheme.FOREGROUND_PRIMARY : Color.BLACK);
+        descArea.setCaretColor(useDarkTheme ? ModernTheme.FOREGROUND_PRIMARY : Color.BLACK);
+        descArea.setFont(ModernTheme.FONT_REGULAR);
         JScrollPane descScroll = new JScrollPane(descArea);
         descScroll.setPreferredSize(new Dimension(300, 80));
-        panel.add(descScroll, gbc);
+        descScroll.setBorder(BorderFactory.createLineBorder(useDarkTheme ? ModernTheme.BORDER_DEFAULT : new Color(200, 200, 200), 1));
+        fieldsPanel.add(descScroll, gbc);
 
         // Author field
         gbc.gridx = 0;
         gbc.gridy = 2;
         gbc.weightx = 0;
         JLabel authorLabel = new JLabel("Author:");
-        authorLabel.setForeground(ModernTheme.FOREGROUND_PRIMARY);
-        panel.add(authorLabel, gbc);
+        authorLabel.setForeground(useDarkTheme ? ModernTheme.FOREGROUND_PRIMARY : Color.BLACK);
+        authorLabel.setFont(ModernTheme.FONT_REGULAR);
+        fieldsPanel.add(authorLabel, gbc);
 
         gbc.gridx = 1;
         gbc.weightx = 1;
         JTextField authorField = new JTextField(metadata.getAuthor() != null ? metadata.getAuthor() : "", 30);
-        authorField.setBackground(ModernTheme.BACKGROUND_DARKER);
-        authorField.setForeground(ModernTheme.FOREGROUND_PRIMARY);
-        authorField.setCaretColor(ModernTheme.FOREGROUND_PRIMARY);
-        panel.add(authorField, gbc);
+        authorField.setBackground(useDarkTheme ? ModernTheme.BACKGROUND_DARKER : new Color(245, 245, 245));
+        authorField.setForeground(useDarkTheme ? ModernTheme.FOREGROUND_PRIMARY : Color.BLACK);
+        authorField.setCaretColor(useDarkTheme ? ModernTheme.FOREGROUND_PRIMARY : Color.BLACK);
+        authorField.setFont(ModernTheme.FONT_REGULAR);
+        authorField.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(useDarkTheme ? ModernTheme.BORDER_DEFAULT : new Color(200, 200, 200), 1),
+            new EmptyBorder(5, 5, 5, 5)
+        ));
+        fieldsPanel.add(authorField, gbc);
 
         // Version field
         gbc.gridx = 0;
         gbc.gridy = 3;
         gbc.weightx = 0;
         JLabel versionLabel = new JLabel("Version:");
-        versionLabel.setForeground(ModernTheme.FOREGROUND_PRIMARY);
-        panel.add(versionLabel, gbc);
+        versionLabel.setForeground(useDarkTheme ? ModernTheme.FOREGROUND_PRIMARY : Color.BLACK);
+        versionLabel.setFont(ModernTheme.FONT_REGULAR);
+        fieldsPanel.add(versionLabel, gbc);
 
         gbc.gridx = 1;
         gbc.weightx = 1;
         JTextField versionField = new JTextField(metadata.getVersion() != null ? metadata.getVersion() : "1.0", 30);
-        versionField.setBackground(ModernTheme.BACKGROUND_DARKER);
-        versionField.setForeground(ModernTheme.FOREGROUND_PRIMARY);
-        versionField.setCaretColor(ModernTheme.FOREGROUND_PRIMARY);
-        panel.add(versionField, gbc);
+        versionField.setBackground(useDarkTheme ? ModernTheme.BACKGROUND_DARKER : new Color(245, 245, 245));
+        versionField.setForeground(useDarkTheme ? ModernTheme.FOREGROUND_PRIMARY : Color.BLACK);
+        versionField.setCaretColor(useDarkTheme ? ModernTheme.FOREGROUND_PRIMARY : Color.BLACK);
+        versionField.setFont(ModernTheme.FONT_REGULAR);
+        versionField.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(useDarkTheme ? ModernTheme.BORDER_DEFAULT : new Color(200, 200, 200), 1),
+            new EmptyBorder(5, 5, 5, 5)
+        ));
+        fieldsPanel.add(versionField, gbc);
 
-        // Show dialog using JOptionPane with dark theme
-        int result = JOptionPane.showConfirmDialog(
-                this,
-                panel,
-                "Edit Metadata",
-                JOptionPane.OK_CANCEL_OPTION,
-                JOptionPane.PLAIN_MESSAGE
-        );
+        contentPanel.add(fieldsPanel, BorderLayout.CENTER);
 
-        if (result != JOptionPane.OK_OPTION) {
+        // Buttons panel
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        buttonPanel.setBackground(useDarkTheme ? ModernTheme.BACKGROUND_DARK : Color.WHITE);
+
+        final boolean[] okClicked = {false};
+
+        JButton okButton = createThemedDialogButton("OK");
+        okButton.addActionListener(e -> {
+            okClicked[0] = true;
+            dialog.dispose();
+        });
+
+        JButton cancelButton = createThemedDialogButton("Cancel");
+        cancelButton.addActionListener(e -> dialog.dispose());
+
+        buttonPanel.add(okButton);
+        buttonPanel.add(cancelButton);
+        contentPanel.add(buttonPanel, BorderLayout.SOUTH);
+
+        dialog.setContentPane(contentPanel);
+        dialog.pack();
+        dialog.setLocationRelativeTo(this);
+        dialog.setVisible(true);
+
+        if (!okClicked[0]) {
             return;  // User cancelled
         }
 
@@ -2673,6 +2688,43 @@ public class Python3IDE extends JPanel {
     }
 
     /**
+     * Creates a themed button for dialogs (v2.3.3).
+     * Matches the style of DarkDialog buttons.
+     *
+     * @param text button text
+     * @return themed button
+     */
+    private JButton createThemedDialogButton(String text) {
+        Color buttonBg = useDarkTheme ? new Color(60, 63, 65) : new Color(238, 238, 238);
+        Color foreground = useDarkTheme ? new Color(224, 224, 224) : Color.BLACK;
+        Color borderColor = useDarkTheme ? new Color(60, 63, 65) : new Color(200, 200, 200);
+
+        JButton button = new JButton(text);
+        button.setBackground(buttonBg);
+        button.setForeground(foreground);
+        button.setFont(ModernTheme.FONT_REGULAR);
+        button.setFocusPainted(false);
+        button.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(borderColor, 1),
+            new EmptyBorder(5, 15, 5, 15)
+        ));
+        button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+
+        // Hover effect
+        Color hoverBg = useDarkTheme ? new Color(75, 80, 85) : new Color(220, 220, 220);
+        button.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                button.setBackground(hoverBg);
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                button.setBackground(buttonBg);
+            }
+        });
+
+        return button;
+    }
+
+    /**
      * Recursively updates all TitledBorder components to match the current theme.
      * This updates the border color and title text color for all panels with titled borders.
      *
@@ -2774,35 +2826,25 @@ public class Python3IDE extends JPanel {
 
     /**
      * Recursively updates all JSplitPane dividers to match the current theme.
-     * Forces dividers to pick up the theme colors by updating their background colors.
+     * Uses ThemedSplitPaneUI for direct paint control (v2.3.3).
+     *
+     * Previous approaches using setBackground() failed - this uses custom paint instead.
      *
      * @param comp the component to traverse
      * @param isDarkTheme true if dark theme, false if light theme
      *
      * v1.17.1: Fix for Issue 8 - ensure dividers match theme
+     * v2.3.3: Replaced background approach with custom UI paint approach
      */
     private void updateSplitPaneDividers(Component comp, boolean isDarkTheme) {
         if (comp instanceof JSplitPane) {
             JSplitPane splitPane = (JSplitPane) comp;
 
-            // Update divider colors
-            if (isDarkTheme) {
-                splitPane.setDividerSize(8);
-                splitPane.setBorder(null);
-                // Access the divider UI component
-                if (splitPane.getUI() instanceof BasicSplitPaneUI) {
-                    ((BasicSplitPaneUI) splitPane.getUI()).getDivider().setBackground(ModernTheme.BACKGROUND_DARKER);
-                }
-            } else {
-                splitPane.setDividerSize(8);
-                splitPane.setBorder(null);
-                // Access the divider UI component
-                if (splitPane.getUI() instanceof BasicSplitPaneUI) {
-                    ((BasicSplitPaneUI) splitPane.getUI()).getDivider().setBackground(new Color(200, 200, 200));
-                }
-            }
-
-            splitPane.updateUI();
+            // Set custom UI with direct paint control (v2.3.3)
+            Color dividerColor = isDarkTheme ? ModernTheme.BACKGROUND_DARKER : new Color(200, 200, 200);
+            splitPane.setUI(new ThemedSplitPaneUI(dividerColor));
+            splitPane.setBorder(null);
+            splitPane.setDividerSize(4);  // Maintain consistent size
         }
 
         // Recursively traverse child components

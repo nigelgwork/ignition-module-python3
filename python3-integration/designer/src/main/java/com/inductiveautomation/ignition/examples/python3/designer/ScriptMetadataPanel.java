@@ -90,13 +90,13 @@ public class ScriptMetadataPanel extends JPanel {
         descLabel.setBorder(new EmptyBorder(0, 0, 3, 0));  // Space below label
         descPanel.add(descLabel, BorderLayout.NORTH);
 
-        // Description area without scrollbar - 25% taller (v2.3.1 UX improvement)
+        // Description area without scrollbar - 30% taller than original (v2.3.3 UX improvement)
         // Removed scroll pane as requested - if description is too long, it just won't fit
         descriptionArea.setBorder(BorderFactory.createCompoundBorder(
             BorderFactory.createLineBorder(ModernTheme.BORDER_DEFAULT),
             new EmptyBorder(5, 5, 5, 5)
         ));
-        descriptionArea.setPreferredSize(new Dimension(240, 188));  // 150 * 1.25 = 187.5, rounded to 188
+        descriptionArea.setPreferredSize(new Dimension(240, 244));  // Increased by 30% from 188px (v2.3.3)
         descriptionArea.setMinimumSize(new Dimension(240, 150));
 
         descPanel.add(descriptionArea, BorderLayout.CENTER);
