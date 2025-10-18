@@ -446,7 +446,8 @@ public class Python3IDE extends JPanel {
      * Creates the editor panel.
      */
     private JPanel createEditorPanel() {
-        JPanel panel = new JPanel(new BorderLayout(5, 5));
+        // v2.5.11: Remove gaps to eliminate white spacing between components
+        JPanel panel = new JPanel(new BorderLayout());
         panel.setBackground(ModernTheme.BACKGROUND_DARK);
 
         // Editor with line numbers
@@ -464,9 +465,14 @@ public class Python3IDE extends JPanel {
         editorScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
         editorScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
+        // v2.5.11: Ensure scroll pane backgrounds match to eliminate white lines
+        editorScroll.setBackground(new Color(30, 30, 30));
+        editorScroll.getViewport().setBackground(new Color(30, 30, 30));
+
         // v2.5.5: Made instance variable to allow dynamic title updates
         editorContainer = new JPanel(new BorderLayout());
-        editorContainer.setBackground(ModernTheme.PANEL_BACKGROUND);
+        // v2.5.11: Match codeEditor background (30,30,30) to eliminate white lines
+        editorContainer.setBackground(new Color(30, 30, 30));
         editorTitledBorder = new TitledBorder(BorderFactory.createLineBorder(ModernTheme.BORDER_DEFAULT),
                 "Python 3 Code Editor",
                 TitledBorder.DEFAULT_JUSTIFICATION,
@@ -530,7 +536,8 @@ public class Python3IDE extends JPanel {
         outputTabs.addTab("Errors", errorScroll);
 
         JPanel outputPanel = new JPanel(new BorderLayout());
-        outputPanel.setBackground(ModernTheme.PANEL_BACKGROUND);
+        // v2.5.11: Match outputScroll background (23,23,23) to eliminate white lines
+        outputPanel.setBackground(ModernTheme.BACKGROUND_DARKER);
         // v2.5.9: Removed empty border to eliminate white padding
         outputPanel.setBorder(new TitledBorder(BorderFactory.createLineBorder(ModernTheme.BORDER_DEFAULT),
                 "Execution Results",
