@@ -90,19 +90,16 @@ public class ScriptMetadataPanel extends JPanel {
         descLabel.setBorder(new EmptyBorder(0, 0, 3, 0));  // Space below label
         descPanel.add(descLabel, BorderLayout.NORTH);
 
-        // Scroll pane with smart scrollbar policy
-        JScrollPane descScroll = new JScrollPane(descriptionArea);
-        descScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-        descScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        descScroll.setBackground(ModernTheme.BACKGROUND_DARKER);
-        descScroll.getViewport().setBackground(ModernTheme.BACKGROUND_DARKER);
-        descScroll.setBorder(BorderFactory.createLineBorder(ModernTheme.BORDER_DEFAULT));
+        // Description area without scrollbar - 25% taller (v2.3.1 UX improvement)
+        // Removed scroll pane as requested - if description is too long, it just won't fit
+        descriptionArea.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(ModernTheme.BORDER_DEFAULT),
+            new EmptyBorder(5, 5, 5, 5)
+        ));
+        descriptionArea.setPreferredSize(new Dimension(240, 188));  // 150 * 1.25 = 187.5, rounded to 188
+        descriptionArea.setMinimumSize(new Dimension(240, 150));
 
-        // Expanded scroll pane for better usability (v2.0.1 UX fix: 70px → 120px, v2.0.9: 120px → 150px)
-        descScroll.setPreferredSize(new Dimension(240, 150));
-        descScroll.setMinimumSize(new Dimension(240, 100));
-
-        descPanel.add(descScroll, BorderLayout.CENTER);
+        descPanel.add(descriptionArea, BorderLayout.CENTER);
 
         add(descPanel, BorderLayout.CENTER);
 

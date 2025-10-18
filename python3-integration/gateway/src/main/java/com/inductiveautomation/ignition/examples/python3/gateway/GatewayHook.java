@@ -79,6 +79,27 @@ public class GatewayHook extends AbstractGatewayModuleHook {
                         pythonPath
                 );
                 LOGGER.info("Package manager initialized");
+
+                // Auto-install Jedi for IDE autocomplete (v2.3.1)
+                // Jedi is essential for autocomplete functionality
+                if (!packageManager.isInstalled("jedi")) {
+                    LOGGER.info("Jedi not installed - installing automatically for IDE autocomplete...");
+                    try {
+                        Python3PackageManager.InstallResult result = packageManager.installPackage("jedi");
+                        if (result.success) {
+                            LOGGER.info("Jedi installed successfully - autocomplete will be available");
+                        } else {
+                            LOGGER.warn("Failed to auto-install Jedi: {}", result.message);
+                            LOGGER.warn("IDE autocomplete may not work. Install jedi manually or download wheels.");
+                        }
+                    } catch (Exception e) {
+                        LOGGER.error("Failed to auto-install Jedi", e);
+                        LOGGER.warn("IDE autocomplete may not work. Install jedi manually.");
+                    }
+                } else {
+                    LOGGER.info("Jedi already installed - autocomplete ready");
+                }
+
             } catch (Exception e) {
                 LOGGER.error("Failed to initialize package manager", e);
                 // Don't throw - allow module to continue without package management

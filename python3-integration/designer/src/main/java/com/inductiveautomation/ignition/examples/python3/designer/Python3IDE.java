@@ -159,7 +159,7 @@ public class Python3IDE extends JPanel {
         themeSelector.setFont(ModernTheme.FONT_REGULAR);
         themeSelector.setBackground(ModernTheme.PANEL_BACKGROUND);
         themeSelector.setForeground(ModernTheme.FOREGROUND_PRIMARY);
-        themeSelector.setPreferredSize(new Dimension(180, 28));  // Expanded width to avoid text cutoff (Issue 2 - v1.17.1)
+        themeSelector.setPreferredSize(new Dimension(153, 28));  // Reduced by 15% to give more space for "Theme:" label (v2.3.1)
 
         // Code editor with RSyntaxTextArea
         codeEditor = new RSyntaxTextArea(20, 80);
@@ -1508,6 +1508,11 @@ public class Python3IDE extends JPanel {
             renameItem.addActionListener(ev -> renameScript(scriptNode));
             menu.add(renameItem);
 
+            // v2.3.1: Edit Metadata
+            JMenuItem editMetadataItem = new JMenuItem("Edit Metadata...");
+            editMetadataItem.addActionListener(ev -> editMetadata(scriptNode));
+            menu.add(editMetadataItem);
+
             // v2.0.29: Move to Folder
             JMenuItem moveItem = new JMenuItem("Move to Folder...");
             moveItem.addActionListener(ev -> showMoveToFolderDialog(scriptNode));
@@ -1664,6 +1669,182 @@ public class Python3IDE extends JPanel {
                     DarkDialog.showMessage(
                             Python3IDE.this,
                             "Failed to rename script: " + e.getMessage(),
+                            "Error"
+                    );
+                }
+            }
+        };
+
+        worker.execute();
+    }
+
+    /**
+     * Edit metadata for a script (v2.3.1).
+     * Allows editing: name, description, author, version.
+     *
+     * @param scriptNode the script node to edit
+     */
+    private void editMetadata(ScriptTreeNode scriptNode) {
+        ScriptMetadata metadata = scriptNode.getScriptMetadata();
+        String oldName = metadata.getName();
+
+        // Create dialog with input fields
+        JPanel panel = new JPanel(new GridBagLayout());
+        panel.setBackground(ModernTheme.PANEL_BACKGROUND);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        // Name field
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 0;
+        JLabel nameLabel = new JLabel("Name:");
+        nameLabel.setForeground(ModernTheme.FOREGROUND_PRIMARY);
+        panel.add(nameLabel, gbc);
+
+        gbc.gridx = 1;
+        gbc.weightx = 1;
+        JTextField nameField = new JTextField(oldName, 30);
+        nameField.setBackground(ModernTheme.BACKGROUND_DARKER);
+        nameField.setForeground(ModernTheme.FOREGROUND_PRIMARY);
+        nameField.setCaretColor(ModernTheme.FOREGROUND_PRIMARY);
+        panel.add(nameField, gbc);
+
+        // Description field
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.weightx = 0;
+        JLabel descLabel = new JLabel("Description:");
+        descLabel.setForeground(ModernTheme.FOREGROUND_PRIMARY);
+        panel.add(descLabel, gbc);
+
+        gbc.gridx = 1;
+        gbc.weightx = 1;
+        JTextArea descArea = new JTextArea(metadata.getDescription() != null ? metadata.getDescription() : "", 4, 30);
+        descArea.setLineWrap(true);
+        descArea.setWrapStyleWord(true);
+        descArea.setBackground(ModernTheme.BACKGROUND_DARKER);
+        descArea.setForeground(ModernTheme.FOREGROUND_PRIMARY);
+        descArea.setCaretColor(ModernTheme.FOREGROUND_PRIMARY);
+        JScrollPane descScroll = new JScrollPane(descArea);
+        descScroll.setPreferredSize(new Dimension(300, 80));
+        panel.add(descScroll, gbc);
+
+        // Author field
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        gbc.weightx = 0;
+        JLabel authorLabel = new JLabel("Author:");
+        authorLabel.setForeground(ModernTheme.FOREGROUND_PRIMARY);
+        panel.add(authorLabel, gbc);
+
+        gbc.gridx = 1;
+        gbc.weightx = 1;
+        JTextField authorField = new JTextField(metadata.getAuthor() != null ? metadata.getAuthor() : "", 30);
+        authorField.setBackground(ModernTheme.BACKGROUND_DARKER);
+        authorField.setForeground(ModernTheme.FOREGROUND_PRIMARY);
+        authorField.setCaretColor(ModernTheme.FOREGROUND_PRIMARY);
+        panel.add(authorField, gbc);
+
+        // Version field
+        gbc.gridx = 0;
+        gbc.gridy = 3;
+        gbc.weightx = 0;
+        JLabel versionLabel = new JLabel("Version:");
+        versionLabel.setForeground(ModernTheme.FOREGROUND_PRIMARY);
+        panel.add(versionLabel, gbc);
+
+        gbc.gridx = 1;
+        gbc.weightx = 1;
+        JTextField versionField = new JTextField(metadata.getVersion() != null ? metadata.getVersion() : "1.0", 30);
+        versionField.setBackground(ModernTheme.BACKGROUND_DARKER);
+        versionField.setForeground(ModernTheme.FOREGROUND_PRIMARY);
+        versionField.setCaretColor(ModernTheme.FOREGROUND_PRIMARY);
+        panel.add(versionField, gbc);
+
+        // Show dialog using JOptionPane with dark theme
+        int result = JOptionPane.showConfirmDialog(
+                this,
+                panel,
+                "Edit Metadata",
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.PLAIN_MESSAGE
+        );
+
+        if (result != JOptionPane.OK_OPTION) {
+            return;  // User cancelled
+        }
+
+        // Get values
+        String newName = nameField.getText().trim();
+        String newDescription = descArea.getText().trim();
+        String newAuthor = authorField.getText().trim();
+        String newVersion = versionField.getText().trim();
+
+        // Validate new name
+        if (newName.isEmpty()) {
+            DarkDialog.showMessage(this, "Name cannot be empty", "Error");
+            return;
+        }
+
+        if (!isValidName(newName)) {
+            showInvalidNameError(newName);
+            return;
+        }
+
+        // Update metadata by: load script -> delete old -> save with new metadata
+        SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
+            private SavedScript script;
+
+            @Override
+            protected Void doInBackground() throws Exception {
+                // Load the script
+                script = restClient.loadScript(oldName);
+
+                // Delete old script if name changed
+                if (!newName.equals(oldName)) {
+                    restClient.deleteScript(oldName);
+                }
+
+                // Save with new metadata
+                restClient.saveScript(
+                        newName,
+                        script.getCode(),
+                        newDescription,
+                        newAuthor,
+                        script.getFolderPath(),
+                        newVersion
+                );
+
+                return null;
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    get();
+                    setStatus("Updated metadata for '" + newName + "'", new Color(0, 128, 0));
+                    refreshScriptTree();
+
+                    // Update current script metadata if this is the currently loaded script
+                    if (currentScript != null && currentScript.getName().equals(oldName)) {
+                        currentScript.setName(newName);
+                        currentScript.setDescription(newDescription);
+                        currentScript.setAuthor(newAuthor);
+                        currentScript.setVersion(newVersion);
+
+                        // Refresh metadata panel
+                        if (metadataPanel != null) {
+                            metadataPanel.displayMetadata(currentScript);
+                        }
+                    }
+
+                } catch (Exception e) {
+                    LOGGER.error("Failed to update metadata", e);
+                    DarkDialog.showMessage(
+                            Python3IDE.this,
+                            "Failed to update metadata: " + e.getMessage(),
                             "Error"
                     );
                 }

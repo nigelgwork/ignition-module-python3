@@ -1,6 +1,6 @@
 # Python 3 Integration Module for Ignition
 
-**Current Version: v2.3.0** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
+**Current Version: v2.3.1** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
 
 This module enables Python 3 scripting functions in Ignition 8.3+, allowing you to use modern Python 3 features and libraries alongside Ignition's built-in Jython 2.7 environment.
 
@@ -582,6 +582,16 @@ Built using the Ignition SDK:
 - https://www.sdk-docs.inductiveautomation.com/
 
 ## Changelog
+
+### 2.3.1 (UX Improvements + Auto-install Jedi)
+- **NEW**: Jedi package automatically installed on module startup for autocomplete
+- **IMPROVED**: Theme dropdown reduced by 15% (180→153px) to prevent "Theme:" label cutoff
+- **IMPROVED**: Description panel made 25% taller (150→188px) with scrollbar removed
+- **NEW**: "Edit Metadata..." context menu option for scripts
+  - Edit name, description, author, and version all at once
+  - Clean dialog interface with dark theme support
+- **UX**: Better use of available space in Script Information panel
+- **UX**: All metadata now editable from right-click menu
 
 ### 2.3.0 (Bundled Python Package Management - Foundation)
 - **NEW**: Python3PackageManager class for offline package installation
