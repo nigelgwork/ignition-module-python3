@@ -1,6 +1,6 @@
 # Python 3 Integration Module for Ignition
 
-**Current Version: v2.5.18** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
+**Current Version: v2.5.19** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
 
 This module enables Python 3 scripting functions in Ignition 8.3+, allowing you to use modern Python 3 features and libraries alongside Ignition's built-in Jython 2.7 environment.
 
@@ -1234,6 +1234,45 @@ Built using the Ignition SDK:
 - https://www.sdk-docs.inductiveautomation.com/
 
 ## Changelog
+
+### 2.5.19 (UX Enhancement - Diagnostics Panel Cleanup + RAM/CPU Metrics)
+- **CLEANUP**: Removed duplicate metrics from diagnostics panel
+  - Removed: Python Version, Pool Size, Healthy, Available, In Use (shown in bottom status bar)
+  - Reduced GridLayout from 10 rows to 7 rows (30% reduction)
+  - More space for remaining metrics
+  - DiagnosticsPanel.java: Removed 5 duplicate label fields
+- **NEW METRICS**: Added RAM and CPU usage display
+  - **RAM Usage (MB)**: Shows Gateway JVM memory consumption
+  - **CPU Time (ms)**: Shows average Python execution CPU time
+  - Color-coded indicators:
+    - GREEN: RAM < 100 MB, CPU < 100ms
+    - YELLOW: RAM 100-250 MB, CPU 100-500ms
+    - RED: RAM > 250 MB, CPU > 500ms
+- **LARGER FONTS**: Increased readability
+  - Key labels: 10pt → 12pt (20% larger)
+  - Value labels: 10pt → 12pt (20% larger)
+  - Vertical spacing: 3px → 5px
+  - Better visual hierarchy and readability
+- **GATEWAY ENHANCEMENTS**:
+  - Python3MetricsCollector.java: Added memory tracking via Runtime.getRuntime()
+  - GatewayImpact.java: Added memoryUsageMb and averageCpuTimeMs fields
+  - REST API /gateway-impact now includes RAM and CPU data
+  - Health score calculation includes pool utilization and success rate
+  - Camel case JSON fields for easier parsing
+- **RESULT**:
+  - ✅ Cleaner diagnostics panel with no duplicate info
+  - ✅ Real-time RAM and CPU monitoring
+  - ✅ Larger, more readable text (12pt vs 10pt)
+  - ✅ More vertical space for each metric
+  - ✅ Professional monitoring dashboard
+
+**FILES MODIFIED:**
+1. DiagnosticsPanel.java - Removed duplicates, added RAM/CPU labels, increased fonts (12pt)
+2. GatewayImpact.java - Added memoryUsageMb and averageCpuTimeMs fields
+3. Python3MetricsCollector.java - Added memory tracking and health score calculation
+4. version.properties - 2.5.18 → 2.5.19
+5. DesignerHook.java - Fallback version 2.5.18 → 2.5.19
+6. README.md (both) - Updated version and changelog
 
 ### 2.5.18 (CRITICAL FIXES - Tab Switching Bug + TitledBorder Removal)
 - **FIX 1**: Fixed CustomTabButton click action bug (tabs not switching)

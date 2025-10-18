@@ -15,16 +15,15 @@ import java.awt.*;
 public class DiagnosticsPanel extends JPanel {
     private static final Logger LOGGER = LoggerFactory.getLogger(DiagnosticsPanel.class);
 
-    private final JLabel poolSizeLabel;
-    private final JLabel healthyLabel;
-    private final JLabel availableLabel;
-    private final JLabel inUseLabel;
+    // v2.5.19: Removed duplicate labels (poolSize, healthy, available, inUse, pythonVersion)
+    // These are now only shown in the bottom status bar
     private final JLabel impactLevelLabel;
     private final JLabel healthScoreLabel;
-    private final JLabel pythonVersionLabel;
     private final JLabel totalExecutionsLabel;
     private final JLabel successRateLabel;
     private final JLabel avgExecutionTimeLabel;
+    private final JLabel ramUsageLabel;        // v2.5.19: NEW - RAM usage
+    private final JLabel cpuUsageLabel;        // v2.5.19: NEW - CPU usage
 
     private Python3RestClient restClient;
     private Timer refreshTimer;
@@ -46,38 +45,21 @@ public class DiagnosticsPanel extends JPanel {
         setPreferredSize(new Dimension(250, 200));
         setBackground(ModernTheme.PANEL_BACKGROUND);
 
-        // Create labels
-        poolSizeLabel = createValueLabel();
-        healthyLabel = createValueLabel();
-        availableLabel = createValueLabel();
-        inUseLabel = createValueLabel();
+        // v2.5.19: Create labels (removed duplicates: poolSize, healthy, available, inUse, pythonVersion)
         impactLevelLabel = createValueLabel();
         healthScoreLabel = createValueLabel();
-        pythonVersionLabel = createValueLabel();
         totalExecutionsLabel = createValueLabel();
         successRateLabel = createValueLabel();
         avgExecutionTimeLabel = createValueLabel();
+        ramUsageLabel = createValueLabel();
+        cpuUsageLabel = createValueLabel();
 
-        // Layout
-        JPanel fieldsPanel = new JPanel(new GridLayout(10, 2, 5, 3));
+        // v2.5.19: Layout - reduced to 7 rows (was 10), larger font for better readability
+        JPanel fieldsPanel = new JPanel(new GridLayout(7, 2, 5, 5));  // 5px vertical spacing (was 3)
         fieldsPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
         fieldsPanel.setBackground(ModernTheme.PANEL_BACKGROUND);
 
-        fieldsPanel.add(createKeyLabel("Python Version:"));
-        fieldsPanel.add(pythonVersionLabel);
-
-        fieldsPanel.add(createKeyLabel("Pool Size:"));
-        fieldsPanel.add(poolSizeLabel);
-
-        fieldsPanel.add(createKeyLabel("Healthy:"));
-        fieldsPanel.add(healthyLabel);
-
-        fieldsPanel.add(createKeyLabel("Available:"));
-        fieldsPanel.add(availableLabel);
-
-        fieldsPanel.add(createKeyLabel("In Use:"));
-        fieldsPanel.add(inUseLabel);
-
+        // v2.5.19: Removed Python Version, Pool Size, Healthy, Available, In Use (shown in bottom status bar)
         fieldsPanel.add(createKeyLabel("Total Executions:"));
         fieldsPanel.add(totalExecutionsLabel);
 
@@ -86,6 +68,12 @@ public class DiagnosticsPanel extends JPanel {
 
         fieldsPanel.add(createKeyLabel("Avg Time (ms):"));
         fieldsPanel.add(avgExecutionTimeLabel);
+
+        fieldsPanel.add(createKeyLabel("RAM Usage (MB):"));  // v2.5.19: NEW
+        fieldsPanel.add(ramUsageLabel);
+
+        fieldsPanel.add(createKeyLabel("CPU Time (ms):"));   // v2.5.19: NEW
+        fieldsPanel.add(cpuUsageLabel);
 
         fieldsPanel.add(createKeyLabel("Impact Level:"));
         fieldsPanel.add(impactLevelLabel);
@@ -187,29 +175,8 @@ public class DiagnosticsPanel extends JPanel {
             return;
         }
 
-        PoolStats stats = data.poolStats;
-        GatewayImpact impact = data.impact;
-
-        // Python version
-        pythonVersionLabel.setText(data.pythonVersion != null ? data.pythonVersion : "—");
-
-        // Pool size
-        poolSizeLabel.setText(String.valueOf(stats.getTotalSize()));
-
-        // Healthy executors
-        healthyLabel.setText(String.valueOf(stats.getHealthy()));
-        healthyLabel.setForeground(stats.isHealthy() ? ModernTheme.SUCCESS : ModernTheme.WARNING);
-
-        // Available executors
-        availableLabel.setText(String.valueOf(stats.getAvailable()));
-
-        // In use executors
-        int inUse = stats.getInUse();
-        inUseLabel.setText(String.valueOf(inUse));
-
-        // Calculate pool usage percentage
-        int poolUsage = stats.getTotalSize() > 0 ? (inUse * 100 / stats.getTotalSize()) : 0;
-        inUseLabel.setForeground(getPoolUsageColor(poolUsage));
+        // v2.5.19: Removed duplicate pool stats display (pythonVersion, poolSize, healthy, available, inUse)
+        // These are shown in bottom status bar
 
         // Execution metrics
         if (data.metrics != null) {
@@ -227,8 +194,28 @@ public class DiagnosticsPanel extends JPanel {
             avgExecutionTimeLabel.setText("—");
         }
 
-        // Impact level
+        // v2.5.19: RAM and CPU usage from impact data
+        GatewayImpact impact = data.impact;
         if (impact != null) {
+            // RAM usage - from impact.getMemoryUsageMb() if available
+            if (impact.getMemoryUsageMb() != null && impact.getMemoryUsageMb() > 0) {
+                ramUsageLabel.setText(String.format("%.1f", impact.getMemoryUsageMb()));
+                ramUsageLabel.setForeground(getMemoryUsageColor(impact.getMemoryUsageMb()));
+            } else {
+                ramUsageLabel.setText("—");
+                ramUsageLabel.setForeground(ModernTheme.FOREGROUND_PRIMARY);
+            }
+
+            // CPU time - from impact.getAverageCpuTimeMs()
+            if (impact.getAverageCpuTimeMs() != null && impact.getAverageCpuTimeMs() > 0) {
+                cpuUsageLabel.setText(String.format("%.1f", impact.getAverageCpuTimeMs()));
+                cpuUsageLabel.setForeground(getCpuUsageColor(impact.getAverageCpuTimeMs()));
+            } else {
+                cpuUsageLabel.setText("—");
+                cpuUsageLabel.setForeground(ModernTheme.FOREGROUND_PRIMARY);
+            }
+
+            // Impact level
             impactLevelLabel.setText(impact.getImpactLevel());
             impactLevelLabel.setForeground(getImpactLevelColor(impact.getImpactLevel()));
 
@@ -236,6 +223,10 @@ public class DiagnosticsPanel extends JPanel {
             healthScoreLabel.setText(String.valueOf(impact.getHealthScore()));
             healthScoreLabel.setForeground(getHealthScoreColor(impact.getHealthScore()));
         } else {
+            ramUsageLabel.setText("—");
+            ramUsageLabel.setForeground(ModernTheme.FOREGROUND_PRIMARY);
+            cpuUsageLabel.setText("—");
+            cpuUsageLabel.setForeground(ModernTheme.FOREGROUND_PRIMARY);
             impactLevelLabel.setText("—");
             impactLevelLabel.setForeground(ModernTheme.FOREGROUND_PRIMARY);
             healthScoreLabel.setText("—");
@@ -247,35 +238,52 @@ public class DiagnosticsPanel extends JPanel {
      * Clears all diagnostic fields.
      */
     private void clear() {
-        pythonVersionLabel.setText("—");
-        poolSizeLabel.setText("—");
-        healthyLabel.setText("—");
-        availableLabel.setText("—");
-        inUseLabel.setText("—");
+        // v2.5.19: Updated to reflect removed duplicate fields
         totalExecutionsLabel.setText("—");
         successRateLabel.setText("—");
         avgExecutionTimeLabel.setText("—");
+        ramUsageLabel.setText("—");
+        cpuUsageLabel.setText("—");
         impactLevelLabel.setText("—");
         healthScoreLabel.setText("—");
 
         // Reset colors
-        healthyLabel.setForeground(ModernTheme.FOREGROUND_PRIMARY);
-        inUseLabel.setForeground(ModernTheme.FOREGROUND_PRIMARY);
         successRateLabel.setForeground(ModernTheme.FOREGROUND_PRIMARY);
+        ramUsageLabel.setForeground(ModernTheme.FOREGROUND_PRIMARY);
+        cpuUsageLabel.setForeground(ModernTheme.FOREGROUND_PRIMARY);
         impactLevelLabel.setForeground(ModernTheme.FOREGROUND_PRIMARY);
         healthScoreLabel.setForeground(ModernTheme.FOREGROUND_PRIMARY);
     }
 
     /**
-     * Gets color for pool usage display.
+     * Gets color for memory usage display (v2.5.19).
+     *
+     * @param memoryMb memory usage in MB
+     * @return color based on usage level
      */
-    private Color getPoolUsageColor(int usage) {
-        if (usage <= 60) {
-            return ModernTheme.SUCCESS;
-        } else if (usage <= 85) {
-            return ModernTheme.WARNING;
+    private Color getMemoryUsageColor(double memoryMb) {
+        if (memoryMb <= 100) {
+            return ModernTheme.SUCCESS;      // Low usage (< 100 MB)
+        } else if (memoryMb <= 250) {
+            return ModernTheme.WARNING;      // Moderate usage (100-250 MB)
         } else {
-            return ModernTheme.ERROR;
+            return ModernTheme.ERROR;        // High usage (> 250 MB)
+        }
+    }
+
+    /**
+     * Gets color for CPU usage display (v2.5.19).
+     *
+     * @param cpuTimeMs average CPU time in milliseconds
+     * @return color based on CPU time
+     */
+    private Color getCpuUsageColor(double cpuTimeMs) {
+        if (cpuTimeMs <= 100) {
+            return ModernTheme.SUCCESS;      // Fast execution (< 100ms)
+        } else if (cpuTimeMs <= 500) {
+            return ModernTheme.WARNING;      // Moderate execution (100-500ms)
+        } else {
+            return ModernTheme.ERROR;        // Slow execution (> 500ms)
         }
     }
 
@@ -334,7 +342,8 @@ public class DiagnosticsPanel extends JPanel {
      */
     private JLabel createKeyLabel(String text) {
         JLabel label = new JLabel(text);
-        label.setFont(ModernTheme.withSize(ModernTheme.FONT_BOLD, 10));
+        // v2.5.19: Increased font size from 10 to 12 for better readability
+        label.setFont(ModernTheme.withSize(ModernTheme.FONT_BOLD, 12));
         label.setForeground(ModernTheme.FOREGROUND_SECONDARY);
         return label;
     }
@@ -346,7 +355,8 @@ public class DiagnosticsPanel extends JPanel {
      */
     private JLabel createValueLabel() {
         JLabel label = new JLabel("—");
-        label.setFont(ModernTheme.withSize(ModernTheme.FONT_REGULAR, 10));
+        // v2.5.19: Increased font size from 10 to 12 for better readability
+        label.setFont(ModernTheme.withSize(ModernTheme.FONT_REGULAR, 12));
         label.setForeground(ModernTheme.FOREGROUND_PRIMARY);
         return label;
     }

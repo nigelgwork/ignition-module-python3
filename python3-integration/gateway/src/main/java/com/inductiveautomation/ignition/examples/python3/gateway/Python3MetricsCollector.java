@@ -233,7 +233,16 @@ public class Python3MetricsCollector {
         impact.put("executions_per_minute", Math.round(executionRate * 100.0) / 100.0);
 
         // Average CPU time consumed
-        impact.put("average_cpu_time_ms", total > 0 ? totalTime / total : 0);
+        long avgCpuTime = total > 0 ? totalTime / total : 0;
+        impact.put("average_cpu_time_ms", avgCpuTime);
+        impact.put("averageCpuTimeMs", (double) avgCpuTime);  // v2.5.19: Camel case for JSON parsing
+
+        // v2.5.19: Memory usage - get current JVM memory used by Gateway
+        Runtime runtime = Runtime.getRuntime();
+        long usedMemory = runtime.totalMemory() - runtime.freeMemory();
+        double usedMemoryMb = usedMemory / (1024.0 * 1024.0);
+        impact.put("memory_usage_mb", Math.round(usedMemoryMb * 100.0) / 100.0);
+        impact.put("memoryUsageMb", Math.round(usedMemoryMb * 100.0) / 100.0);  // v2.5.19: Camel case for JSON parsing
 
         // Pool contention (wait time indicates resource pressure)
         int waitCount = poolWaitCount.get();
@@ -255,6 +264,29 @@ public class Python3MetricsCollector {
             impactLevel = "LOW";
         }
         impact.put("impact_level", impactLevel);
+        impact.put("impactLevel", impactLevel);  // v2.5.19: Camel case for JSON parsing
+
+        // v2.5.19: Health score calculation (0-100)
+        int healthScore = 100;
+        if (poolUtil > 85) {
+            healthScore -= 30;
+        } else if (poolUtil > 60) {
+            healthScore -= 15;
+        }
+        if (executionRate > 50) {
+            healthScore -= 20;
+        } else if (executionRate > 20) {
+            healthScore -= 10;
+        }
+        long failedCount = failedExecutions.get();
+        double successRate = total > 0 ? (double) (total - failedCount) / total * 100.0 : 100.0;
+        if (successRate < 90) {
+            healthScore -= 20;
+        } else if (successRate < 95) {
+            healthScore -= 10;
+        }
+        impact.put("health_score", Math.max(0, healthScore));
+        impact.put("healthScore", Math.max(0, healthScore));  // v2.5.19: Camel case for JSON parsing
 
         return impact;
     }

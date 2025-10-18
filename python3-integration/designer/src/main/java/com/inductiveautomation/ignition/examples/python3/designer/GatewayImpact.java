@@ -5,9 +5,11 @@ package com.inductiveautomation.ignition.examples.python3.designer;
  * Contains impact level classification and overall health score.
  */
 public class GatewayImpact {
-    private String impactLevel;      // LOW, MODERATE, HIGH, CRITICAL
-    private int healthScore;         // 0-100
+    private String impactLevel;          // LOW, MODERATE, HIGH, CRITICAL
+    private int healthScore;             // 0-100
     private String recommendation;
+    private Double memoryUsageMb;        // v2.5.19: RAM usage in MB
+    private Double averageCpuTimeMs;     // v2.5.19: Average CPU time in milliseconds
 
     public GatewayImpact() {
     }
@@ -42,12 +44,31 @@ public class GatewayImpact {
         this.recommendation = recommendation;
     }
 
+    // v2.5.19: Getters and setters for memory and CPU usage
+    public Double getMemoryUsageMb() {
+        return memoryUsageMb;
+    }
+
+    public void setMemoryUsageMb(Double memoryUsageMb) {
+        this.memoryUsageMb = memoryUsageMb;
+    }
+
+    public Double getAverageCpuTimeMs() {
+        return averageCpuTimeMs;
+    }
+
+    public void setAverageCpuTimeMs(Double averageCpuTimeMs) {
+        this.averageCpuTimeMs = averageCpuTimeMs;
+    }
+
     @Override
     public String toString() {
         return "GatewayImpact{" +
                 "impactLevel='" + impactLevel + '\'' +
                 ", healthScore=" + healthScore +
                 ", recommendation='" + recommendation + '\'' +
+                ", memoryUsageMb=" + memoryUsageMb +
+                ", averageCpuTimeMs=" + averageCpuTimeMs +
                 '}';
     }
 }
