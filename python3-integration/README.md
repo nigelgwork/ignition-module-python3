@@ -1,6 +1,6 @@
 # Python 3 Integration Module for Ignition
 
-**Current Version: v2.3.1** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
+**Current Version: v2.3.2** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
 
 This module enables Python 3 scripting functions in Ignition 8.3+, allowing you to use modern Python 3 features and libraries alongside Ignition's built-in Jython 2.7 environment.
 
@@ -582,6 +582,22 @@ Built using the Ignition SDK:
 - https://www.sdk-docs.inductiveautomation.com/
 
 ## Changelog
+
+### 2.3.2 (Comprehensive Dark Theme Fix)
+- **FIXED**: JSplitPane dividers now properly themed (no more light gray)
+- **FIXED**: JScrollPane backgrounds now match dark theme
+- **FIXED**: All borders now use theme colors consistently
+- **FIXED**: Viewport backgrounds properly themed
+- **IMPROVED**: Comprehensive UIManager settings for ALL Swing components
+  - ScrollBar (background, track, thumb colors)
+  - SplitPane (divider, shadows, borders)
+  - Borders (TitledBorder, general borders)
+  - ComboBox, Tree, List, Table components
+  - Menu and PopupMenu components
+  - All text components (TextField, TextArea)
+- **IMPROVED**: Light theme also updated with comprehensive settings
+- **UX**: Complete visual consistency across all UI elements
+- **UX**: No more light gray components showing through dark theme
 
 ### 2.3.1 (UX Improvements + Auto-install Jedi)
 - **NEW**: Jedi package automatically installed on module startup for autocomplete

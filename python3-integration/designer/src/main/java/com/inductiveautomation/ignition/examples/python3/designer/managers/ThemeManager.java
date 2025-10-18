@@ -121,32 +121,209 @@ public class ThemeManager {
 
     private void applyDarkDialogTheme() {
         // UX Fix v2.0.9: Enhanced dialog theming for consistent dark theme
+        // UX Fix v2.3.2: Comprehensive dark theme for ALL Swing components
+
+        // Dialog components
         UIManager.put("OptionPane.background", ModernTheme.PANEL_BACKGROUND);
         UIManager.put("OptionPane.messageForeground", ModernTheme.FOREGROUND_PRIMARY);
         UIManager.put("OptionPane.messagebackground", ModernTheme.PANEL_BACKGROUND);
+
+        // Panel and container backgrounds
         UIManager.put("Panel.background", ModernTheme.PANEL_BACKGROUND);
+        UIManager.put("control", ModernTheme.PANEL_BACKGROUND);
+
+        // Text fields
         UIManager.put("TextField.background", ModernTheme.BACKGROUND_DARKER);
         UIManager.put("TextField.foreground", ModernTheme.FOREGROUND_PRIMARY);
         UIManager.put("TextField.caretForeground", ModernTheme.FOREGROUND_PRIMARY);
         UIManager.put("TextField.selectionBackground", ModernTheme.ACCENT_PRIMARY);
         UIManager.put("TextField.selectionForeground", Color.WHITE);
         UIManager.put("TextField.border", BorderFactory.createLineBorder(ModernTheme.BORDER_DEFAULT));
+        UIManager.put("TextField.inactiveForeground", ModernTheme.FOREGROUND_SECONDARY);
+
+        // Text areas
+        UIManager.put("TextArea.background", ModernTheme.BACKGROUND_DARKER);
+        UIManager.put("TextArea.foreground", ModernTheme.FOREGROUND_PRIMARY);
+        UIManager.put("TextArea.caretForeground", ModernTheme.FOREGROUND_PRIMARY);
+        UIManager.put("TextArea.selectionBackground", ModernTheme.ACCENT_PRIMARY);
+        UIManager.put("TextArea.selectionForeground", Color.WHITE);
+
+        // Labels
         UIManager.put("Label.foreground", ModernTheme.FOREGROUND_PRIMARY);
         UIManager.put("Label.background", ModernTheme.PANEL_BACKGROUND);
+        UIManager.put("Label.disabledForeground", ModernTheme.FOREGROUND_SECONDARY);
+
+        // Buttons
         UIManager.put("Button.background", ModernTheme.BUTTON_BACKGROUND);
         UIManager.put("Button.foreground", ModernTheme.FOREGROUND_PRIMARY);
         UIManager.put("Button.select", ModernTheme.BUTTON_HOVER);
+        UIManager.put("Button.focus", ModernTheme.ACCENT_PRIMARY);
+
+        // ComboBox
+        UIManager.put("ComboBox.background", ModernTheme.BACKGROUND_DARKER);
+        UIManager.put("ComboBox.foreground", ModernTheme.FOREGROUND_PRIMARY);
+        UIManager.put("ComboBox.selectionBackground", ModernTheme.ACCENT_PRIMARY);
+        UIManager.put("ComboBox.selectionForeground", Color.WHITE);
+        UIManager.put("ComboBox.buttonBackground", ModernTheme.BUTTON_BACKGROUND);
+        UIManager.put("ComboBox.buttonDarkShadow", ModernTheme.BORDER_DEFAULT);
+
+        // Tree
+        UIManager.put("Tree.background", ModernTheme.TREE_BACKGROUND);
+        UIManager.put("Tree.foreground", ModernTheme.FOREGROUND_PRIMARY);
+        UIManager.put("Tree.textBackground", ModernTheme.TREE_BACKGROUND);
+        UIManager.put("Tree.textForeground", ModernTheme.FOREGROUND_PRIMARY);
+        UIManager.put("Tree.selectionBackground", ModernTheme.ACCENT_PRIMARY);
+        UIManager.put("Tree.selectionForeground", Color.WHITE);
+        UIManager.put("Tree.selectionBorderColor", ModernTheme.ACCENT_PRIMARY);
+
+        // ScrollPane - CRITICAL FIX for light gray backgrounds
+        UIManager.put("ScrollPane.background", ModernTheme.BACKGROUND_DARK);
+        UIManager.put("ScrollPane.foreground", ModernTheme.FOREGROUND_PRIMARY);
+        UIManager.put("ScrollPane.border", BorderFactory.createLineBorder(ModernTheme.BORDER_DEFAULT));
+
+        // ScrollBar
+        UIManager.put("ScrollBar.background", ModernTheme.BACKGROUND_DARKER);
+        UIManager.put("ScrollBar.foreground", ModernTheme.FOREGROUND_SECONDARY);
+        UIManager.put("ScrollBar.thumb", ModernTheme.FOREGROUND_SECONDARY);
+        UIManager.put("ScrollBar.thumbDarkShadow", ModernTheme.BORDER_DEFAULT);
+        UIManager.put("ScrollBar.thumbHighlight", ModernTheme.FOREGROUND_PRIMARY);
+        UIManager.put("ScrollBar.thumbShadow", ModernTheme.BACKGROUND_DARKER);
+        UIManager.put("ScrollBar.track", ModernTheme.BACKGROUND_DARKER);
+        UIManager.put("ScrollBar.trackHighlight", ModernTheme.BACKGROUND_DARK);
+
+        // SplitPane - CRITICAL FIX for light gray dividers
+        UIManager.put("SplitPane.background", ModernTheme.BACKGROUND_DARK);
+        UIManager.put("SplitPane.dividerSize", 5);
+        UIManager.put("SplitPane.border", BorderFactory.createEmptyBorder());
+        UIManager.put("SplitPaneDivider.border", BorderFactory.createEmptyBorder());
+        UIManager.put("SplitPane.dividerFocusColor", ModernTheme.BACKGROUND_DARKER);
+        UIManager.put("SplitPane.highlight", ModernTheme.BACKGROUND_DARKER);
+        UIManager.put("SplitPane.shadow", ModernTheme.BACKGROUND_DARKER);
+        UIManager.put("SplitPane.darkShadow", ModernTheme.BACKGROUND_DARKER);
+
+        // Borders - CRITICAL FIX for light borders
+        UIManager.put("TitledBorder.border", BorderFactory.createLineBorder(ModernTheme.BORDER_DEFAULT));
+        UIManager.put("TitledBorder.titleColor", ModernTheme.FOREGROUND_PRIMARY);
+        UIManager.put("Border.color", ModernTheme.BORDER_DEFAULT);
+
+        // Viewport (scroll pane content area)
+        UIManager.put("Viewport.background", ModernTheme.BACKGROUND_DARK);
+        UIManager.put("Viewport.foreground", ModernTheme.FOREGROUND_PRIMARY);
+
+        // Menu components (if any)
+        UIManager.put("Menu.background", ModernTheme.PANEL_BACKGROUND);
+        UIManager.put("Menu.foreground", ModernTheme.FOREGROUND_PRIMARY);
+        UIManager.put("MenuItem.background", ModernTheme.PANEL_BACKGROUND);
+        UIManager.put("MenuItem.foreground", ModernTheme.FOREGROUND_PRIMARY);
+        UIManager.put("MenuItem.selectionBackground", ModernTheme.ACCENT_PRIMARY);
+        UIManager.put("MenuItem.selectionForeground", Color.WHITE);
+        UIManager.put("PopupMenu.background", ModernTheme.PANEL_BACKGROUND);
+        UIManager.put("PopupMenu.border", BorderFactory.createLineBorder(ModernTheme.BORDER_DEFAULT));
+
+        // List components
+        UIManager.put("List.background", ModernTheme.BACKGROUND_DARKER);
+        UIManager.put("List.foreground", ModernTheme.FOREGROUND_PRIMARY);
+        UIManager.put("List.selectionBackground", ModernTheme.ACCENT_PRIMARY);
+        UIManager.put("List.selectionForeground", Color.WHITE);
+
+        // Table components (if any)
+        UIManager.put("Table.background", ModernTheme.BACKGROUND_DARKER);
+        UIManager.put("Table.foreground", ModernTheme.FOREGROUND_PRIMARY);
+        UIManager.put("Table.selectionBackground", ModernTheme.ACCENT_PRIMARY);
+        UIManager.put("Table.selectionForeground", Color.WHITE);
+        UIManager.put("Table.gridColor", ModernTheme.BORDER_DEFAULT);
+        UIManager.put("TableHeader.background", ModernTheme.PANEL_BACKGROUND);
+        UIManager.put("TableHeader.foreground", ModernTheme.FOREGROUND_PRIMARY);
     }
 
     private void applyLightDialogTheme() {
+        // Light theme - comprehensive UIManager settings (v2.3.2)
+        Color lightGray = new Color(238, 238, 238);
+        Color mediumGray = new Color(200, 200, 200);
+        Color accentBlue = new Color(51, 153, 255);
+
+        // Dialog components
         UIManager.put("OptionPane.background", Color.WHITE);
         UIManager.put("OptionPane.messageForeground", Color.BLACK);
+        UIManager.put("OptionPane.messagebackground", Color.WHITE);
+
+        // Panel and container backgrounds
         UIManager.put("Panel.background", Color.WHITE);
+        UIManager.put("control", Color.WHITE);
+
+        // Text fields
         UIManager.put("TextField.background", Color.WHITE);
         UIManager.put("TextField.foreground", Color.BLACK);
+        UIManager.put("TextField.caretForeground", Color.BLACK);
+        UIManager.put("TextField.selectionBackground", accentBlue);
+        UIManager.put("TextField.selectionForeground", Color.WHITE);
+
+        // Text areas
+        UIManager.put("TextArea.background", Color.WHITE);
+        UIManager.put("TextArea.foreground", Color.BLACK);
+        UIManager.put("TextArea.caretForeground", Color.BLACK);
+        UIManager.put("TextArea.selectionBackground", accentBlue);
+        UIManager.put("TextArea.selectionForeground", Color.WHITE);
+
+        // Labels
         UIManager.put("Label.foreground", Color.BLACK);
-        UIManager.put("Button.background", new Color(238, 238, 238));
+        UIManager.put("Label.background", Color.WHITE);
+
+        // Buttons
+        UIManager.put("Button.background", lightGray);
         UIManager.put("Button.foreground", Color.BLACK);
+        UIManager.put("Button.select", mediumGray);
+
+        // ComboBox
+        UIManager.put("ComboBox.background", Color.WHITE);
+        UIManager.put("ComboBox.foreground", Color.BLACK);
+        UIManager.put("ComboBox.selectionBackground", accentBlue);
+        UIManager.put("ComboBox.selectionForeground", Color.WHITE);
+
+        // Tree
+        UIManager.put("Tree.background", Color.WHITE);
+        UIManager.put("Tree.foreground", Color.BLACK);
+        UIManager.put("Tree.selectionBackground", accentBlue);
+        UIManager.put("Tree.selectionForeground", Color.WHITE);
+
+        // ScrollPane
+        UIManager.put("ScrollPane.background", Color.WHITE);
+        UIManager.put("ScrollPane.foreground", Color.BLACK);
+
+        // ScrollBar
+        UIManager.put("ScrollBar.background", lightGray);
+        UIManager.put("ScrollBar.track", lightGray);
+
+        // SplitPane
+        UIManager.put("SplitPane.background", Color.WHITE);
+        UIManager.put("SplitPane.dividerSize", 5);
+
+        // Viewport
+        UIManager.put("Viewport.background", Color.WHITE);
+        UIManager.put("Viewport.foreground", Color.BLACK);
+
+        // Menu components
+        UIManager.put("Menu.background", Color.WHITE);
+        UIManager.put("Menu.foreground", Color.BLACK);
+        UIManager.put("MenuItem.background", Color.WHITE);
+        UIManager.put("MenuItem.foreground", Color.BLACK);
+        UIManager.put("MenuItem.selectionBackground", accentBlue);
+        UIManager.put("MenuItem.selectionForeground", Color.WHITE);
+        UIManager.put("PopupMenu.background", Color.WHITE);
+
+        // List components
+        UIManager.put("List.background", Color.WHITE);
+        UIManager.put("List.foreground", Color.BLACK);
+        UIManager.put("List.selectionBackground", accentBlue);
+        UIManager.put("List.selectionForeground", Color.WHITE);
+
+        // Table components
+        UIManager.put("Table.background", Color.WHITE);
+        UIManager.put("Table.foreground", Color.BLACK);
+        UIManager.put("Table.selectionBackground", accentBlue);
+        UIManager.put("Table.selectionForeground", Color.WHITE);
+        UIManager.put("TableHeader.background", lightGray);
+        UIManager.put("TableHeader.foreground", Color.BLACK);
     }
 
     private void updateComponent(Component comp, Color background) {
