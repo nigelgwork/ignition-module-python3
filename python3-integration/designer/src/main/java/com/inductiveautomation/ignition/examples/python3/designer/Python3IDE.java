@@ -444,6 +444,10 @@ public class Python3IDE extends JPanel {
         RTextScrollPane editorScroll = new RTextScrollPane(codeEditor);
         editorScroll.setLineNumbersEnabled(true);
 
+        // v2.5.3: Apply minimal transparent scrollbars
+        applyTransparentScrollBar(editorScroll.getVerticalScrollBar());
+        applyTransparentScrollBar(editorScroll.getHorizontalScrollBar());
+
         JPanel editorContainer = new JPanel(new BorderLayout());
         editorContainer.setBackground(ModernTheme.PANEL_BACKGROUND);
         editorContainer.setBorder(BorderFactory.createCompoundBorder(
@@ -474,6 +478,11 @@ public class Python3IDE extends JPanel {
         outputScroll.setBorder(BorderFactory.createEmptyBorder());  // Remove border to prevent white bars
         outputScroll.setBackground(ModernTheme.BACKGROUND_DARKER);
         outputScroll.getViewport().setBackground(ModernTheme.BACKGROUND_DARKER);
+
+        // v2.5.3: Apply minimal transparent scrollbars
+        applyTransparentScrollBar(outputScroll.getVerticalScrollBar());
+        applyTransparentScrollBar(outputScroll.getHorizontalScrollBar());
+
         outputTabs.addTab("Output", outputScroll);
 
         JScrollPane errorScroll = new JScrollPane(errorArea);
@@ -482,6 +491,11 @@ public class Python3IDE extends JPanel {
         errorScroll.setBorder(BorderFactory.createEmptyBorder());  // Remove border to prevent white bars
         errorScroll.setBackground(ModernTheme.BACKGROUND_DARKER);
         errorScroll.getViewport().setBackground(ModernTheme.BACKGROUND_DARKER);
+
+        // v2.5.3: Apply minimal transparent scrollbars
+        applyTransparentScrollBar(errorScroll.getVerticalScrollBar());
+        applyTransparentScrollBar(errorScroll.getHorizontalScrollBar());
+
         outputTabs.addTab("Errors", errorScroll);
 
         JPanel outputPanel = new JPanel(new BorderLayout());
@@ -3310,6 +3324,78 @@ public class Python3IDE extends JPanel {
 
             worker.execute();
         }
+    }
+
+    /**
+     * Applies completely transparent scrollbar with small grey rounded thumb only.
+     *
+     * v2.5.3: User-requested ultra-minimal scrollbars
+     * - Completely transparent track (no visible background)
+     * - No arrow buttons
+     * - Small grey rounded slider only
+     */
+    private void applyTransparentScrollBar(JScrollBar scrollBar) {
+        if (scrollBar == null) {
+            return;
+        }
+
+        // Make scrollbar background completely transparent
+        scrollBar.setOpaque(false);
+        scrollBar.setBackground(new Color(0, 0, 0, 0));  // Fully transparent
+        scrollBar.setUnitIncrement(16);  // Smooth scrolling
+
+        // Custom UI: transparent everything except small grey thumb
+        scrollBar.setUI(new javax.swing.plaf.basic.BasicScrollBarUI() {
+            @Override
+            protected JButton createDecreaseButton(int orientation) {
+                // No arrow buttons - return invisible button
+                JButton button = new JButton();
+                button.setPreferredSize(new Dimension(0, 0));
+                button.setMinimumSize(new Dimension(0, 0));
+                button.setMaximumSize(new Dimension(0, 0));
+                return button;
+            }
+
+            @Override
+            protected JButton createIncreaseButton(int orientation) {
+                // No arrow buttons - return invisible button
+                JButton button = new JButton();
+                button.setPreferredSize(new Dimension(0, 0));
+                button.setMinimumSize(new Dimension(0, 0));
+                button.setMaximumSize(new Dimension(0, 0));
+                return button;
+            }
+
+            @Override
+            protected void configureScrollBarColors() {
+                // Make track completely transparent
+                this.trackColor = new Color(0, 0, 0, 0);
+                this.thumbColor = new Color(120, 120, 120);  // Small grey thumb
+            }
+
+            @Override
+            protected void paintTrack(Graphics g, JComponent c, Rectangle trackBounds) {
+                // Completely transparent track - paint nothing
+            }
+
+            @Override
+            protected void paintThumb(Graphics g, JComponent c, Rectangle thumbBounds) {
+                if (thumbBounds.isEmpty() || !scrollbar.isEnabled()) {
+                    return;
+                }
+
+                Graphics2D g2 = (Graphics2D) g.create();
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+                                   RenderingHints.VALUE_ANTIALIAS_ON);
+
+                // Small grey rounded thumb
+                g2.setColor(new Color(120, 120, 120));
+                g2.fillRoundRect(thumbBounds.x, thumbBounds.y,
+                               thumbBounds.width, thumbBounds.height, 6, 6);
+
+                g2.dispose();
+            }
+        });
     }
 
     /**

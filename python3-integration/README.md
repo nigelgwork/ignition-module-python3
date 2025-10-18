@@ -1,6 +1,6 @@
 # Python 3 Integration Module for Ignition
 
-**Current Version: v2.5.2** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
+**Current Version: v2.5.3** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
 
 This module enables Python 3 scripting functions in Ignition 8.3+, allowing you to use modern Python 3 features and libraries alongside Ignition's built-in Jython 2.7 environment.
 
@@ -1004,6 +1004,23 @@ Built using the Ignition SDK:
 - https://www.sdk-docs.inductiveautomation.com/
 
 ## Changelog
+
+### 2.5.3 (UX Perfection - Transparent Scrollbars)
+- **FIXED**: Scrollbars completely transparent with small grey rounded slider only
+  - Applied transparent scrollbar UI to code editor scrollbars
+  - Applied transparent scrollbar UI to output/error panel scrollbars
+  - Completely invisible track (no background, no borders)
+  - No arrow buttons (size 0x0)
+  - Small grey rounded thumb (6px corner radius)
+  - Smooth antialiased rendering
+- **IMPROVED**: Consistent scrollbar styling across all panels
+  - Code editor scrollbars now match description/script browser style
+  - Output/error scrollbars ultra-minimal
+  - No visual distractions from content
+- **UX**: Ultra-minimal design matching Warp terminal aesthetics
+  - Only scrollbar thumb visible when scrolling
+  - 120,120,120 grey color for subtle appearance
+  - Completely seamless integration with dark theme
 
 ### 2.5.2 (Documentation Corrections - CRITICAL)
 - **FIXED**: Removed incorrect "unsigned modules" requirement
