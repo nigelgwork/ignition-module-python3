@@ -1,6 +1,6 @@
 # Python 3 Integration Module - Roadmap
 
-**Current Version:** v2.0.30
+**Current Version:** v2.1.0
 **Target Version:** v2.2.0 (Feature Parity + Advanced IDE)
 **Last Updated:** 2025-10-18
 
@@ -8,40 +8,36 @@
 
 ## 📊 Project Status
 
-**Overall Progress:** 100% Complete 🎉
+**Overall Progress:** 95% Complete (Phase 3 in progress)
 
 | Component | Status | Progress |
 |-----------|--------|----------|
 | **Core Module** | ✅ Done | 100% |
-| **Designer IDE** | ✅ Done | 100% |
+| **Designer IDE (Essential + Power User)** | ✅ Done | 100% |
+| **Designer IDE (Advanced Features)** | 🔄 In Progress | 50% |
 | **Documentation** | ✅ Done | 100% |
 
-**Remaining Effort:** 0 hours - All essential and power user features complete!
+**Remaining Effort:** 28 hours - Advanced syntax checking and auto-completion
 
 ---
 
-## 🎯 Current Status: v2.0.30 (Latest Release)
+## 🎯 Current Status: v2.1.0 (Latest Release)
 
-**Phase 2 Complete:** All Power User Features Delivered ✅
-**Actual Effort:** ~7 hours (vs 26 hours estimated)
+**Phase 3 In Progress:** Advanced Find/Replace Complete ✅
+**Actual Effort:** ~6 hours (as estimated)
 **Status:** ✅ Released
 
 ### Delivered Features:
-1. **Font Size Controls** (v2.0.28) ✅
-   - Added +/- buttons to toolbar for font size adjustment
-   - Tooltips with keyboard shortcut hints
-   - Persistence via existing preferences system
-   - Keyboard shortcuts (Ctrl++, Ctrl+-, Ctrl+0) already existed
-
-2. **Move Script Between Folders** (v2.0.29) ✅
-   - "Move to Folder..." context menu item
-   - Folder selection dialog with visual feedback
-   - Async move operation with status updates
-
-3. **Drag-and-Drop Organization** (v2.0.30) ✅
-   - Validated existing full drag-and-drop implementation
-   - Scripts and folders can be dragged to reorganize
-   - Visual feedback during drag operations
+1. **Advanced Find/Replace Dialog** (v2.1.0) ✅
+   - Separate dialog window with comprehensive features
+   - Regex pattern support for powerful searches
+   - Whole word matching option
+   - Search direction (forward/backward)
+   - Find/Replace history (stores last 20 searches)
+   - Count matches feature
+   - Keyboard shortcuts (Ctrl+Shift+F, F3, Shift+F3, Escape)
+   - Modern dark theme styling
+   - Status feedback with color-coded messages
 
 ---
 
@@ -76,16 +72,16 @@
 
 ### **Phase 3: Advanced IDE** (v2.1.0 - v2.2.0) - Weeks 5-6
 
-| Version | Features | Effort | Priority |
-|---------|----------|--------|----------|
-| **v2.1.0** | Find/Replace Dialog (advanced options) | 6 hours | LOW |
-| **v2.2.0** | Real-time Syntax Checking + Auto-Completion (Jedi) | 28 hours | LOW |
+| Version | Features | Effort | Actual | Status |
+|---------|----------|--------|--------|--------|
+| **v2.1.0** | Find/Replace Dialog (advanced options) | 6 hours | 6 hours | ✅ Complete |
+| **v2.2.0** | Real-time Syntax Checking + Auto-Completion (Jedi) | 28 hours | TBD | ⏳ Next |
 
-**Total:** 34 hours
+**Total:** 34 hours | **Completed:** 6 hours | **Remaining:** 28 hours
 
 ---
 
-## ✅ Completed Features (v2.0.0 - v2.0.30)
+## ✅ Completed Features (v2.0.0 - v2.1.0)
 
 ### **Core Module** ✅
 - ✅ Python 3 subprocess process pool (3-20 warm processes)
@@ -118,6 +114,7 @@
 - ✅ **Font Size Controls** (A+/A- buttons, Ctrl++/Ctrl+-/Ctrl+0) - v2.0.28
 - ✅ **Move Script Between Folders** (context menu with folder picker) - v2.0.29
 - ✅ **Drag-and-Drop Organization** (scripts and folders) - v2.0.30
+- ✅ **Advanced Find/Replace Dialog** (regex, whole word, history, Ctrl+Shift+F) - v2.1.0
 
 ### **Code Quality** ✅
 - ✅ Checkstyle + OWASP dependency check
@@ -129,13 +126,7 @@
 
 ## ⏳ Remaining Features
 
-### **Phase 2: Power User** - 26 hours
-- ❌ Font Size Controls (v2.0.28) - 6 hours
-- ❌ Move Script Between Folders (v2.0.29) - 12 hours
-- ❌ Drag-and-Drop Organization (v2.0.30) - 8 hours
-
-### **Phase 3: Advanced IDE** (Optional) - 34 hours
-- ❌ Advanced Find/Replace Dialog (v2.1.0) - 6 hours
+### **Phase 3: Advanced IDE** - 28 hours remaining
 - ❌ Real-time Syntax Checking (v2.2.0) - 14 hours
 - ❌ Intelligent Auto-Completion with Jedi (v2.2.0) - 14 hours
 
@@ -147,10 +138,11 @@
 |------|-----------|----------|--------|
 | **1-2** | Essential UI + Autocomplete | v2.0.24 - v2.0.27 | ✅ Complete |
 | **3** | Font + Move + Drag-and-Drop | v2.0.28 - v2.0.30 | ✅ Complete |
-| **4+** | Advanced IDE (Optional) | v2.1.0 - v2.2.0 | 📋 Optional Future |
+| **4** | Advanced Find/Replace Dialog | v2.1.0 | ✅ Complete |
+| **5-6** | Syntax Checking + Auto-Completion | v2.2.0 | ⏳ Next |
 
-**Completed:** Phase 1 + Phase 2 (v2.0.24 - v2.0.30) ✅
-**Remaining:** Phase 3 (34 hours, optional advanced features)
+**Completed:** Phase 1 + Phase 2 + v2.1.0 (v2.0.24 - v2.1.0) ✅
+**Remaining:** v2.2.0 (28 hours, syntax checking and intelligent auto-completion)
 
 ---
 
@@ -164,30 +156,27 @@ For in-depth technical details, see:
 
 ---
 
-## 🎉 Phase 2 Complete - What's Next?
+## 🎉 v2.1.0 Complete - What's Next?
 
-**Current Status:** All essential and power user features are complete!
+**Current Status:** Advanced Find/Replace dialog complete! One more feature to go.
 
-**If you want to continue with Phase 3 (Optional Advanced IDE Features):**
+**Remaining Phase 3 Feature:**
 
-1. **v2.1.0 - Advanced Find/Replace Dialog** (6 hours)
-   - Separate dialog window (vs current toolbar)
-   - Regex support
-   - Whole word matching
-   - Find/Replace history
+**v2.2.0 - Real-time Syntax Checking + Auto-Completion** (28 hours)
+- Real-time Python syntax checking with red squiggles
+- Yellow warnings for style issues
+- Intelligent auto-completion powered by Jedi
+- Context-aware completion suggestions
+- Function signature hints
+- Import statement suggestions
 
-2. **v2.2.0 - Syntax Checking + Auto-Completion** (28 hours)
-   - Real-time Python syntax checking
-   - Red squiggles for errors
-   - Intelligent auto-completion with Jedi
-   - Context-aware suggestions
-
-**Or you're done!** The module now has:
+**What you have now:**
 - ✅ All core functionality
 - ✅ Complete Designer IDE with essential features
 - ✅ Power user features (font controls, move, drag-and-drop)
+- ✅ Advanced Find/Replace with regex and history
 - ✅ Professional UX matching modern IDEs
 
 ---
 
-**Ready to continue with Phase 2!** 🚀
+**Ready to continue with v2.2.0!** 🚀

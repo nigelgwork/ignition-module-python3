@@ -1,6 +1,7 @@
 package com.inductiveautomation.ignition.examples.python3.designer;
 
 import com.inductiveautomation.ignition.designer.model.DesignerContext;
+import com.inductiveautomation.ignition.examples.python3.designer.ui.FindReplaceDialog;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rsyntaxtextarea.Theme;
@@ -110,6 +111,7 @@ public class Python3IDE extends JPanel {
     // Find/Replace Dialogs
     private FindDialog findDialog;
     private ReplaceDialog replaceDialog;
+    private FindReplaceDialog advancedFindReplaceDialog;
 
     // Unsaved Changes Tracking
     private UnsavedChangesTracker changesTracker;
@@ -693,6 +695,16 @@ public class Python3IDE extends JPanel {
             @Override
             public void actionPerformed(ActionEvent e) {
                 showReplaceDialog();
+            }
+        });
+
+        // Ctrl+Shift+F: Advanced Find/Replace
+        KeyStroke ctrlShiftF = KeyStroke.getKeyStroke("control shift F");
+        inputMap.put(ctrlShiftF, "advancedFindReplace");
+        actionMap.put("advancedFindReplace", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                showAdvancedFindReplaceDialog();
             }
         });
     }
@@ -2646,6 +2658,22 @@ public class Python3IDE extends JPanel {
         }
 
         replaceDialog.setVisible(true);
+    }
+
+    /**
+     * Shows the advanced Find/Replace dialog (v2.1.0).
+     * This dialog includes regex support, whole word matching, and search history.
+     */
+    private void showAdvancedFindReplaceDialog() {
+        if (advancedFindReplaceDialog == null) {
+            // Lazy initialization
+            advancedFindReplaceDialog = new FindReplaceDialog(
+                (JFrame) SwingUtilities.getWindowAncestor(this),
+                codeEditor
+            );
+        }
+
+        advancedFindReplaceDialog.showDialog();
     }
 
     /**

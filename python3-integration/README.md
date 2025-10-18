@@ -1,6 +1,6 @@
 # Python 3 Integration Module for Ignition
 
-**Current Version: v2.0.30** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
+**Current Version: v2.1.0** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
 
 This module enables Python 3 scripting functions in Ignition 8.3+, allowing you to use modern Python 3 features and libraries alongside Ignition's built-in Jython 2.7 environment.
 
@@ -582,6 +582,19 @@ Built using the Ignition SDK:
 - https://www.sdk-docs.inductiveautomation.com/
 
 ## Changelog
+
+### 2.1.0 (Advanced Find/Replace Dialog)
+- **NEW**: Advanced Find/Replace dialog with comprehensive features
+- **NEW**: Regex pattern support for powerful search capabilities
+- **NEW**: Whole word matching option
+- **NEW**: Search direction (forward/backward)
+- **NEW**: Find/Replace history with combo boxes (stores last 20 searches)
+- **NEW**: Count matches feature to see total occurrences
+- **NEW**: Keyboard shortcut Ctrl+Shift+F to open advanced dialog
+- **NEW**: Additional shortcuts: F3 (Find Next), Shift+F3 (Find Previous), Escape (Close)
+- **IMPROVED**: Modern dark theme styling for dialog
+- **IMPROVED**: Status feedback with color-coded messages
+- **DOCS**: Phase 3 implementation begins (Advanced IDE Features)
 
 ### 2.0.30 (Drag-and-Drop Organization - Validated)
 - **VALIDATED**: Drag-and-drop already fully implemented via ScriptTreeTransferHandler
