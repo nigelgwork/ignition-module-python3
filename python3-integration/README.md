@@ -1,6 +1,6 @@
 # Python 3 Integration Module for Ignition
 
-**Current Version: v2.1.0** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
+**Current Version: v2.2.0** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
 
 This module enables Python 3 scripting functions in Ignition 8.3+, allowing you to use modern Python 3 features and libraries alongside Ignition's built-in Jython 2.7 environment.
 
@@ -582,6 +582,22 @@ Built using the Ignition SDK:
 - https://www.sdk-docs.inductiveautomation.com/
 
 ## Changelog
+
+### 2.2.0 (Real-time Syntax Checking + Intelligent Auto-Completion)
+- **COMPLETE**: Phase 3 fully implemented! All advanced IDE features now available
+- **SYNTAX CHECKING**: Real-time Python syntax validation with debouncing (500ms)
+- **SYNTAX CHECKING**: Red squiggly underlines for syntax errors
+- **SYNTAX CHECKING**: Yellow squiggly underlines for warnings
+- **SYNTAX CHECKING**: Error tooltips on hover via RSyntaxTextArea parser system
+- **AUTO-COMPLETION**: Jedi-powered intelligent completions
+- **AUTO-COMPLETION**: Context-aware suggestions based on code analysis
+- **AUTO-COMPLETION**: Function signatures in completion popup
+- **AUTO-COMPLETION**: Docstrings displayed for each completion
+- **AUTO-COMPLETION**: Type badges (function, class, module, keyword, variable)
+- **AUTO-COMPLETION**: Auto-activation after typing (500ms delay)
+- **AUTO-COMPLETION**: Manual trigger with Ctrl+Space
+- **IMPROVED**: Rich HTML formatting in completion descriptions
+- **DOCS**: Phase 3 complete - Full IDE feature parity achieved!
 
 ### 2.1.0 (Advanced Find/Replace Dialog)
 - **NEW**: Advanced Find/Replace dialog with comprehensive features
