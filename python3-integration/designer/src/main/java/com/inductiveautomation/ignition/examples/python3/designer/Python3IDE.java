@@ -104,6 +104,8 @@ public class Python3IDE extends JPanel {
 
     // Editor container (v2.5.5 - made instance var for dynamic title updates)
     private JPanel editorContainer;
+    private TerminalPanel terminalPanel;  // v2.5.9: True terminal UI
+    private JPanel centerPanel;  // v2.5.9: Container that switches between editor and terminal
     private TitledBorder editorTitledBorder;
 
     // Split panes (v2.0.22 - made instance vars for theme updates)
@@ -475,17 +477,26 @@ public class Python3IDE extends JPanel {
                 TitledBorder.DEFAULT_POSITION,
                 ModernTheme.FONT_REGULAR,
                 ModernTheme.FOREGROUND_PRIMARY);
-        editorContainer.setBorder(BorderFactory.createCompoundBorder(
-                editorTitledBorder,
-                BorderFactory.createEmptyBorder(5, 5, 5, 5)
-        ));
+        // v2.5.9: Removed empty border to eliminate white padding
+        editorContainer.setBorder(editorTitledBorder);
 
         // Add current script indicator at top
         editorContainer.add(currentScriptLabel, BorderLayout.NORTH);
         editorContainer.add(editorScroll, BorderLayout.CENTER);
 
+        // v2.5.9: Create terminal panel for true terminal UX
+        terminalPanel = new TerminalPanel(this::executeTerminalCommand);
+
+        // v2.5.9: Create center panel with CardLayout to switch between editor and terminal
+        centerPanel = new JPanel(new CardLayout());
+        centerPanel.add(editorContainer, "EDITOR");
+        centerPanel.add(terminalPanel, "TERMINAL");
+
+        // Start with editor view
+        ((CardLayout) centerPanel.getLayout()).show(centerPanel, "EDITOR");
+
         // Toolbar removed - buttons moved to top toolbar (v2.0.16 UX improvement)
-        panel.add(editorContainer, BorderLayout.CENTER);
+        panel.add(centerPanel, BorderLayout.CENTER);
 
         // Output tabs
         outputTabs = new JTabbedPane();
@@ -524,15 +535,13 @@ public class Python3IDE extends JPanel {
 
         JPanel outputPanel = new JPanel(new BorderLayout());
         outputPanel.setBackground(ModernTheme.PANEL_BACKGROUND);
-        outputPanel.setBorder(BorderFactory.createCompoundBorder(
-                new TitledBorder(BorderFactory.createLineBorder(ModernTheme.BORDER_DEFAULT),
-                        "Execution Results",
-                        TitledBorder.DEFAULT_JUSTIFICATION,
-                        TitledBorder.DEFAULT_POSITION,
-                        ModernTheme.FONT_REGULAR,
-                        ModernTheme.FOREGROUND_PRIMARY),
-                BorderFactory.createEmptyBorder(5, 5, 5, 5)
-        ));
+        // v2.5.9: Removed empty border to eliminate white padding
+        outputPanel.setBorder(new TitledBorder(BorderFactory.createLineBorder(ModernTheme.BORDER_DEFAULT),
+                "Execution Results",
+                TitledBorder.DEFAULT_JUSTIFICATION,
+                TitledBorder.DEFAULT_POSITION,
+                ModernTheme.FONT_REGULAR,
+                ModernTheme.FOREGROUND_PRIMARY));
         outputPanel.add(outputTabs, BorderLayout.CENTER);
 
         // Split execution results (left 75%) and diagnostics (right 25%) with themed UI (v2.3.3)
@@ -951,19 +960,30 @@ public class Python3IDE extends JPanel {
         boolean isTerminalMode = "Terminal".equals(executionModeCombo.getSelectedItem());
 
         if (isTerminalMode) {
-            // Terminal mode: Switch to plain text style (no syntax highlighting)
-            codeEditor.setSyntaxEditingStyle(org.fife.ui.rsyntaxtextarea.SyntaxConstants.SYNTAX_STYLE_NONE);
-            codeEditor.setBackground(new Color(10, 10, 10));  // Darker background for terminal feel
-            codeEditor.setCurrentLineHighlightColor(new Color(20, 20, 20));
-            codeEditor.setFont(new Font("Monospaced", Font.PLAIN, fontSize));  // Monospace font for terminal
+            // v2.5.9: Switch to terminal panel view
+            ((CardLayout) centerPanel.getLayout()).show(centerPanel, "TERMINAL");
 
-            // v2.5.5/v2.5.6: Update editor panel title and current script label
-            editorTitledBorder.setTitle("Terminal");
-            currentScriptLabel.setText("Terminal - Interactive Shell Session");  // v2.5.8: Updated label
-            currentScriptLabel.setVisible(true);
+            // Create shell session if needed
+            if (interactiveShellSessionId == null && restClient != null) {
+                try {
+                    interactiveShellSessionId = restClient.createInteractiveShellSession();
+                    LOGGER.info("Created interactive shell session: {}", interactiveShellSessionId);
 
-            setStatus("Terminal mode: Interactive shell (session persists between commands)", new Color(100, 149, 237));  // Cornflower blue
+                    // Get initial working directory
+                    updateTerminalWorkingDirectory();
+                } catch (IOException e) {
+                    LOGGER.error("Failed to create interactive shell session", e);
+                }
+            }
+
+            // Focus the terminal command input
+            terminalPanel.focusCommandInput();
+
+            setStatus("Terminal mode: Interactive shell (type commands and press Enter)", new Color(100, 149, 237));
         } else {
+            // v2.5.9: Switch back to editor panel view
+            ((CardLayout) centerPanel.getLayout()).show(centerPanel, "EDITOR");
+
             // Switching from Terminal to Python - close shell session
             if (interactiveShellSessionId != null && restClient != null) {
                 try {
@@ -995,8 +1015,8 @@ public class Python3IDE extends JPanel {
             setStatus("Python Code mode: Write Python 3 code", new Color(100, 149, 237));
         }
 
-        editorContainer.repaint();  // Repaint to update title
-        codeEditor.repaint();
+        centerPanel.revalidate();
+        centerPanel.repaint();
     }
 
     /**
@@ -1005,6 +1025,87 @@ public class Python3IDE extends JPanel {
     private void clearOutput() {
         outputArea.setText("");
         errorArea.setText("");
+    }
+
+    /**
+     * Executes a terminal command (called from TerminalPanel).
+     *
+     * v2.5.9: Terminal command execution with inline output
+     */
+    private void executeTerminalCommand(String command) {
+        if (restClient == null || interactiveShellSessionId == null) {
+            terminalPanel.appendOutput("ERROR: Not connected or no session");
+            return;
+        }
+
+        // Execute command in background
+        SwingWorker<String, Void> worker = new SwingWorker<String, Void>() {
+            @Override
+            protected String doInBackground() throws Exception {
+                ExecutionResult result = restClient.executeInteractiveShellCommand(interactiveShellSessionId, command);
+                return result.getResult();
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    String output = get();
+                    terminalPanel.appendOutput(output != null ? output : "");
+
+                    // Update working directory if command was cd
+                    if (command.trim().startsWith("cd ")) {
+                        updateTerminalWorkingDirectory();
+                    }
+                } catch (Exception e) {
+                    terminalPanel.appendOutput("ERROR: " + e.getMessage());
+                    LOGGER.error("Terminal command execution failed", e);
+                }
+            }
+        };
+
+        worker.execute();
+    }
+
+    /**
+     * Updates the terminal prompt with current working directory.
+     *
+     * v2.5.9: Fetch pwd and update terminal prompt
+     */
+    private void updateTerminalWorkingDirectory() {
+        if (restClient == null || interactiveShellSessionId == null) {
+            return;
+        }
+
+        // Execute pwd command to get current directory
+        SwingWorker<String, Void> worker = new SwingWorker<String, Void>() {
+            @Override
+            protected String doInBackground() throws Exception {
+                // Detect OS
+                String os = System.getProperty("os.name").toLowerCase();
+                String pwdCommand = os.contains("win") ? "cd" : "pwd";
+
+                ExecutionResult result = restClient.executeInteractiveShellCommand(interactiveShellSessionId, pwdCommand);
+                return result.getResult();
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    String pwd = get();
+                    if (pwd != null && !pwd.isEmpty()) {
+                        // Clean up output (remove trailing newlines, etc.)
+                        pwd = pwd.trim();
+                        if (!pwd.isEmpty()) {
+                            terminalPanel.updateWorkingDirectory(pwd);
+                        }
+                    }
+                } catch (Exception e) {
+                    LOGGER.error("Failed to get working directory", e);
+                }
+            }
+        };
+
+        worker.execute();
     }
 
     /**

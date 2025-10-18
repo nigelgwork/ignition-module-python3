@@ -1,6 +1,6 @@
 # Python 3 Integration Module for Ignition
 
-**Current Version: v2.5.8** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
+**Current Version: v2.5.9** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
 
 This module enables Python 3 scripting functions in Ignition 8.3+, allowing you to use modern Python 3 features and libraries alongside Ignition's built-in Jython 2.7 environment.
 
@@ -1004,6 +1004,49 @@ Built using the Ignition SDK:
 - https://www.sdk-docs.inductiveautomation.com/
 
 ## Changelog
+
+### 2.5.9 (UX Perfection - True Terminal Experience + Borderless Windows)
+- **NEW**: True terminal-style interface in Terminal mode
+  - Single scrolling view with inline command/output history
+  - Command input at bottom with prompt showing `user@host:/path$ `
+  - Enter key executes commands directly
+  - Output appears inline after command (like a real terminal)
+  - Type 'clear' to clear terminal history
+  - No more separate output window - everything in one view
+- **NEW**: TerminalPanel.java component (184 lines)
+  - JTextArea for history display (non-editable)
+  - JTextField for command input at bottom
+  - Real-time working directory tracking
+  - Terminal prompt updates after 'cd' commands
+  - Consumer callback pattern for command execution
+  - Welcome message on startup
+- **FIXED**: Removed white borders from code editor and output windows
+  - User feedback: "The white borders around those 2 windows are still there"
+  - Removed BorderFactory.createEmptyBorder(5,5,5,5) padding
+  - Code editor panel: kept titled border only, removed compound border
+  - Output/error panel: kept titled border only, removed compound border
+  - Perfect visual harmony - zero white padding/borders
+- **IMPROVED**: Terminal UX matches user expectations
+  - User feedback: "I was expecting... I could use it like any other terminal where I hit enter and the responses are inline"
+  - CardLayout switches between editor view and terminal view
+  - Terminal mode: shows TerminalPanel (inline output)
+  - Python Code mode: shows traditional editor + output tabs
+  - Seamless switching between execution modes
+- **IMPROVED**: Working directory tracking
+  - Auto-fetches pwd (Unix) or cd (Windows) on session start
+  - Updates terminal prompt with current directory
+  - Detects 'cd' commands and refreshes prompt
+  - Shows user@ignition:/path$ format
+- **TECHNICAL**: CardLayout for view switching
+  - centerPanel contains both editorContainer and terminalPanel
+  - onExecutionModeChanged() switches views based on mode
+  - Terminal mode: creates shell session, updates pwd
+  - Python Code mode: closes shell session, returns to editor
+- **TECHNICAL**: Interactive shell integration
+  - executeTerminalCommand() callback from TerminalPanel
+  - SwingWorker for async command execution
+  - updateTerminalWorkingDirectory() refreshes prompt
+  - Session cleanup when switching modes
 
 ### 2.5.8 (Major UX Update - Interactive Shell + Invisible Scrolling)
 - **NEW**: Interactive shell sessions in Terminal mode
