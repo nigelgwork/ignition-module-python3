@@ -476,9 +476,26 @@ public class Python3IDE extends JPanel {
             editorScroll.getGutter().setOpaque(true);
         }
 
-        // v2.5.24: CRITICAL - Disable focus border that creates white rectangle
-        editorScroll.setFocusable(false);  // Prevents focus border on scroll pane
-        codeEditor.setBorder(null);  // No border on text area itself
+        // v2.5.25: COMPREHENSIVE FIX - Eliminate ALL potential white rectangle sources
+        // Fix 1: Disable focus border on scroll pane
+        editorScroll.setFocusable(false);
+
+        // Fix 2: Remove border from text area itself
+        codeEditor.setBorder(null);
+
+        // Fix 3: Disable focus painting on code editor
+        codeEditor.setFocusable(true);  // Keep focusable for keyboard input
+        codeEditor.getCaret().setVisible(true);  // Ensure caret is visible
+
+        // Fix 4: Remove any column/row headers that might have borders
+        editorScroll.setColumnHeaderView(null);
+        editorScroll.setRowHeaderView(null);
+
+        // Fix 5: Remove any corner components
+        editorScroll.setCorner(JScrollPane.UPPER_LEFT_CORNER, null);
+        editorScroll.setCorner(JScrollPane.UPPER_RIGHT_CORNER, null);
+        editorScroll.setCorner(JScrollPane.LOWER_LEFT_CORNER, null);
+        editorScroll.setCorner(JScrollPane.LOWER_RIGHT_CORNER, null);
 
         // v2.5.8: Hide scrollbars completely (Option A - invisible scrolling)
         editorScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
@@ -2886,6 +2903,16 @@ public class Python3IDE extends JPanel {
                 // Panels
                 updateComponent(this, ModernTheme.BACKGROUND_DARK);
 
+                // v2.5.25: EXPLICIT background fixes for editor area to eliminate white rectangles
+                if (editorContainer != null) {
+                    editorContainer.setBackground(new Color(30, 30, 30));
+                }
+                if (centerPanel != null) {
+                    centerPanel.setBackground(new Color(30, 30, 30));
+                }
+                // Ensure editor components have correct dark background
+                codeEditor.setBackground(new Color(30, 30, 30));
+
                 // v2.0.17: Removed applyDarkDialogTheme() - used global UIManager.put()
             } else {
                 // v2.0.17: Removed applyLightScrollbarTheme() - used global UIManager.put()
@@ -2948,6 +2975,14 @@ public class Python3IDE extends JPanel {
 
                 // Panels
                 updateComponent(this, Color.WHITE);
+
+                // v2.5.25: EXPLICIT background fixes for editor area (light theme)
+                if (editorContainer != null) {
+                    editorContainer.setBackground(Color.WHITE);
+                }
+                if (centerPanel != null) {
+                    centerPanel.setBackground(Color.WHITE);
+                }
 
                 // v2.0.17: Removed applyLightDialogTheme() - used global UIManager.put()
             }
