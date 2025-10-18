@@ -1,6 +1,6 @@
 # Python 3 Integration Module for Ignition
 
-**Current Version: v2.3.2** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
+**Current Version: v2.4.0** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
 
 This module enables Python 3 scripting functions in Ignition 8.3+, allowing you to use modern Python 3 features and libraries alongside Ignition's built-in Jython 2.7 environment.
 
@@ -610,6 +610,29 @@ Built using the Ignition SDK:
 - https://www.sdk-docs.inductiveautomation.com/
 
 ## Changelog
+
+### 2.4.0 (Modern UX Polish - Sleek Scrollbars & Autocomplete Diagnostics)
+- **NEW**: Modern sleek scrollbars with minimal design
+  - Thin, semi-transparent scrollbar thumbs (8px base, 10px on hover)
+  - Rounded corners for modern aesthetic
+  - Invisible track for clean look
+  - Smooth hover effects
+  - Matches VS Code / IntelliJ style
+- **NEW**: Autocomplete status indicator in status bar
+  - Shows "AC: Ready" when Jedi is available
+  - Shows "AC: No Jedi" with installation instructions when unavailable
+  - Helpful tooltip: "Ctrl+Space to trigger"
+  - Real-time status updates
+- **FIXED**: White borders on code editor and output areas now blend with dark theme
+  - All scroll panes now use `BORDER_DEFAULT` color
+  - Consistent with description area border style
+  - Clean, seamless appearance
+- **IMPROVED**: Better autocomplete error handling
+  - Distinguishes between Jedi not installed vs temporary failures
+  - 1-minute cooldown after errors to prevent spam
+  - Clear user feedback about autocomplete availability
+- **UX**: Smoother scrolling with increased unit increment (16px)
+- **UX**: All visual elements now harmonized for sleek, modern IDE feel
 
 ### 2.3.2 (Comprehensive Dark Theme Fix)
 - **FIXED**: JSplitPane dividers now properly themed (no more light gray)

@@ -15,14 +15,44 @@ import java.util.List;
 /**
  * Custom completion provider for Python code that uses the Gateway's Jedi-powered
  * completion engine to provide intelligent auto-completion suggestions.
+ *
+ * v2.4.0: Enhanced error handling and diagnostics
  */
 public class Python3CompletionProvider extends DefaultCompletionProvider {
     private static final Logger LOGGER = LoggerFactory.getLogger(Python3CompletionProvider.class);
 
     private final Python3RestClient restClient;
+    private boolean jediAvailable = true;  // Assume available until proven otherwise
+    private long lastFailureTime = 0;
+    private static final long FAILURE_COOLDOWN = 60000;  // 1 minute cooldown after failures
 
     public Python3CompletionProvider(Python3RestClient restClient) {
         this.restClient = restClient;
+    }
+
+    /**
+     * Returns true if autocomplete is currently available.
+     *
+     * @return true if Jedi is available, false otherwise
+     */
+    public boolean isAvailable() {
+        return jediAvailable && (System.currentTimeMillis() - lastFailureTime > FAILURE_COOLDOWN);
+    }
+
+    /**
+     * Returns a status message about autocomplete availability.
+     *
+     * @return status message
+     */
+    public String getStatusMessage() {
+        if (!jediAvailable) {
+            return "Autocomplete unavailable (Jedi not installed)";
+        } else if (System.currentTimeMillis() - lastFailureTime < FAILURE_COOLDOWN) {
+            long secondsRemaining = (FAILURE_COOLDOWN - (System.currentTimeMillis() - lastFailureTime)) / 1000;
+            return "Autocomplete temporarily disabled (" + secondsRemaining + "s cooldown)";
+        } else {
+            return "Autocomplete ready (Ctrl+Space)";
+        }
     }
 
     @Override
@@ -65,10 +95,29 @@ public class Python3CompletionProvider extends DefaultCompletionProvider {
 
             LOGGER.debug("Providing {} completions", completions.size());
 
+            // Mark Jedi as available if we got results successfully
+            if (!jediAvailable && !results.isEmpty()) {
+                jediAvailable = true;
+                LOGGER.info("Autocomplete now available (Jedi detected)");
+            }
+
         } catch (BadLocationException e) {
             LOGGER.error("Failed to get cursor position", e);
         } catch (Exception e) {
-            LOGGER.warn("Failed to get completions from Gateway", e);
+            // Distinguish between different error types
+            String errorMsg = e.getMessage() != null ? e.getMessage().toLowerCase() : "";
+
+            if (errorMsg.contains("jedi") || errorMsg.contains("not installed") || errorMsg.contains("module not found")) {
+                // Jedi not available
+                if (jediAvailable) {
+                    LOGGER.warn("Autocomplete unavailable: Jedi not installed on Gateway. Install with: pip install jedi");
+                    jediAvailable = false;
+                }
+            } else {
+                // Other error - temporary failure
+                LOGGER.debug("Failed to get completions from Gateway: {}", e.getMessage());
+                lastFailureTime = System.currentTimeMillis();
+            }
             // Return empty list on error - don't break the user experience
         }
 

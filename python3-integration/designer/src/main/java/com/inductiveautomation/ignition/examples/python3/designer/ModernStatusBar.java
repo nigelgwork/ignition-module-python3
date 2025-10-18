@@ -10,6 +10,7 @@ import java.awt.event.MouseEvent;
  * Shows cursor position, Python version, pool status, and other metadata.
  *
  * v1.17.2: Pool stats label is now clickable for adjusting pool size
+ * v2.4.0: Added autocomplete status indicator
  */
 public class ModernStatusBar extends JPanel {
     private final JLabel statusLabel;
@@ -17,6 +18,7 @@ public class ModernStatusBar extends JPanel {
     private final JLabel pythonVersionLabel;
     private final JLabel poolStatsLabel;
     private final JLabel connectionLabel;
+    private final JLabel autocompleteLabel;
     private PoolClickListener poolClickListener;
 
     /**
@@ -74,6 +76,10 @@ public class ModernStatusBar extends JPanel {
         pythonVersionLabel = createStatusLabel();
         pythonVersionLabel.setForeground(ModernTheme.FOREGROUND_SECONDARY);
 
+        autocompleteLabel = createStatusLabel();
+        autocompleteLabel.setForeground(ModernTheme.FOREGROUND_SECONDARY);
+        autocompleteLabel.setToolTipText("Autocomplete status (Ctrl+Space to trigger)");
+
         cursorPositionLabel = createStatusLabel();
         cursorPositionLabel.setForeground(ModernTheme.FOREGROUND_SECONDARY);
 
@@ -84,6 +90,8 @@ public class ModernStatusBar extends JPanel {
         rightPanel.add(createSeparator());
         rightPanel.add(pythonVersionLabel);
         rightPanel.add(createSeparator());
+        rightPanel.add(autocompleteLabel);
+        rightPanel.add(createSeparator());
         rightPanel.add(cursorPositionLabel);
 
         add(rightPanel, BorderLayout.EAST);
@@ -93,6 +101,7 @@ public class ModernStatusBar extends JPanel {
         setConnection("Not Connected");
         setPoolStats("Pool: --");
         setPythonVersion("Python: --");
+        setAutocomplete("AC: --", ModernTheme.FOREGROUND_SECONDARY);
         setCursorPosition(1, 1);
 
         setPreferredSize(new Dimension(0, 28));
@@ -177,6 +186,19 @@ public class ModernStatusBar extends JPanel {
      */
     public void setPythonVersion(String version) {
         pythonVersionLabel.setText(version);
+    }
+
+    /**
+     * Sets the autocomplete status display.
+     *
+     * v2.4.0: New method for autocomplete status indicator
+     *
+     * @param status the autocomplete status text
+     * @param color  the text color
+     */
+    public void setAutocomplete(String status, Color color) {
+        autocompleteLabel.setText(status);
+        autocompleteLabel.setForeground(color);
     }
 
     /**

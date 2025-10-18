@@ -61,6 +61,7 @@ public class Python3IDE extends JPanel {
     private Python3RestClient restClient;
     private PythonSyntaxChecker syntaxChecker;
     private AutoCompletion autoCompletion;
+    private Python3CompletionProvider completionProvider;  // v2.4.0: Track for status updates
 
     // UI Components
     private JTextField gatewayUrlField;
@@ -716,8 +717,8 @@ public class Python3IDE extends JPanel {
             if (autoCompletion != null) {
                 autoCompletion.uninstall();
             }
-            CompletionProvider provider = new Python3CompletionProvider(restClient);
-            autoCompletion = new AutoCompletion(provider);
+            completionProvider = new Python3CompletionProvider(restClient);
+            autoCompletion = new AutoCompletion(completionProvider);
             autoCompletion.setAutoActivationEnabled(true);
             autoCompletion.setAutoCompleteSingleChoices(false);
             autoCompletion.setAutoActivationDelay(500);  // 500ms delay after typing
@@ -725,6 +726,9 @@ public class Python3IDE extends JPanel {
             autoCompletion.setTriggerKey(KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, KeyEvent.CTRL_DOWN_MASK));  // Ctrl+Space
             autoCompletion.install(codeEditor);
             LOGGER.info("Auto-completion enabled: Ctrl+Space to trigger, auto-activates on typing");
+
+            // v2.4.0: Update autocomplete status indicator
+            updateAutocompleteStatus();
 
             refreshDiagnostics();
             refreshPythonVersion();
@@ -899,6 +903,32 @@ public class Python3IDE extends JPanel {
         }
 
         LOGGER.info("refreshPythonVersion() - END");
+    }
+
+    /**
+     * Updates the autocomplete status indicator in the status bar.
+     *
+     * v2.4.0: New method for autocomplete diagnostics
+     */
+    private void updateAutocompleteStatus() {
+        if (completionProvider == null) {
+            statusBar.setAutocomplete("AC: --", ModernTheme.FOREGROUND_SECONDARY);
+            return;
+        }
+
+        // Check autocomplete availability
+        if (completionProvider.isAvailable()) {
+            statusBar.setAutocomplete("AC: Ready", ModernTheme.SUCCESS);
+            statusBar.setStatus(completionProvider.getStatusMessage(), ModernStatusBar.MessageType.SUCCESS);
+        } else {
+            String status = completionProvider.getStatusMessage();
+            if (status.contains("Jedi not installed")) {
+                statusBar.setAutocomplete("AC: No Jedi", ModernTheme.WARNING);
+                statusBar.setStatus("Autocomplete unavailable - Install Jedi: pip install jedi", ModernStatusBar.MessageType.WARNING);
+            } else {
+                statusBar.setAutocomplete("AC: Cooldown", ModernTheme.INFO);
+            }
+        }
     }
 
     /**

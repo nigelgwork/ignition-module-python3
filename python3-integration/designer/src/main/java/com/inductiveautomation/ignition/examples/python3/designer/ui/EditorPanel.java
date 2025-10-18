@@ -1,5 +1,6 @@
 package com.inductiveautomation.ignition.examples.python3.designer.ui;
 
+import com.inductiveautomation.ignition.examples.python3.designer.ModernScrollBarUI;
 import com.inductiveautomation.ignition.examples.python3.designer.ModernTheme;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
@@ -7,15 +8,18 @@ import org.fife.ui.rtextarea.RTextScrollPane;
 import org.fife.ui.rtextarea.SearchContext;
 import org.fife.ui.rtextarea.SearchEngine;
 
+import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JScrollBar;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.border.EmptyBorder;
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 
@@ -94,6 +98,15 @@ public class EditorPanel extends JPanel {
         RTextScrollPane editorScroll = new RTextScrollPane(codeEditor);
         editorScroll.setLineNumbersEnabled(true);
 
+        // UX Fix v2.4.0: Blend border with dark theme (match description area style)
+        editorScroll.setBorder(BorderFactory.createLineBorder(ModernTheme.BORDER_DEFAULT));
+        editorScroll.setBackground(ModernTheme.BACKGROUND_DARK);
+        editorScroll.getViewport().setBackground(ModernTheme.BACKGROUND_DARKER);
+
+        // UX Fix v2.4.0: Modern sleek scrollbars
+        applyModernScrollBar(editorScroll.getVerticalScrollBar());
+        applyModernScrollBar(editorScroll.getHorizontalScrollBar());
+
         // Output/error areas
         outputArea = new JTextArea();
         outputArea.setEditable(false);
@@ -111,9 +124,27 @@ public class EditorPanel extends JPanel {
         outputScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         outputScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
 
+        // UX Fix v2.4.0: Blend border with dark theme
+        outputScroll.setBorder(BorderFactory.createLineBorder(ModernTheme.BORDER_DEFAULT));
+        outputScroll.setBackground(ModernTheme.BACKGROUND_DARK);
+        outputScroll.getViewport().setBackground(ModernTheme.BACKGROUND_DARKER);
+
+        // UX Fix v2.4.0: Modern sleek scrollbars
+        applyModernScrollBar(outputScroll.getVerticalScrollBar());
+        applyModernScrollBar(outputScroll.getHorizontalScrollBar());
+
         JScrollPane errorScroll = new JScrollPane(errorArea);
         errorScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         errorScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+
+        // UX Fix v2.4.0: Blend border with dark theme
+        errorScroll.setBorder(BorderFactory.createLineBorder(ModernTheme.BORDER_DEFAULT));
+        errorScroll.setBackground(ModernTheme.BACKGROUND_DARK);
+        errorScroll.getViewport().setBackground(ModernTheme.BACKGROUND_DARKER);
+
+        // UX Fix v2.4.0: Modern sleek scrollbars
+        applyModernScrollBar(errorScroll.getVerticalScrollBar());
+        applyModernScrollBar(errorScroll.getHorizontalScrollBar());
 
         JTabbedPane outputTabs = new JTabbedPane();
         outputTabs.addTab("Output", outputScroll);
@@ -218,5 +249,20 @@ public class EditorPanel extends JPanel {
         context.setWholeWord(false);
 
         SearchEngine.replaceAll(codeEditor, context);
+    }
+
+    /**
+     * Applies modern sleek scrollbar UI to a scrollbar.
+     *
+     * v2.4.0: New method for modern UX
+     *
+     * @param scrollBar the scrollbar to style
+     */
+    private void applyModernScrollBar(JScrollBar scrollBar) {
+        if (scrollBar != null) {
+            scrollBar.setUI(new ModernScrollBarUI(true));  // true = dark theme
+            scrollBar.setOpaque(false);
+            scrollBar.setUnitIncrement(16);  // Smoother scrolling
+        }
     }
 }
