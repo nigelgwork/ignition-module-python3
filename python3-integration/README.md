@@ -1,6 +1,6 @@
 # Python 3 Integration Module for Ignition
 
-**Current Version: v2.5.13** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
+**Current Version: v2.5.14** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
 
 This module enables Python 3 scripting functions in Ignition 8.3+, allowing you to use modern Python 3 features and libraries alongside Ignition's built-in Jython 2.7 environment.
 
@@ -1234,6 +1234,23 @@ Built using the Ignition SDK:
 - https://www.sdk-docs.inductiveautomation.com/
 
 ## Changelog
+
+### 2.5.14 (JTabbedPane Content Area Fix + IDE Header Version)
+- **FIX**: White rectangle in Output/Errors tabbed pane eliminated
+  - User feedback: "Within the execution result windows there are the 2 tabs output and errors. The white box is rectangular, the top part of the rectangle runs along the bottom of the tabs."
+  - **Root Cause**: JTabbedPane content area background was not set, showing default white/grey
+  - Added `UIManager.put("TabbedPane.contentAreaColor", ModernTheme.BACKGROUND_DARKER)`
+  - Added `outputTabs.setOpaque(true)` and `outputTabs.updateUI()`
+  - Content area now matches tab background (BACKGROUND_DARKER = 23,23,23)
+- **FIX**: IDE header version update workflow (Python3IDE.java:510-513)
+  - User feedback: "The header for the IDE is still not being updated to reflect the module version"
+  - Updated DesignerHook.java fallback version: 2.5.13 → 2.5.14 (line 183)
+  - This version appears in IDE window title bar: "Python 3 IDE vX.Y.Z"
+  - **ADDED TO WORKFLOW**: DesignerHook.java fallback version MUST be updated with EVERY release
+- **DOCUMENTATION**: Updated CLAUDE.md workflow
+  - Added CRITICAL reminder to update DesignerHook.java fallback version
+  - Emphasized this is needed for IDE header to show correct version
+  - Updated current version reference to 2.5.14
 
 ### 2.5.13 (Component Background Fix - White Line Seams Eliminated)
 - **FIX**: Eliminated white lines at component seams (targeted background fix)

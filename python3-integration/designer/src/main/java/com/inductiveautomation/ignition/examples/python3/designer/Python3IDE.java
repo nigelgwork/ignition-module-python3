@@ -507,6 +507,10 @@ public class Python3IDE extends JPanel {
         outputTabs = new JTabbedPane();
         outputTabs.setBackground(ModernTheme.BACKGROUND_DARKER);  // v2.5.13: Match output content background
         outputTabs.setForeground(ModernTheme.FOREGROUND_PRIMARY);
+        outputTabs.setOpaque(true);  // v2.5.14: Make background visible
+        // v2.5.14: Fix white rectangle - JTabbedPane content area background
+        UIManager.put("TabbedPane.contentAreaColor", ModernTheme.BACKGROUND_DARKER);
+        outputTabs.updateUI();  // Apply UI changes
 
         JScrollPane outputScroll = new JScrollPane(outputArea);
 

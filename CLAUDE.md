@@ -24,7 +24,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### 2. Version Increment
 Version file: `python3-integration/version.properties`
 
-**Current Version: v2.2.0** (December 2024)
+**Current Version: v2.5.14** (October 2025)
 
 **Versioning Rules:**
 - **MAJOR** (x.0.0): Breaking changes, major new features, architectural changes
@@ -39,11 +39,17 @@ Version file: `python3-integration/version.properties`
 **Version Locations to Update:**
 When incrementing version, update ALL of these files:
 - [ ] `python3-integration/version.properties` - Primary version source (REQUIRED)
-- [ ] `python3-integration/designer/src/main/java/.../DesignerHook.java` - Fallback version (line 183)
-- [ ] `README.md` (repository root) - Main README version references (lines 3, 11, 76, 135)
-- [ ] `python3-integration/README.md` - Module README version references (lines 3, 136, 471, 514) + Changelog entry
-- [ ] `CLAUDE.md` - Current version references (lines 27, 112, 121, 551, 566)
+- [ ] `python3-integration/designer/src/main/java/.../DesignerHook.java` - Fallback version (line 183) **CRITICAL: Update EVERY release**
+- [ ] `README.md` (repository root) - Main README version references
+- [ ] `python3-integration/README.md` - Module README version references + Changelog entry
+- [ ] `CLAUDE.md` - Current version reference (line 27)
 - [ ] Update Changelog sections in both README files
+
+**CRITICAL: DesignerHook.java Fallback Version (line 183)**
+This version appears in the IDE window title bar. It MUST be updated with EVERY release or the header will show the wrong version.
+```java
+return "X.Y.Z";  // ALWAYS UPDATE THIS WITH NEW RELEASES
+```
 
 **Release Checklist:**
 - [ ] All tests passing (`./gradlew clean build`)
