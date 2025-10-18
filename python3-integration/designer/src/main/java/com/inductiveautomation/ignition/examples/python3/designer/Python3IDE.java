@@ -98,6 +98,10 @@ public class Python3IDE extends JPanel {
     // Output tabs (v2.0.15 - made instance var for theme updates)
     private JTabbedPane outputTabs;
 
+    // Editor container (v2.5.5 - made instance var for dynamic title updates)
+    private JPanel editorContainer;
+    private TitledBorder editorTitledBorder;
+
     // Split panes (v2.0.22 - made instance vars for theme updates)
     private JSplitPane mainSplit;
     private JSplitPane sidebarSplit;
@@ -458,15 +462,17 @@ public class Python3IDE extends JPanel {
         applyTransparentScrollBar(editorScroll.getVerticalScrollBar());
         applyTransparentScrollBar(editorScroll.getHorizontalScrollBar());
 
-        JPanel editorContainer = new JPanel(new BorderLayout());
+        // v2.5.5: Made instance variable to allow dynamic title updates
+        editorContainer = new JPanel(new BorderLayout());
         editorContainer.setBackground(ModernTheme.PANEL_BACKGROUND);
+        editorTitledBorder = new TitledBorder(BorderFactory.createLineBorder(ModernTheme.BORDER_DEFAULT),
+                "Python 3 Code Editor",
+                TitledBorder.DEFAULT_JUSTIFICATION,
+                TitledBorder.DEFAULT_POSITION,
+                ModernTheme.FONT_REGULAR,
+                ModernTheme.FOREGROUND_PRIMARY);
         editorContainer.setBorder(BorderFactory.createCompoundBorder(
-                new TitledBorder(BorderFactory.createLineBorder(ModernTheme.BORDER_DEFAULT),
-                        "Python 3 Code Editor",
-                        TitledBorder.DEFAULT_JUSTIFICATION,
-                        TitledBorder.DEFAULT_POSITION,
-                        ModernTheme.FONT_REGULAR,
-                        ModernTheme.FOREGROUND_PRIMARY),
+                editorTitledBorder,
                 BorderFactory.createEmptyBorder(5, 5, 5, 5)
         ));
 
@@ -882,7 +888,7 @@ public class Python3IDE extends JPanel {
     /**
      * Handles execution mode change between Python Code and Terminal.
      *
-     * v2.5.4: Visual differentiation between modes - Terminal mode uses plain text style
+     * v2.5.4/v2.5.5: Visual differentiation between modes - Terminal mode uses plain text style
      */
     private void onExecutionModeChanged() {
         boolean isTerminalMode = "Terminal".equals(executionModeCombo.getSelectedItem());
@@ -892,15 +898,33 @@ public class Python3IDE extends JPanel {
             codeEditor.setSyntaxEditingStyle(org.fife.ui.rsyntaxtextarea.SyntaxConstants.SYNTAX_STYLE_NONE);
             codeEditor.setBackground(new Color(10, 10, 10));  // Darker background for terminal feel
             codeEditor.setCurrentLineHighlightColor(new Color(20, 20, 20));
+            codeEditor.setFont(new Font("Monospaced", Font.PLAIN, fontSize));  // Monospace font for terminal
+
+            // v2.5.5: Update editor panel title and hide script indicator
+            editorTitledBorder.setTitle("Terminal");
+            currentScriptLabel.setVisible(false);
+
+            // Add terminal prompt hint to help text
+            if (codeEditor.getText().trim().isEmpty()) {
+                codeEditor.setText("# Terminal mode - enter shell commands (e.g., pip install pandas)\n# Commands will execute on the Gateway server\n");
+            }
+
             setStatus("Terminal mode: Enter shell commands (e.g., pip install pandas)", new Color(100, 149, 237));  // Cornflower blue
         } else {
             // Python Code mode: Restore Python syntax highlighting
             codeEditor.setSyntaxEditingStyle(org.fife.ui.rsyntaxtextarea.SyntaxConstants.SYNTAX_STYLE_PYTHON);
             codeEditor.setBackground(new Color(30, 30, 30));  // Standard background
             codeEditor.setCurrentLineHighlightColor(new Color(50, 50, 50));
+            codeEditor.setFont(ModernTheme.FONT_MONOSPACE);  // Standard monospace
+
+            // v2.5.5: Restore editor panel title and show script indicator
+            editorTitledBorder.setTitle("Python 3 Code Editor");
+            currentScriptLabel.setVisible(true);
+
             setStatus("Python Code mode: Write Python 3 code", new Color(100, 149, 237));
         }
 
+        editorContainer.repaint();  // Repaint to update title
         codeEditor.repaint();
     }
 

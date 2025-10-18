@@ -275,17 +275,26 @@ public class Python3ScriptModule implements Python3RpcFunctions {
             }
 
             try {
-                // v2.5.4: Auto-fix pip install commands for externally-managed environments (PEP 668)
+                // v2.5.4/v2.5.5: Auto-fix pip install commands for externally-managed environments (PEP 668)
                 // Detect pip install/uninstall commands and add --break-system-packages flag if needed
+                LOGGER.info("execShell() - Original command: [{}]", command);
+
                 String processedCommand = command;
-                if (command.matches(".*\\bpip3?\\s+(install|uninstall)\\b.*") &&
-                    !command.contains("--break-system-packages")) {
+                boolean isPipCommand = command.matches(".*\\bpip3?\\s+(install|uninstall)\\b.*");
+                boolean hasFlag = command.contains("--break-system-packages");
+
+                LOGGER.info("execShell() - isPipCommand: {}, hasFlag: {}", isPipCommand, hasFlag);
+
+                if (isPipCommand && !hasFlag) {
                     // Insert --break-system-packages after pip install/uninstall
                     processedCommand = command.replaceFirst(
                         "(pip3?\\s+(?:install|uninstall))",
                         "$1 --break-system-packages"
                     );
-                    LOGGER.info("Auto-added --break-system-packages flag to pip command: {}", processedCommand);
+                    LOGGER.warn("AUTO-FIXED PIP COMMAND - Original: [{}]", command);
+                    LOGGER.warn("AUTO-FIXED PIP COMMAND - Processed: [{}]", processedCommand);
+                } else if (isPipCommand) {
+                    LOGGER.info("Pip command already has --break-system-packages flag");
                 }
 
                 // Execute shell command using Python subprocess

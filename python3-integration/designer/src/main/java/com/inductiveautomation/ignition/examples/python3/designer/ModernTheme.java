@@ -31,10 +31,10 @@ public class ModernTheme {
     public static final Color ERROR = new Color(244, 67, 54);                   // #F44336
     public static final Color INFO = new Color(33, 150, 243);                   // #2196F3
 
-    // Border Colors
-    public static final Color BORDER_DEFAULT = new Color(64, 64, 64);           // #404040
+    // Border Colors (v2.5.5: Darkened to eliminate visible lines in dark theme)
+    public static final Color BORDER_DEFAULT = new Color(30, 30, 30);           // #1E1E1E - Matches BACKGROUND_DARK for invisible borders
     public static final Color BORDER_FOCUSED = new Color(14, 99, 156);          // #0E639C
-    public static final Color BORDER_HOVER = new Color(80, 80, 80);             // #505050
+    public static final Color BORDER_HOVER = new Color(40, 40, 40);             // #282828 - Slightly lighter for subtle hover
 
     // UI Element Colors
     public static final Color BUTTON_BACKGROUND = new Color(51, 51, 51);        // #333333
@@ -42,10 +42,10 @@ public class ModernTheme {
     public static final Color BUTTON_ACTIVE = new Color(45, 45, 45);            // #2D2D2D
 
     public static final Color INPUT_BACKGROUND = new Color(37, 37, 38);         // #252526
-    public static final Color INPUT_BORDER = new Color(64, 64, 64);             // #404040
+    public static final Color INPUT_BORDER = new Color(30, 30, 30);             // #1E1E1E - Matches BORDER_DEFAULT
 
     public static final Color PANEL_BACKGROUND = new Color(37, 37, 38);         // #252526
-    public static final Color PANEL_BORDER = new Color(64, 64, 64);             // #404040
+    public static final Color PANEL_BORDER = new Color(30, 30, 30);             // #1E1E1E - Matches BORDER_DEFAULT
 
     // Tree Colors
     public static final Color TREE_BACKGROUND = new Color(37, 37, 38);          // #252526
