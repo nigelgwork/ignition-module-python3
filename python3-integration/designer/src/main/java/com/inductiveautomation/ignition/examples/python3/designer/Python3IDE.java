@@ -213,10 +213,10 @@ public class Python3IDE extends JPanel {
         // Pool click listener for adjusting pool size (v1.17.2)
         statusBar.setPoolClickListener(this::handlePoolClicked);
 
-        // Buttons
-        executeButton = ModernButton.createPrimary("Execute (Ctrl+Enter)");
+        // Buttons (v2.5.6: Removed keyboard shortcuts from labels - use Info button instead)
+        executeButton = ModernButton.createPrimary("Execute");
         clearButton = ModernButton.createDefault("Clear");
-        saveButton = ModernButton.createSuccess("Save (Ctrl+S)");
+        saveButton = ModernButton.createSuccess("Save");
         saveAsButton = ModernButton.createDefault("Save As...");
         importButton = ModernButton.createDefault("Import...");
         exportButton = ModernButton.createDefault("Export...");
@@ -900,14 +900,10 @@ public class Python3IDE extends JPanel {
             codeEditor.setCurrentLineHighlightColor(new Color(20, 20, 20));
             codeEditor.setFont(new Font("Monospaced", Font.PLAIN, fontSize));  // Monospace font for terminal
 
-            // v2.5.5: Update editor panel title and hide script indicator
+            // v2.5.5/v2.5.6: Update editor panel title and current script label
             editorTitledBorder.setTitle("Terminal");
-            currentScriptLabel.setVisible(false);
-
-            // Add terminal prompt hint to help text
-            if (codeEditor.getText().trim().isEmpty()) {
-                codeEditor.setText("# Terminal mode - enter shell commands (e.g., pip install pandas)\n# Commands will execute on the Gateway server\n");
-            }
+            currentScriptLabel.setText("Terminal - Shell Commands");  // v2.5.6: Changed label instead of hiding
+            currentScriptLabel.setVisible(true);
 
             setStatus("Terminal mode: Enter shell commands (e.g., pip install pandas)", new Color(100, 149, 237));  // Cornflower blue
         } else {
@@ -917,9 +913,15 @@ public class Python3IDE extends JPanel {
             codeEditor.setCurrentLineHighlightColor(new Color(50, 50, 50));
             codeEditor.setFont(ModernTheme.FONT_MONOSPACE);  // Standard monospace
 
-            // v2.5.5: Restore editor panel title and show script indicator
+            // v2.5.5/v2.5.6: Restore editor panel title and script indicator
             editorTitledBorder.setTitle("Python 3 Code Editor");
             currentScriptLabel.setVisible(true);
+            // v2.5.6: Restore script label to current script or default
+            if (currentScript != null) {
+                currentScriptLabel.setText("Current script: " + currentScript.getName());
+            } else {
+                currentScriptLabel.setText("No script selected");
+            }
 
             setStatus("Python Code mode: Write Python 3 code", new Color(100, 149, 237));
         }
