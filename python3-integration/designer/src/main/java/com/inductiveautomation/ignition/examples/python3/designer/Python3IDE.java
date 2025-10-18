@@ -2,7 +2,6 @@ package com.inductiveautomation.ignition.examples.python3.designer;
 
 import com.inductiveautomation.ignition.designer.model.DesignerContext;
 import com.inductiveautomation.ignition.examples.python3.designer.ui.FindReplaceDialog;
-import com.inductiveautomation.ignition.examples.python3.designer.ui.ZeroInsetTitledBorder;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rsyntaxtextarea.Theme;
@@ -474,13 +473,13 @@ public class Python3IDE extends JPanel {
         editorContainer = new JPanel(new BorderLayout());
         // v2.5.11: Match codeEditor background (30,30,30) to eliminate white lines
         editorContainer.setBackground(new Color(30, 30, 30));
-        // v2.5.12: Use ZeroInsetTitledBorder to eliminate TitledBorder's internal EDGE_SPACING
-        editorTitledBorder = new ZeroInsetTitledBorder(BorderFactory.createLineBorder(ModernTheme.BORDER_DEFAULT),
+        editorTitledBorder = new TitledBorder(BorderFactory.createLineBorder(ModernTheme.BORDER_DEFAULT),
                 "Python 3 Code Editor",
                 TitledBorder.DEFAULT_JUSTIFICATION,
                 TitledBorder.DEFAULT_POSITION,
                 ModernTheme.FONT_REGULAR,
                 ModernTheme.FOREGROUND_PRIMARY);
+        // v2.5.9: Removed empty border to eliminate white padding
         editorContainer.setBorder(editorTitledBorder);
 
         // Add current script indicator at top
@@ -539,8 +538,8 @@ public class Python3IDE extends JPanel {
         JPanel outputPanel = new JPanel(new BorderLayout());
         // v2.5.11: Match outputScroll background (23,23,23) to eliminate white lines
         outputPanel.setBackground(ModernTheme.BACKGROUND_DARKER);
-        // v2.5.12: Use ZeroInsetTitledBorder to eliminate TitledBorder's internal EDGE_SPACING
-        outputPanel.setBorder(new ZeroInsetTitledBorder(BorderFactory.createLineBorder(ModernTheme.BORDER_DEFAULT),
+        // v2.5.9: Removed empty border to eliminate white padding
+        outputPanel.setBorder(new TitledBorder(BorderFactory.createLineBorder(ModernTheme.BORDER_DEFAULT),
                 "Execution Results",
                 TitledBorder.DEFAULT_JUSTIFICATION,
                 TitledBorder.DEFAULT_POSITION,
