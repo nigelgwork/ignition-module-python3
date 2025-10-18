@@ -287,15 +287,13 @@ public class Python3IDE extends JPanel {
         // Top area: Gateway Connection with theme selector
         JPanel gatewayPanel = new JPanel(new BorderLayout(10, 0));
         gatewayPanel.setBackground(ModernTheme.PANEL_BACKGROUND);
-        gatewayPanel.setBorder(BorderFactory.createCompoundBorder(
-                new TitledBorder(BorderFactory.createLineBorder(ModernTheme.BORDER_DEFAULT),
-                        "Gateway Connection",
-                        TitledBorder.DEFAULT_JUSTIFICATION,
-                        TitledBorder.DEFAULT_POSITION,
-                        ModernTheme.FONT_REGULAR,
-                        ModernTheme.FOREGROUND_PRIMARY),
-                BorderFactory.createEmptyBorder(3, 5, 3, 5)  // Reduced top/bottom padding for 25% height reduction (Issue 5 - v1.15.1)
-        ));
+        // v2.5.10: Removed empty border to eliminate white padding inside panel
+        gatewayPanel.setBorder(new TitledBorder(BorderFactory.createLineBorder(ModernTheme.BORDER_DEFAULT),
+                "Gateway Connection",
+                TitledBorder.DEFAULT_JUSTIFICATION,
+                TitledBorder.DEFAULT_POSITION,
+                ModernTheme.FONT_REGULAR,
+                ModernTheme.FOREGROUND_PRIMARY));
 
         // Left side: URL and Connect button
         JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 1));  // Reduced vertical gap for 25% height reduction (Issue 5 - v1.15.1)
@@ -388,15 +386,13 @@ public class Python3IDE extends JPanel {
         JScrollPane treeScroll = new JScrollPane(scriptTree);
         treeScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);  // Hide when not needed (Issue 4 - v1.15.1)
         treeScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        treeScroll.setBorder(BorderFactory.createCompoundBorder(
-                new TitledBorder(BorderFactory.createLineBorder(ModernTheme.BORDER_DEFAULT),
-                        "Script Browser",
-                        TitledBorder.DEFAULT_JUSTIFICATION,
-                        TitledBorder.DEFAULT_POSITION,
-                        ModernTheme.FONT_REGULAR,
-                        ModernTheme.FOREGROUND_PRIMARY),
-                BorderFactory.createEmptyBorder(5, 5, 5, 5)
-        ));
+        // v2.5.10: Removed empty border to eliminate white padding inside panel
+        treeScroll.setBorder(new TitledBorder(BorderFactory.createLineBorder(ModernTheme.BORDER_DEFAULT),
+                "Script Browser",
+                TitledBorder.DEFAULT_JUSTIFICATION,
+                TitledBorder.DEFAULT_POSITION,
+                ModernTheme.FONT_REGULAR,
+                ModernTheme.FOREGROUND_PRIMARY));
         treeScroll.setBackground(ModernTheme.TREE_BACKGROUND);
         treeScroll.getViewport().setBackground(ModernTheme.TREE_BACKGROUND);
 

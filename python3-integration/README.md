@@ -1,6 +1,6 @@
 # Python 3 Integration Module for Ignition
 
-**Current Version: v2.5.9** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
+**Current Version: v2.5.10** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
 
 This module enables Python 3 scripting functions in Ignition 8.3+, allowing you to use modern Python 3 features and libraries alongside Ignition's built-in Jython 2.7 environment.
 
@@ -104,6 +104,236 @@ cd python3-integration
    - Your saved scripts should appear in the script tree
 
 **Note:** Scripts are stored in your user directory, NOT in the module itself, so they persist across upgrades.
+
+## Bundling Python Packages for Air-Gapped Deployments
+
+The module includes a package bundling system that allows you to pre-install Python packages into the .modl file for offline/air-gapped deployment scenarios.
+
+### When to Bundle Packages
+
+You should bundle packages when:
+- **Air-gapped networks**: Gateway has no internet access
+- **Corporate environments**: Restricted PyPI access or proxy issues
+- **Reproducible deployments**: Guarantee exact package versions across installations
+- **Security requirements**: Package verification before deployment
+
+If your Gateway has internet access, you can skip bundling and install packages via Shell Command mode (`pip install package`) after module installation.
+
+### Default Bundled Packages
+
+**✅ Jedi (v0.19.2) - Always Bundled**
+- **Size**: ~1.6 MB
+- **Purpose**: IDE autocomplete functionality
+- **Auto-installed**: Yes, on Gateway startup
+- **Required for**: Designer IDE autocomplete feature
+
+Jedi is automatically installed when the module starts up. Check Gateway logs (`wrapper.log`) to verify installation:
+```
+INFO  [Python3PackageManager] Jedi already installed - autocomplete ready
+```
+
+### Optional Package Bundles
+
+The following package bundles are **available but NOT bundled by default**. You can add them using the instructions below.
+
+**🌐 Web Package Bundle (v2.32.5)**
+- **Size**: ~0.6 MB
+- **Includes**: requests, urllib3, certifi, charset-normalizer, idna
+- **Use cases**: HTTP requests, REST API calls, web scraping
+
+**📊 Data Science Bundle (v2.3.4)**
+- **Size**: ~85 MB (Windows), ~60 MB (Linux)
+- **Includes**: numpy, pandas, matplotlib + dependencies
+- **Use cases**: Numerical computing, data analysis, plotting
+- **Recommendation**: ⚠️ Install via `pip install` if internet available (large size)
+
+### How to Bundle Additional Packages
+
+Follow these steps to bundle extra packages (like `web` or `datascience`) into your module build:
+
+#### Step 1: Navigate to Python Packages Directory
+```bash
+cd python3-integration/gateway/src/main/resources/python-packages
+```
+
+#### Step 2: Download Package Wheels
+Run the download helper script to fetch all wheels defined in `packages.json`:
+
+```bash
+python3 download_wheels.py
+```
+
+This automatically downloads platform-specific wheels for:
+- Windows x64
+- Linux x64
+
+**Output**:
+```
+✅ windows-x64 wheels downloaded to: ./windows-x64
+✅ linux-x64 wheels downloaded to: ./linux-x64
+```
+
+#### Step 3: Verify Downloaded Wheels
+Check that wheels were downloaded correctly:
+
+```bash
+ls windows-x64/*.whl
+ls linux-x64/*.whl
+```
+
+You should see `.whl` files for each package.
+
+#### Step 4: Rebuild Module
+Navigate back to project root and rebuild:
+
+```bash
+cd ../../../../..  # Back to python3-integration/
+./gradlew clean build --no-daemon
+```
+
+The `.modl` file will now include all downloaded wheels.
+
+**Module Size Impact**:
+- Base module: ~1.2 MB
+- With jedi bundled: ~2.8 MB
+- With jedi + web: ~3.4 MB
+- With jedi + web + datascience: ~88 MB (Windows), ~63 MB (Linux)
+
+#### Step 5: Install Module
+Install the newly built module as normal - all bundled wheels are included in the `.modl` file.
+
+### Adding Custom Packages
+
+To bundle your own custom packages:
+
+#### 1. Edit packages.json
+Add your package definition to `gateway/src/main/resources/packages.json`:
+
+```json
+{
+  "mypackage": {
+    "version": "1.0.0",
+    "description": "My custom package for XYZ functionality",
+    "sizeMb": 2.0,
+    "wheels": [
+      "mypackage-1.0.0-py3-none-any.whl",
+      "dependency1-2.3.4-py3-none-any.whl"
+    ],
+    "pipPackages": [
+      "mypackage",
+      "dependency1"
+    ],
+    "importName": "mypackage",
+    "requiredFor": [
+      "Custom XYZ functionality"
+    ]
+  }
+}
+```
+
+**Wheel filename formats**:
+- Pure Python wheels: `package-1.0.0-py3-none-any.whl` (works on all platforms)
+- Platform-specific: `package-1.0.0-cp311-cp311-win_amd64.whl` (Windows only)
+- Use `{platform}` placeholder: `package-1.0.0-cp311-cp311-{platform}.whl` (auto-resolved)
+
+#### 2. Download Wheels
+```bash
+cd gateway/src/main/resources/python-packages
+python3 download_wheels.py
+```
+
+The script automatically downloads wheels for both platforms based on your `packages.json` definition.
+
+#### 3. Rebuild and Install
+```bash
+cd ../../../../..
+./gradlew clean build --no-daemon
+# Install the new .modl file in Gateway
+```
+
+### Installing Bundled Packages
+
+Once packages are bundled in the module:
+
+#### Automatic Installation (Jedi Only)
+Jedi automatically installs on module startup. No user action required.
+
+#### Manual Installation (Other Packages)
+Use the Designer IDE Shell Command mode or REST API:
+
+**Via Designer IDE (Shell Command Mode)**:
+```bash
+# Install web package bundle
+python -m pip install requests urllib3 certifi charset-normalizer idna
+
+# Install datascience bundle
+python -m pip install numpy pandas matplotlib
+```
+
+**Via REST API**:
+```bash
+# Install from bundled wheels
+curl -X POST http://localhost:8088/data/python3integration/api/v1/packages/install/web
+curl -X POST http://localhost:8088/data/python3integration/api/v1/packages/install/datascience
+```
+
+Bundled wheels install **from local files** - no internet connection required.
+
+### Platform Support
+
+**Bundled Platforms**:
+- ✅ Windows x64 (win_amd64)
+- ✅ Linux x64 (manylinux)
+
+**Not Bundled**:
+- ❌ macOS (both Intel and ARM) - install via `pip install` after module installation
+
+**Why macOS not bundled?**
+macOS wheels can be large and add significant module size. Users on macOS can easily install packages using `pip install` in Shell Command mode after module installation.
+
+### Troubleshooting
+
+**Wheel download fails**:
+- Ensure you have internet connection
+- Check Python version (requires Python 3.8+)
+- Install pip if missing: `python3 -m ensurepip`
+- Manually download from PyPI: https://pypi.org/project/package-name/#files
+
+**Package installation fails**:
+- Check Gateway logs: `<ignition-install>/logs/wrapper.log`
+- Verify wheel architecture matches Gateway OS
+- Ensure bundled Python is being used (not system Python)
+
+**Wrong package version bundled**:
+- Update version in `packages.json`
+- Re-run `download_wheels.py`
+- Verify `.whl` files in platform directories
+- Rebuild module
+
+### Best Practices
+
+1. **Bundle only essential packages**: Keep module size reasonable
+2. **Test before deployment**: Verify packages work on target platform
+3. **Document dependencies**: Update `packages.json` description field
+4. **Version lock**: Specify exact versions for reproducibility
+5. **Security scan**: Review packages before bundling for production
+
+### Technical Details
+
+**Package Storage**:
+- Wheels stored in: `gateway/src/main/resources/python-packages/{platform}/`
+- Catalog: `gateway/src/main/resources/packages.json`
+
+**Installation Process**:
+1. Module extracts wheels to: `<gateway-data>/python3-integration/packages/`
+2. Gateway runs: `pip install --no-index --find-links packages/ package-name`
+3. Packages install to bundled Python's site-packages
+4. Installation tracked in: `<gateway-data>/python3-integration/installed-packages.json`
+
+**Auto-Installation (Jedi)**:
+- Triggered in `GatewayHook.startup()` (line 85-100)
+- Only runs if jedi not already installed
+- Uses `Python3PackageManager.installPackage("jedi")`
 
 ## Usage
 
@@ -1004,6 +1234,43 @@ Built using the Ignition SDK:
 - https://www.sdk-docs.inductiveautomation.com/
 
 ## Changelog
+
+### 2.5.10 (UX Polish + Jedi Bundled + Air-Gap Documentation)
+- **FIXED**: Removed white padding inside Python Code mode panels
+  - User feedback: "The white lines are still there when the python IDE part is visible"
+  - Script Browser panel: removed BorderFactory.createEmptyBorder(5,5,5,5) inner border
+  - Gateway Connection panel: removed BorderFactory.createEmptyBorder(3,5,3,5) inner border
+  - Terminal mode was already correct (v2.5.9), now Python Code mode matches
+  - Zero white gaps between titled borders and panel content
+- **NEW**: Jedi wheels bundled in module (v0.19.2)
+  - jedi-0.19.2-py2.py3-none-any.whl (1.5 MB)
+  - parso-0.8.5-py2.py3-none-any.whl (105 KB)
+  - Auto-installs on Gateway startup for IDE autocomplete
+  - Works in air-gapped environments (no internet required)
+  - Total bundle size: ~1.6 MB
+- **NEW**: Optional bundled packages available
+  - Web bundle: requests, urllib3, certifi, charset-normalizer, idna (~0.6 MB)
+  - Data science bundle: numpy, pandas, matplotlib + deps (~85 MB Windows, ~60 MB Linux)
+  - All wheels included in .modl file (48 MB total with all packages)
+  - Install on-demand via REST API or Shell Command mode
+- **NEW**: Comprehensive air-gap deployment documentation
+  - Added "Bundling Python Packages for Air-Gapped Deployments" section (~230 lines)
+  - When to bundle packages (air-gap, corporate networks, reproducibility)
+  - How to bundle additional packages (step-by-step guide)
+  - Adding custom packages to packages.json
+  - Platform support (Windows x64, Linux x64)
+  - Troubleshooting and best practices
+  - Technical details of package installation process
+- **IMPROVED**: Package catalog updated
+  - packages.json: jedi version 0.19.1 → 0.19.2
+  - packages.json: parso version 0.8.3 → 0.8.5
+  - Actual wheel filenames match downloaded versions
+- **TECHNICAL**: Python3PackageManager integration
+  - Wheels stored in resources/python-packages/{platform}/
+  - Auto-extraction to <gateway-data>/python3-integration/packages/
+  - Installation via pip --no-index (offline mode)
+  - GatewayHook.startup() auto-installs jedi (lines 85-100)
+- **MODULE SIZE**: 48 MB (includes jedi + web + datascience wheels for offline installation)
 
 ### 2.5.9 (UX Perfection - True Terminal Experience + Borderless Windows)
 - **NEW**: True terminal-style interface in Terminal mode

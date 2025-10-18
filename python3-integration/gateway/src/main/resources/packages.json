@@ -1,11 +1,11 @@
 {
   "jedi": {
-    "version": "0.19.1",
+    "version": "0.19.2",
     "description": "Intelligent auto-completion for Python IDE",
-    "sizeMb": 2.5,
+    "sizeMb": 1.6,
     "wheels": [
-      "jedi-0.19.1-py2.py3-none-any.whl",
-      "parso-0.8.3-py2.py3-none-any.whl"
+      "jedi-0.19.2-py2.py3-none-any.whl",
+      "parso-0.8.5-py2.py3-none-any.whl"
     ],
     "pipPackages": [
       "jedi",
