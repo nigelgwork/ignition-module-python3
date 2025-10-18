@@ -247,6 +247,99 @@ public class Python3ScriptModule implements Python3RpcFunctions {
     }
 
     /**
+     * Execute shell command on Gateway and return output.
+     *
+     * v2.5.0: Added for Shell Command mode in Designer IDE
+     *
+     * @param command Shell command to execute
+     * @return Map with stdout, stderr, exitCode
+     * @throws Exception if execution fails
+     */
+    public Map<String, Object> execShell(String command) throws Exception {
+        LOGGER.info("execShell() called with command: {}", command);
+
+        try {
+            Python3ProcessPool pool = getProcessPool();
+            if (pool == null) {
+                String errorMsg = "Python 3 process pool is not initialized. Check Gateway logs for initialization errors.";
+                LOGGER.error(errorMsg);
+                throw new RuntimeException(errorMsg);
+            }
+
+            LOGGER.debug("Executing shell command via process pool");
+
+            // Borrow an executor from the pool
+            Python3Executor executor = pool.borrowExecutor(30, java.util.concurrent.TimeUnit.SECONDS);
+            if (executor == null) {
+                throw new RuntimeException("Failed to acquire Python executor from pool");
+            }
+
+            try {
+                // Execute shell command using Python subprocess
+                String pythonCode = String.format(
+                    "import subprocess\n" +
+                    "import json\n" +
+                    "try:\n" +
+                    "    result = subprocess.run(%s, shell=True, capture_output=True, text=True, timeout=30)\n" +
+                    "    output = {\n" +
+                    "        'stdout': result.stdout,\n" +
+                    "        'stderr': result.stderr,\n" +
+                    "        'exitCode': result.returncode\n" +
+                    "    }\n" +
+                    "except subprocess.TimeoutExpired:\n" +
+                    "    output = {\n" +
+                    "        'stdout': '',\n" +
+                    "        'stderr': 'Command timed out after 30 seconds',\n" +
+                    "        'exitCode': -1\n" +
+                    "    }\n" +
+                    "result = json.dumps(output)",
+                    escapeForPython(command)
+                );
+
+                Python3Result result = executor.execute(pythonCode, Collections.emptyMap(), "ADMIN");
+
+                if (result.isSuccess() && result.getResult() != null) {
+                    // Parse JSON result
+                    String jsonResult = result.getResult().toString();
+                    com.google.gson.JsonObject jsonObj = new com.google.gson.Gson().fromJson(jsonResult, com.google.gson.JsonObject.class);
+
+                    Map<String, Object> output = new HashMap<>();
+                    output.put("success", jsonObj.get("exitCode").getAsInt() == 0);
+                    output.put("stdout", jsonObj.get("stdout").getAsString());
+                    output.put("stderr", jsonObj.get("stderr").getAsString());
+                    output.put("exitCode", jsonObj.get("exitCode").getAsInt());
+
+                    LOGGER.info("Shell command executed: exit code {}", output.get("exitCode"));
+                    return output;
+                } else {
+                    String errorMsg = "Shell command execution failed: " + result.getError();
+                    LOGGER.error(errorMsg);
+
+                    Map<String, Object> output = new HashMap<>();
+                    output.put("success", false);
+                    output.put("stdout", "");
+                    output.put("stderr", result.getError() != null ? result.getError() : "Unknown error");
+                    output.put("exitCode", 1);
+                    return output;
+                }
+            } finally {
+                pool.returnExecutor(executor);
+            }
+
+        } catch (Exception e) {
+            LOGGER.error("Failed to execute shell command", e);
+            throw e;
+        }
+    }
+
+    /**
+     * Escape string for use in Python code
+     */
+    private String escapeForPython(String str) {
+        return "'" + str.replace("\\", "\\\\").replace("'", "\\'").replace("\n", "\\n") + "'";
+    }
+
+    /**
      * Check if Python 3 is available and the process pool is healthy.
      *
      * @return true if Python 3 is available

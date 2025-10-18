@@ -38,6 +38,7 @@ public class Python3ExecutionWorker extends SwingWorker<ExecutionResult, Void> {
     private final String code;
     private final Map<String, Object> variables;
     private final boolean isEvaluation;
+    private final boolean isShellMode;  // v2.5.0: Shell Command mode
     private final Consumer<ExecutionResult> onSuccess;
     private final Consumer<Exception> onError;
 
@@ -60,6 +61,7 @@ public class Python3ExecutionWorker extends SwingWorker<ExecutionResult, Void> {
         this.code = code;
         this.variables = variables;
         this.isEvaluation = false;
+        this.isShellMode = false;
         this.onSuccess = onSuccess;
         this.onError = onError;
     }
@@ -85,6 +87,37 @@ public class Python3ExecutionWorker extends SwingWorker<ExecutionResult, Void> {
         this.code = code;
         this.variables = variables;
         this.isEvaluation = isEvaluation;
+        this.isShellMode = false;
+        this.onSuccess = onSuccess;
+        this.onError = onError;
+    }
+
+    /**
+     * Creates a worker for executing Python code, evaluating expressions, or running shell commands.
+     *
+     * v2.5.0: Added support for Shell Command mode
+     *
+     * @param restClient the REST API client
+     * @param code the Python code, expression, or shell command
+     * @param variables variables to pass to Python environment (ignored for shell mode)
+     * @param isEvaluation true to evaluate as expression, false to execute as code
+     * @param isShellMode true to execute as shell command (v2.5.0)
+     * @param onSuccess callback for successful execution (runs on Swing thread)
+     * @param onError callback for errors (runs on Swing thread)
+     */
+    public Python3ExecutionWorker(
+            Python3RestClient restClient,
+            String code,
+            Map<String, Object> variables,
+            boolean isEvaluation,
+            boolean isShellMode,
+            Consumer<ExecutionResult> onSuccess,
+            Consumer<Exception> onError) {
+        this.restClient = restClient;
+        this.code = code;
+        this.variables = variables;
+        this.isEvaluation = isEvaluation;
+        this.isShellMode = isShellMode;
         this.onSuccess = onSuccess;
         this.onError = onError;
     }
@@ -97,17 +130,25 @@ public class Python3ExecutionWorker extends SwingWorker<ExecutionResult, Void> {
      */
     @Override
     protected ExecutionResult doInBackground() throws Exception {
-        LOGGER.info("Executing Python code in background thread (evaluation={})", isEvaluation);
-        LOGGER.info("Code to execute: {}", code.length() > 100 ? code.substring(0, 100) + "..." : code);
+        if (isShellMode) {
+            LOGGER.info("Executing shell command in background thread");
+            LOGGER.info("Command to execute: {}", code.length() > 100 ? code.substring(0, 100) + "..." : code);
+        } else {
+            LOGGER.info("Executing Python code in background thread (evaluation={})", isEvaluation);
+            LOGGER.info("Code to execute: {}", code.length() > 100 ? code.substring(0, 100) + "..." : code);
+        }
 
         try {
-            if (isEvaluation) {
+            if (isShellMode) {
+                // v2.5.0: Execute shell command
+                return restClient.executeShellCommand(code);
+            } else if (isEvaluation) {
                 return restClient.evaluateExpression(code, variables);
             } else {
                 return restClient.executeCode(code, variables);
             }
         } catch (Exception e) {
-            LOGGER.error("Python execution failed", e);
+            LOGGER.error("Execution failed", e);
             throw e;
         }
     }

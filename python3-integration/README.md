@@ -1,6 +1,6 @@
 # Python 3 Integration Module for Ignition
 
-**Current Version: v2.4.2** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
+**Current Version: v2.5.1** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
 
 This module enables Python 3 scripting functions in Ignition 8.3+, allowing you to use modern Python 3 features and libraries alongside Ignition's built-in Jython 2.7 environment.
 
@@ -124,16 +124,47 @@ cd python3-integration
 
 ## Installation
 
+### First-Time Installation
+
 1. Open Ignition Gateway web interface (http://localhost:8088)
 2. Navigate to **Config → System → Modules**
 3. Scroll to bottom and click **Install or Upgrade a Module**
-4. Select the `.modl` file
+4. Select the `.modl` file from `python3-integration/build/libs/`
 5. Click **Install**
 6. Module status should show **Running**
 
+### Upgrading from Previous Version
+
+**IMPORTANT:** You must uninstall the previous version before installing a new version.
+
+1. **Backup Your Scripts** (Optional but recommended)
+   - Scripts are saved in: `<user-home>/.python3ide/scripts/`
+   - On Windows: `C:\Users\<username>\.python3ide\scripts\`
+   - On Linux/Mac: `~/.python3ide/scripts/`
+   - Copy this folder to a safe location
+
+2. **Uninstall Previous Version**
+   - Open Gateway web interface (http://localhost:8088)
+   - Navigate to **Config → System → Modules**
+   - Find "Python3Integration" module
+   - Click the **Uninstall** button
+   - Confirm uninstall
+   - Wait for module to be removed
+
+3. **Install New Version**
+   - Follow the First-Time Installation steps above
+   - Your scripts will be preserved (they're stored outside the module)
+
+4. **Verify Installation**
+   - Module status should show **Running**
+   - Open Designer → Tools → Python 3 IDE to verify functionality
+   - Your saved scripts should appear in the script tree
+
+**Note:** Scripts are stored in your user directory, NOT in the module itself, so they persist across upgrades.
+
 ## Usage
 
-### Designer IDE (v2.0.30 - Current)
+### Designer IDE (v2.5.0 - Current)
 
 The Designer IDE provides an interactive development environment for testing Python 3 code directly in the Ignition Designer.
 
@@ -145,11 +176,12 @@ The Designer IDE provides an interactive development environment for testing Pyt
 3. A new window will open with the code editor
 
 **Features:**
+- **Execution Mode Selector** *(v2.5.0)*: Switch between "Python Code" and "Shell Command" modes
 - **Code Editor**: Write and edit Python 3 code with syntax highlighting
 - **Real-time Syntax Checking** *(v1.11.0+)*: Red squiggles for errors, yellow for warnings
 - **Modern UI** *(v1.12.0+)*: VS Code-inspired dark theme with modern buttons and styling
 - **Refactored Architecture** *(v2.0.0+)*: Modular design with 95-490 line files (down from 2,676-line monolith)
-- **Execute Button**: Run code on the Gateway (Ctrl+Enter shortcut)
+- **Execute Button**: Run code or shell commands on the Gateway (Ctrl+Enter shortcut)
 - **Clear Output Button** *(v2.0.24)*: Quickly clear output and error panels
 - **Keyboard Shortcuts** *(v2.0.25)*: Ctrl+Enter, Ctrl+S, Ctrl+Shift+S, Ctrl+N, Ctrl+F, Ctrl+H
 - **Context Menus** *(v2.0.26)*: Right-click scripts (Load, Export, Rename, Delete, Move) and folders
@@ -158,13 +190,16 @@ The Designer IDE provides an interactive development environment for testing Pyt
 - **Font Size Controls** *(v2.0.28)*: A+/A- buttons, Ctrl++/Ctrl+-/Ctrl+0 shortcuts
 - **Move to Folder** *(v2.0.29)*: Context menu to move scripts between folders
 - **Drag-and-Drop** *(v2.0.30)*: Drag scripts and folders to reorganize
-- **Output Panel**: View execution results
-- **Error Panel**: View detailed error messages and tracebacks
+- **Shell Command Mode** *(v2.5.0)*: Direct terminal access for pip, system commands, diagnostics
+- **Output Panel**: View execution results or command output
+- **Error Panel**: View detailed error messages, tracebacks, or stderr
 - **Diagnostics**: Real-time pool statistics (healthy processes, available, in use)
 - **Execution Timing**: See how long each execution takes
 - **Async Execution**: Non-blocking UI during code execution
 
-**Example Workflow:**
+**Example Workflows:**
+
+**Python Code Mode:**
 ```python
 # Write code in the editor
 import math
@@ -175,7 +210,337 @@ print(f"Square root: {result}")
 # Results appear in Output panel
 ```
 
-The Designer IDE communicates with the Gateway via REST API, so all code executes on the Gateway using the process pool (just like `system.python3.*` functions).
+**Shell Command Mode (v2.5.0):**
+```bash
+# Select "Shell Command" from Mode dropdown
+# Type commands directly - no Python subprocess boilerplate needed
+
+pip install pandas
+# Output: Successfully installed pandas-2.1.0...
+
+df -h
+# Output: Filesystem sizes and usage
+
+python3 --version
+# Output: Python 3.11.5
+```
+
+The Designer IDE communicates with the Gateway via REST API, so all code and commands execute on the Gateway using the process pool (just like `system.python3.*` functions).
+
+## How Scripts Work: Complete Workflow Guide
+
+### Understanding the Architecture
+
+The Python 3 Integration module uses a **three-tier architecture**:
+
+1. **Gateway Tier** - Python 3 process pool runs on the Gateway server
+2. **Designer Tier** - IDE for development and testing (connects to Gateway)
+3. **Client/Script Tier** - Scripts call Gateway functions to execute Python code
+
+**Key Concept:** All Python 3 code executes **on the Gateway**, not on the Designer or Client.
+
+```
+┌─────────────┐                    ┌─────────────┐                    ┌─────────────┐
+│   Designer  │ ──REST API────────>│   Gateway   │ ──subprocess────>  │  Python 3   │
+│     IDE     │ <─────────────────│  (Java VM)  │ <─────────────────│   Process   │
+└─────────────┘                    └─────────────┘                    └─────────────┘
+      │                                    ▲
+      │ saves scripts locally              │ system.python3.*
+      │                                    │
+      ▼                                    │
+┌─────────────┐                    ┌─────────────┐
+│  Scripts    │                    │   Client    │
+│  Folder     │                    │   Scripts   │
+│ ~/.python3  │                    └─────────────┘
+└─────────────┘
+```
+
+![Architecture Diagram](docs/images/architecture-diagram.png) *(placeholder - shows Gateway, Designer, Client relationship)*
+
+### Where Scripts Are Stored
+
+Scripts created in the Designer IDE are saved **locally on your workstation**:
+
+- **Windows:** `C:\Users\<username>\.python3ide\scripts\`
+- **Linux/Mac:** `~/.python3ide/scripts/`
+
+Each script is saved as a JSON file containing:
+- Python code
+- Script metadata (name, description, author, version, folder path)
+- Last modified timestamp
+
+**Important:** Scripts are **NOT** stored on the Gateway. They're development tools for testing Python code.
+
+![Script Storage Location](docs/images/script-storage.png) *(placeholder - shows file explorer with .python3ide folder)*
+
+### Workflow 1: Developing and Testing Python Code
+
+**Goal:** Write and test Python 3 code before using it in production scripts.
+
+1. **Open the Designer IDE**
+   - Open Ignition Designer
+   - Navigate to **Tools → Python 3 IDE**
+   - A new window opens with code editor
+
+   ![Open IDE from Tools Menu](docs/images/open-ide.png) *(placeholder - shows Tools menu with Python 3 IDE option)*
+
+2. **Connect to Gateway**
+   - Enter Gateway URL: `http://localhost:8088`
+   - Click **Connect**
+   - Status bar shows "Connected" with green indicator
+
+   ![Connect to Gateway](docs/images/connect-gateway.png) *(placeholder - shows connection panel)*
+
+3. **Write Python Code**
+   - Type your Python 3 code in the editor
+   - Use syntax highlighting and autocomplete
+   - Example:
+     ```python
+     import pandas as pd
+     data = {'name': ['John', 'Jane'], 'age': [30, 25]}
+     df = pd.DataFrame(data)
+     result = df.to_dict()
+     ```
+
+   ![Code Editor](docs/images/code-editor.png) *(placeholder - shows editor with Python code)*
+
+4. **Execute Code**
+   - Click **Execute** button (or press Ctrl+Enter)
+   - Code runs on Gateway's Python 3 process
+   - Results appear in **Output** panel
+   - Errors appear in **Error** panel with full traceback
+
+   ![Execution Results](docs/images/execution-results.png) *(placeholder - shows output and error panels)*
+
+5. **Save for Later** (Optional)
+   - Fill in Script Name and Description
+   - Click **Save** (or press Ctrl+S)
+   - Script appears in tree on left sidebar
+   - Can organize scripts into folders
+
+   ![Save Script](docs/images/save-script.png) *(placeholder - shows metadata panel and script tree)*
+
+### Workflow 2: Using Python 3 in Production Scripts
+
+**Goal:** Use Python 3 capabilities in Gateway scripts, Vision scripts, or Perspective scripts.
+
+1. **Test Your Code in IDE First**
+   - Develop and verify logic in Designer IDE
+   - Ensure code runs without errors
+   - Note the return value structure
+
+2. **Copy Code to Production Script**
+   - Open Script Console (Designer) or create a Gateway Event Script
+   - Use `system.python3.exec()` to execute Python code
+
+   **Example: Gateway Event Script**
+   ```python
+   # Gateway Scheduled Script (runs every hour)
+   def execute():
+       # Execute Python 3 data processing
+       code = """
+   import pandas as pd
+   import json
+
+   # Fetch data from database
+   # (simplified example)
+   data = {'temp': [20, 22, 21], 'humidity': [45, 48, 46]}
+   df = pd.DataFrame(data)
+
+   # Calculate statistics
+   stats = {
+       'avg_temp': df['temp'].mean(),
+       'avg_humidity': df['humidity'].mean()
+   }
+
+   result = json.dumps(stats)
+   """
+
+       # Execute on Gateway's Python 3 process
+       result = system.python3.exec(code)
+
+       # Parse JSON result
+       import json  # Jython json
+       stats = json.loads(result)
+
+       # Write to tags
+       system.tag.writeBlocking(['[default]Stats/AvgTemp'], [stats['avg_temp']])
+       system.tag.writeBlocking(['[default]Stats/AvgHumidity'], [stats['avg_humidity']])
+   ```
+
+3. **Use Saved Scripts** (Alternative Approach)
+   - If you saved the script in the IDE, you can manually copy the code
+   - Future enhancement: Dynamic script registration (see Roadmap)
+
+   ![Script Console Example](docs/images/script-console.png) *(placeholder - shows script console with system.python3 call)*
+
+### Workflow 3: Shell Command Mode (v2.5.0+)
+
+**Goal:** Install packages, run diagnostics, manage Gateway Python environment.
+
+1. **Switch to Shell Command Mode**
+   - Select **"Shell Command"** from Mode dropdown (top toolbar)
+   - Editor now accepts shell commands instead of Python code
+
+2. **Install Python Packages**
+   ```bash
+   pip install pandas numpy requests
+   ```
+   - Output shows installation progress
+   - Packages install on Gateway's Python
+   - Available immediately for all scripts
+
+   ![Shell Command Mode](docs/images/shell-mode.png) *(placeholder - shows mode dropdown and pip install)*
+
+3. **Run System Diagnostics**
+   ```bash
+   # Check Python version
+   python3 --version
+
+   # List installed packages
+   pip list
+
+   # Check disk space
+   df -h
+
+   # View running Python processes
+   ps aux | grep python
+   ```
+
+4. **File Operations**
+   ```bash
+   # Navigate Gateway directories
+   ls -la /var/opt/ignition
+
+   # View log files
+   tail -n 50 /var/log/ignition/wrapper.log
+   ```
+
+### Workflow 4: Organizing Scripts with Folders
+
+**Goal:** Keep scripts organized as your library grows.
+
+1. **Create Folders**
+   - Right-click in script tree
+   - Select **"New Folder"**
+   - Enter folder path (e.g., "DataProcessing/ETL")
+
+2. **Save Scripts to Folders**
+   - When saving, specify folder in metadata
+   - Scripts appear under folder in tree
+
+3. **Move Scripts Between Folders** (v2.0.29+)
+   - Right-click script
+   - Select **"Move to Folder..."**
+   - Choose destination folder
+   - Script relocated automatically
+
+4. **Drag and Drop** (v2.0.30+)
+   - Drag scripts between folders
+   - Drag folders to reorganize hierarchy
+
+   ![Folder Organization](docs/images/folder-organization.png) *(placeholder - shows tree with folders and context menu)*
+
+### Common Use Cases
+
+#### Use Case 1: Data Processing with Pandas
+```python
+# In Designer IDE
+import pandas as pd
+import json
+
+# Read CSV data (example)
+data = {'product': ['A', 'B', 'C'], 'sales': [100, 150, 200]}
+df = pd.DataFrame(data)
+
+# Process data
+total_sales = df['sales'].sum()
+avg_sales = df['sales'].mean()
+
+result = {'total': total_sales, 'average': avg_sales}
+```
+
+**Then in Gateway Script:**
+```python
+code = """... (paste code from IDE) ..."""
+result = system.python3.exec(code)
+# Use result in Ignition
+```
+
+#### Use Case 2: API Integration with Requests
+```python
+# In Designer IDE
+import requests
+import json
+
+response = requests.get('https://api.example.com/data')
+data = response.json()
+
+# Transform data for Ignition
+result = [{'name': item['name'], 'value': item['value']} for item in data['items']]
+```
+
+#### Use Case 3: Machine Learning Predictions
+```python
+# In Designer IDE
+import pickle
+import numpy as np
+
+# Load pre-trained model
+with open('/opt/models/predictor.pkl', 'rb') as f:
+    model = pickle.load(f)
+
+# Make prediction
+input_data = np.array([[temp, humidity, pressure]])
+prediction = model.predict(input_data)[0]
+
+result = float(prediction)
+```
+
+### Best Practices
+
+1. **Develop in IDE First**
+   - Always test code in Designer IDE before deploying to production
+   - Use Output/Error panels to debug issues
+   - Save working scripts for future reference
+
+2. **Use Shell Mode for Setup**
+   - Install all required packages using Shell Command mode
+   - Document package requirements in script descriptions
+   - Test package availability before deploying scripts
+
+3. **Organize Scripts Logically**
+   - Use folders to group related scripts (e.g., "Database", "API", "Reports")
+   - Use descriptive names (e.g., "CalculateDailyRevenue" not "script1")
+   - Fill in metadata (description, author, version)
+
+4. **Handle Errors Gracefully**
+   - Always check for errors in production scripts
+   - Use try/except in Python code
+   - Log errors to Ignition's logging system
+
+5. **Pass Variables Efficiently**
+   - Use the `variables` parameter to pass data from Jython to Python
+   - Return results as JSON for complex data structures
+   - Example:
+     ```python
+     code = "result = x * 2 + y"
+     result = system.python3.exec(code, {'x': tag_value, 'y': 10})
+     ```
+
+### Troubleshooting Script Development
+
+**Problem:** Script works in IDE but fails in Gateway script
+**Solution:** Ensure packages are installed on Gateway, check variable passing
+
+**Problem:** Can't save script
+**Solution:** Check file permissions on `~/.python3ide/scripts/` directory
+
+**Problem:** Script tree is empty
+**Solution:** Scripts are saved locally per-workstation, copy from backup if needed
+
+**Problem:** Shell commands fail
+**Solution:** Check Gateway OS permissions, some commands require sudo
 
 ### Basic Examples
 
@@ -603,6 +968,14 @@ Comprehensive planning documents for enterprise-scale production deployments:
 
 See the usage examples above for common Python 3 integration patterns. Additional examples can be found in the module documentation and test scripts.
 
+### Additional Guides
+
+- **[Python Subprocess and Pip Usage Guide](../PYTHON_SUBPROCESS_AND_PIP_GUIDE.md)** - How to run shell commands, pip, and understand the IDE execution environment
+  - Running pip install from IDE (using subprocess)
+  - Understanding ADMIN vs RESTRICTED security modes
+  - Package installation best practices
+  - Common subprocess use cases
+
 ## Credits
 
 Built using the Ignition SDK:
@@ -610,6 +983,66 @@ Built using the Ignition SDK:
 - https://www.sdk-docs.inductiveautomation.com/
 
 ## Changelog
+
+### 2.5.1 (Documentation + In-App User Guide)
+- **NEW**: Comprehensive "How Scripts Work" section in README
+  - Architecture diagrams and workflows
+  - Step-by-step guides for IDE → Production script workflow
+  - 4 detailed workflow scenarios with examples
+  - Common use cases (Pandas, APIs, Machine Learning)
+  - Best practices and troubleshooting guide
+  - Image placeholders for future screenshots
+- **NEW**: Upgrade/installation instructions in README
+  - First-time installation steps
+  - Detailed upgrade workflow (uninstall previous, install new)
+  - Script backup and persistence explained
+  - Verification steps
+- **NEW**: Information dialog in Designer IDE (ℹ Info button)
+  - Comprehensive in-app user guide
+  - Keyboard shortcuts reference
+  - Execution modes explained
+  - IDE to production workflow guide
+  - Script management best practices
+  - Common use cases and troubleshooting
+  - Scrollable content with theme-aware styling
+- **IMPROVED**: Documentation now beginner-friendly
+  - New users can understand architecture immediately
+  - Clear explanation of where scripts are stored
+  - Visual ASCII diagrams for architecture
+  - Step-by-step workflows with code examples
+- **IMPROVED**: Better onboarding experience
+  - In-app help available with one click
+  - No need to search external docs for basic tasks
+  - Comprehensive keyboard shortcuts listed
+  - Tips and best practices readily accessible
+
+### 2.5.0 (Shell Command Mode - Direct Terminal Access)
+- **NEW**: Shell Command execution mode in Designer IDE
+  - Dropdown selector: "Python Code" or "Shell Command"
+  - Run shell commands directly on Gateway without Python subprocess boilerplate
+  - Perfect for pip installs, system diagnostics, file operations
+  - Example: `pip install pandas` instead of `import subprocess; subprocess.run(...)`
+- **NEW**: REST API endpoint: `POST /data/python3integration/api/v1/shell-exec`
+  - Execute shell commands via HTTP API
+  - Returns stdout, stderr, exit code
+  - Same authentication and rate limiting as Python exec
+- **NEW**: Gateway function: `system.python3.execShell(command)`
+  - Execute shell commands from Ignition scripts
+  - Returns Map with stdout, stderr, exitCode
+- **IMPROVED**: Simpler workflow for package management
+  - No more complex subprocess code for pip
+  - Direct command execution: just type and run
+  - Persistent installations (runs on Gateway's Python, not subprocess)
+- **IMPROVED**: Better UX for system administration tasks
+  - Check disk space: `df -h`
+  - View processes: `ps aux | grep python`
+  - Network diagnostics: `ping google.com`
+  - File operations: `ls -la /tmp`
+- **DOCS**: Added comprehensive subprocess and pip usage guide
+  - `/PYTHON_SUBPROCESS_AND_PIP_GUIDE.md` - 400+ line guide
+  - Explains ADMIN vs RESTRICTED security modes
+  - Package installation best practices
+  - Common use cases and examples
 
 ### 2.4.2 (CRITICAL UX FIX - True Borderless + Simplified Scrollbars)
 - **FIXED**: Borders now completely removed using `null` (not empty borders)
@@ -649,7 +1082,7 @@ Built using the Ignition SDK:
 - **NOTE**: Jedi auto-installs at Gateway startup (not via IDE execute panel)
   - Check Gateway logs (`wrapper.log`) if autocomplete unavailable
   - Pre-bundled wheels install automatically on first startup
-  - Manual pip install not needed
+  - Manual pip install not needed (but possible - see [Subprocess Guide](../PYTHON_SUBPROCESS_AND_PIP_GUIDE.md))
 - **UX**: Sleek, distraction-free coding environment
 - **UX**: Matches modern terminal aesthetics (Warp, VS Code, IntelliJ)
 

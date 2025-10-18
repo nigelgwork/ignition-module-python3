@@ -81,6 +81,7 @@ public class Python3IDE extends JPanel {
     private JButton fontIncreaseButton;
     private JButton fontDecreaseButton;
     private JProgressBar progressBar;
+    private JComboBox<String> executionModeCombo;  // v2.5.0: Execution mode selector
 
     // Script Browser Components
     private JTree scriptTree;
@@ -224,6 +225,13 @@ public class Python3IDE extends JPanel {
         progressBar.setIndeterminate(false);
         progressBar.setVisible(false);
 
+        // Execution mode selector (v2.5.0: Shell Command mode)
+        executionModeCombo = new JComboBox<>(new String[]{"Python Code", "Shell Command"});
+        executionModeCombo.setFont(ModernTheme.FONT_REGULAR);
+        executionModeCombo.setBackground(ModernTheme.PANEL_BACKGROUND);
+        executionModeCombo.setForeground(ModernTheme.FOREGROUND_PRIMARY);
+        executionModeCombo.setToolTipText("Select execution mode: Python code or direct shell commands");
+
         // Script Browser Tree (Ignition Tag Browser style)
         rootNode = new ScriptTreeNode("Scripts");
         treeModel = new DefaultTreeModel(rootNode);
@@ -289,6 +297,11 @@ public class Python3IDE extends JPanel {
         // Center: Action buttons (Execute, Clear, Save, etc.) - v2.0.16 UX improvement
         JPanel centerPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 1));
         centerPanel.setBackground(ModernTheme.PANEL_BACKGROUND);
+        JLabel modeLabel = new JLabel("Mode:");
+        modeLabel.setForeground(ModernTheme.FOREGROUND_PRIMARY);
+        modeLabel.setFont(ModernTheme.FONT_REGULAR);
+        centerPanel.add(modeLabel);
+        centerPanel.add(executionModeCombo);  // v2.5.0: Execution mode selector
         centerPanel.add(executeButton);
         centerPanel.add(clearButton);
         centerPanel.add(saveButton);
@@ -298,9 +311,15 @@ public class Python3IDE extends JPanel {
         centerPanel.add(progressBar);
         gatewayPanel.add(centerPanel, BorderLayout.CENTER);
 
-        // Right side: Font size controls and Theme selector (v2.0.28)
+        // Right side: Information button, Font size controls and Theme selector (v2.5.1)
         JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 1));  // Horizontal gap adjusted (v2.3.3)
         rightPanel.setBackground(ModernTheme.PANEL_BACKGROUND);
+
+        // Information button (v2.5.1)
+        ModernButton infoButton = ModernButton.createDefault("ℹ Info");
+        infoButton.setToolTipText("View keyboard shortcuts and user guide");
+        infoButton.addActionListener(e -> showInformationDialog());
+        rightPanel.add(infoButton);
 
         // Font size controls
         JLabel fontLabel = new JLabel("Font:");
@@ -744,7 +763,8 @@ public class Python3IDE extends JPanel {
     }
 
     /**
-     * Executes the Python code in the editor.
+     * Executes the Python code in the editor or shell command.
+     * v2.5.0: Added support for Shell Command mode
      */
     private void executeCode() {
         if (restClient == null) {
@@ -763,17 +783,27 @@ public class Python3IDE extends JPanel {
             currentWorker.cancel(true);
         }
 
+        // Check execution mode (v2.5.0)
+        boolean isShellMode = "Shell Command".equals(executionModeCombo.getSelectedItem());
+
         clearOutput();
 
         executeButton.setEnabled(false);
         progressBar.setVisible(true);
         progressBar.setIndeterminate(true);
-        setStatus("Executing...", Color.BLUE);
+
+        if (isShellMode) {
+            setStatus("Executing shell command...", Color.BLUE);
+        } else {
+            setStatus("Executing...", Color.BLUE);
+        }
 
         currentWorker = new Python3ExecutionWorker(
                 restClient,
                 code,
                 new HashMap<>(),
+                false,  // not evaluation
+                isShellMode,  // v2.5.0: Shell mode flag
                 this::handleSuccess,
                 this::handleError
         );
@@ -3280,5 +3310,16 @@ public class Python3IDE extends JPanel {
 
             worker.execute();
         }
+    }
+
+    /**
+     * Shows the information dialog with comprehensive user guide.
+     *
+     * v2.5.1: Added to provide in-app help for users
+     */
+    private void showInformationDialog() {
+        // Update theme in dialog before showing
+        InformationDialog.setDarkTheme(useDarkTheme);
+        InformationDialog.show(this);
     }
 }

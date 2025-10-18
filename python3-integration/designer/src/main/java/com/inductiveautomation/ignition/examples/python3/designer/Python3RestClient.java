@@ -137,6 +137,53 @@ public class Python3RestClient {
     }
 
     /**
+     * Executes a shell command on the Gateway.
+     *
+     * v2.5.0: Added for Shell Command mode in Designer IDE
+     *
+     * @param command the shell command to execute
+     * @return execution result with stdout, stderr, exit code
+     * @throws IOException if the HTTP request fails
+     */
+    public ExecutionResult executeShellCommand(String command) throws IOException {
+        LOGGER.info("Executing shell command via REST API: {}", command);
+
+        // Build JSON request body
+        JsonObject requestBody = new JsonObject();
+        requestBody.addProperty("command", command);
+
+        // Make POST request to /shell-exec endpoint
+        LOGGER.info("Sending POST request to /shell-exec endpoint");
+        String response = post("/shell-exec", requestBody.toString());
+        LOGGER.info("Received response from /shell-exec endpoint (length: {} chars)", response.length());
+
+        // Parse response
+        JsonObject json = JsonParser.parseString(response).getAsJsonObject();
+
+        boolean success = json.has("success") && json.get("success").getAsBoolean();
+        String stdout = json.has("stdout") ? json.get("stdout").getAsString() : "";
+        String stderr = json.has("stderr") ? json.get("stderr").getAsString() : "";
+        int exitCode = json.has("exitCode") ? json.get("exitCode").getAsInt() : -1;
+
+        // Format output for display
+        StringBuilder output = new StringBuilder();
+        if (!stdout.isEmpty()) {
+            output.append(stdout);
+        }
+
+        String error = null;
+        if (!stderr.isEmpty()) {
+            error = stderr;
+        }
+
+        if (!success && error == null && exitCode != 0) {
+            error = "Command failed with exit code: " + exitCode;
+        }
+
+        return new ExecutionResult(success, output.toString(), error, 0L, System.currentTimeMillis());
+    }
+
+    /**
      * Gets the current Python process pool statistics.
      *
      * @return pool statistics

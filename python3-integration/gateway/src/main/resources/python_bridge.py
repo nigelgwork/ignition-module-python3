@@ -550,6 +550,60 @@ class PythonBridge:
                 'traceback': traceback.format_exc()
             }
 
+    def execute_shell(self, command: str, timeout: int = 30) -> Dict[str, Any]:
+        """Execute shell command and return stdout, stderr, exit code
+
+        v2.5.0: Added for Shell Command mode in Designer IDE
+
+        Args:
+            command: Shell command to execute
+            timeout: Command timeout in seconds (default: 30)
+
+        Returns:
+            Dict with success, stdout, stderr, exitCode
+        """
+        try:
+            import subprocess
+
+            # Execute shell command
+            result = subprocess.run(
+                command,
+                shell=True,
+                capture_output=True,
+                text=True,
+                timeout=timeout
+            )
+
+            return {
+                'success': result.returncode == 0,
+                'stdout': result.stdout,
+                'stderr': result.stderr,
+                'exitCode': result.returncode,
+                'result': {
+                    'stdout': result.stdout,
+                    'stderr': result.stderr,
+                    'exitCode': result.returncode
+                }
+            }
+
+        except subprocess.TimeoutExpired:
+            return {
+                'success': False,
+                'error': f'Command timed out after {timeout} seconds',
+                'stdout': '',
+                'stderr': '',
+                'exitCode': -1
+            }
+        except Exception as e:
+            return {
+                'success': False,
+                'error': str(e),
+                'traceback': traceback.format_exc(),
+                'stdout': '',
+                'stderr': '',
+                'exitCode': -1
+            }
+
     def _serialize(self, obj: Any) -> Any:
         """Convert Python objects to JSON-serializable format"""
         if obj is None:
@@ -615,6 +669,12 @@ class PythonBridge:
                 request.get('code', ''),
                 request.get('line', 1),
                 request.get('column', 0)
+            )
+
+        elif command == 'execute_shell':
+            return self.execute_shell(
+                request.get('command_str', ''),
+                request.get('timeout', 30)
             )
 
         elif command == 'ping':

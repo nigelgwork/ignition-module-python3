@@ -491,6 +491,14 @@ public final class Python3RestEndpoints {
             .accessControl(Python3RestEndpoints::checkExecutePermission)  // ✅ AUTH + RATE LIMIT
             .mount();
 
+        // POST /data/python3integration/api/v1/shell-exec - Execute shell command (v2.5.0)
+        routes.newRoute("/api/v1/shell-exec")
+            .handler(Python3RestEndpoints::handleShellExec)
+            .method(HttpMethod.POST)
+            .type(RouteGroup.TYPE_JSON)
+            .accessControl(Python3RestEndpoints::checkExecutePermission)  // ✅ AUTH + RATE LIMIT
+            .mount();
+
         // POST /data/python3integration/api/v1/eval - Evaluate Python expression
         routes.newRoute("/api/v1/eval")
             .handler(Python3RestEndpoints::handleEval)
@@ -761,6 +769,57 @@ public final class Python3RestEndpoints {
             LOGGER.error("REST API: /exec failed", e);
             applySecurityHeaders(res);  // Apply headers even on error
             return createErrorResponse(e.getMessage());
+        }
+    }
+
+    /**
+     * Handle POST /shell-exec - Execute shell command (v2.5.0)
+     *
+     * Request body: {"command": "pip list"}
+     * Response: {"success": true, "stdout": "...", "stderr": "...", "exitCode": 0}
+     */
+    private static JsonObject handleShellExec(RequestContext req, HttpServletResponse res) {
+        LOGGER.debug("REST API: /shell-exec called");
+
+        try {
+            // Apply security headers
+            applySecurityHeaders(res);
+
+            JsonObject requestBody = parseJsonBody(req);
+            String command = requestBody.has("command") ? requestBody.get("command").getAsString() : "";
+
+            if (command == null || command.trim().isEmpty()) {
+                return createErrorResponse("Missing required parameter: command");
+            }
+
+            LOGGER.info("REST API: Executing shell command: {}", command);
+
+            // Audit log
+            auditLog("SHELL_EXEC", command);
+
+            // Execute shell command
+            Map<String, Object> result = scriptModule.execShell(command);
+
+            JsonObject response = new JsonObject();
+            response.addProperty("success", (Boolean) result.get("success"));
+            response.addProperty("stdout", (String) result.get("stdout"));
+            response.addProperty("stderr", (String) result.get("stderr"));
+            response.addProperty("exitCode", ((Number) result.get("exitCode")).intValue());
+
+            // Add result object for compatibility
+            JsonObject resultObj = new JsonObject();
+            resultObj.addProperty("stdout", (String) result.get("stdout"));
+            resultObj.addProperty("stderr", (String) result.get("stderr"));
+            resultObj.addProperty("exitCode", ((Number) result.get("exitCode")).intValue());
+            response.add("result", resultObj);
+
+            LOGGER.info("REST API: Shell command completed: exit code {}", result.get("exitCode"));
+            return response;
+
+        } catch (Exception e) {
+            LOGGER.error("REST API: /shell-exec failed", e);
+            applySecurityHeaders(res);
+            return createErrorResponse("Shell execution error: " + e.getMessage());
         }
     }
 

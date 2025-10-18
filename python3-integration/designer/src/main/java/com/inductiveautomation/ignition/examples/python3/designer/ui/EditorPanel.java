@@ -11,6 +11,7 @@ import org.fife.ui.rtextarea.SearchEngine;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollBar;
@@ -39,6 +40,7 @@ public class EditorPanel extends JPanel {
     private final JTextField findField;
     private final JTextField replaceField;
     private final JCheckBox matchCaseCheckbox;
+    private final JComboBox<String> executionModeCombo;
 
     public EditorPanel() {
         setLayout(new BorderLayout());
@@ -75,6 +77,13 @@ public class EditorPanel extends JPanel {
         clearOutputButton.setFont(ModernTheme.FONT_REGULAR);
         clearOutputButton.addActionListener(e -> clearOutput());
 
+        // Execution mode selector (v2.5.0)
+        executionModeCombo = new JComboBox<>(new String[]{"Python Code", "Shell Command"});
+        executionModeCombo.setFont(ModernTheme.FONT_REGULAR);
+        executionModeCombo.setBackground(ModernTheme.PANEL_BACKGROUND);
+        executionModeCombo.setForeground(ModernTheme.FOREGROUND_PRIMARY);
+        executionModeCombo.setToolTipText("Select execution mode: Python code or direct shell commands");
+
         findReplacePanel.add(new JLabel("Find:"));
         findReplacePanel.add(findField);
         findReplacePanel.add(new JLabel("Replace:"));
@@ -83,6 +92,8 @@ public class EditorPanel extends JPanel {
         findReplacePanel.add(findNextButton);
         findReplacePanel.add(replaceButton);
         findReplacePanel.add(replaceAllButton);
+        findReplacePanel.add(new JLabel("  Mode:"));
+        findReplacePanel.add(executionModeCombo);
         findReplacePanel.add(clearOutputButton);
 
         add(findReplacePanel, BorderLayout.NORTH);
@@ -219,6 +230,22 @@ public class EditorPanel extends JPanel {
 
     public JTextArea getErrorArea() {
         return errorArea;
+    }
+
+    /**
+     * Get execution mode ("Python Code" or "Shell Command")
+     * @return selected execution mode
+     */
+    public String getExecutionMode() {
+        return (String) executionModeCombo.getSelectedItem();
+    }
+
+    /**
+     * Check if Shell Command mode is selected
+     * @return true if Shell Command mode is active
+     */
+    public boolean isShellMode() {
+        return "Shell Command".equals(getExecutionMode());
     }
 
     private void findNext() {
