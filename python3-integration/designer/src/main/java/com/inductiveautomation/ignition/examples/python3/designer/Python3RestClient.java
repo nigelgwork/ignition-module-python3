@@ -184,6 +184,86 @@ public class Python3RestClient {
     }
 
     /**
+     * Creates a new interactive shell session.
+     *
+     * v2.5.8: Interactive shell support
+     *
+     * @return session ID
+     * @throws IOException if the HTTP request fails
+     */
+    public String createInteractiveShellSession() throws IOException {
+        LOGGER.info("Creating interactive shell session via REST API");
+
+        // Build JSON request body (empty for create)
+        JsonObject requestBody = new JsonObject();
+
+        // Make POST request to /shell-interactive/create endpoint
+        String response = post("/shell-interactive/create", requestBody.toString());
+
+        // Parse response
+        JsonObject json = JsonParser.parseString(response).getAsJsonObject();
+
+        if (json.has("success") && json.get("success").getAsBoolean() && json.has("sessionId")) {
+            String sessionId = json.get("sessionId").getAsString();
+            LOGGER.info("Created interactive shell session: {}", sessionId);
+            return sessionId;
+        } else {
+            throw new IOException("Failed to create interactive shell session");
+        }
+    }
+
+    /**
+     * Executes a command in an interactive shell session.
+     *
+     * v2.5.8: Interactive shell support
+     *
+     * @param sessionId the session ID
+     * @param command the command to execute
+     * @return execution result with command output
+     * @throws IOException if the HTTP request fails
+     */
+    public ExecutionResult executeInteractiveShellCommand(String sessionId, String command) throws IOException {
+        LOGGER.info("Executing interactive shell command (session: {}): {}", sessionId, command);
+
+        // Build JSON request body
+        JsonObject requestBody = new JsonObject();
+        requestBody.addProperty("sessionId", sessionId);
+        requestBody.addProperty("command", command);
+
+        // Make POST request to /shell-interactive/exec endpoint
+        String response = post("/shell-interactive/exec", requestBody.toString());
+
+        // Parse response
+        JsonObject json = JsonParser.parseString(response).getAsJsonObject();
+
+        boolean success = json.has("success") && json.get("success").getAsBoolean();
+        String output = json.has("output") ? json.get("output").getAsString() : "";
+
+        return new ExecutionResult(success, output, null, 0L, System.currentTimeMillis());
+    }
+
+    /**
+     * Closes an interactive shell session.
+     *
+     * v2.5.8: Interactive shell support
+     *
+     * @param sessionId the session ID to close
+     * @throws IOException if the HTTP request fails
+     */
+    public void closeInteractiveShellSession(String sessionId) throws IOException {
+        LOGGER.info("Closing interactive shell session: {}", sessionId);
+
+        // Build JSON request body
+        JsonObject requestBody = new JsonObject();
+        requestBody.addProperty("sessionId", sessionId);
+
+        // Make POST request to /shell-interactive/close endpoint
+        post("/shell-interactive/close", requestBody.toString());
+
+        LOGGER.info("Closed interactive shell session: {}", sessionId);
+    }
+
+    /**
      * Gets the current Python process pool statistics.
      *
      * @return pool statistics

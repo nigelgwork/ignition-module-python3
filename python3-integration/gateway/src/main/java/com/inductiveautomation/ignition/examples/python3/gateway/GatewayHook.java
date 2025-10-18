@@ -122,6 +122,13 @@ public class GatewayHook extends AbstractGatewayModuleHook {
     public void shutdown() {
         LOGGER.info("Python 3 Integration module shutdown");
 
+        // v2.5.8: Close all interactive shell sessions
+        try {
+            Python3InteractiveShell.closeAllSessions();
+        } catch (Exception e) {
+            LOGGER.error("Error closing interactive shell sessions", e);
+        }
+
         // Shutdown process pool
         if (processPool != null) {
             try {

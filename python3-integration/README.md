@@ -1,6 +1,6 @@
 # Python 3 Integration Module for Ignition
 
-**Current Version: v2.5.7** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
+**Current Version: v2.5.8** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
 
 This module enables Python 3 scripting functions in Ignition 8.3+, allowing you to use modern Python 3 features and libraries alongside Ignition's built-in Jython 2.7 environment.
 
@@ -1004,6 +1004,47 @@ Built using the Ignition SDK:
 - https://www.sdk-docs.inductiveautomation.com/
 
 ## Changelog
+
+### 2.5.8 (Major UX Update - Interactive Shell + Invisible Scrolling)
+- **NEW**: Interactive shell sessions in Terminal mode
+  - Persistent bash/cmd/powershell sessions across commands
+  - Command history accumulates in output window
+  - Session automatically created on first Terminal command
+  - Session closed when switching back to Python Code mode
+  - Commands execute in same shell environment (cd, export, etc. persist)
+  - Faster command execution (no process startup overhead per command)
+- **NEW**: REST API endpoints for interactive shell
+  - `/api/v1/shell-interactive/create` - Create new shell session
+  - `/api/v1/shell-interactive/exec` - Execute command in session
+  - `/api/v1/shell-interactive/close` - Close shell session
+  - Sessions automatically cleaned up on module shutdown
+- **IMPROVED**: Terminal mode UX
+  - Updated label: "Terminal - Interactive Shell Session"
+  - Status: "Interactive shell (session persists between commands)"
+  - Editor auto-clears after command execution
+  - Terminal prompt "$ " shown before each command in history
+- **FIXED**: Removed hint text from code editor
+  - Editor now starts completely empty
+  - No "# Python 3.11 Code Editor" placeholder text
+  - Cleaner initial state
+- **FIXED**: Invisible scrollbars (Option A)
+  - ALL scrollbars completely hidden
+  - Mouse wheel and trackpad scrolling still work
+  - Code editor: no scrollbars
+  - Output/Error panels: no scrollbars
+  - Ultra-minimal, distraction-free interface
+  - No more white borders around scrollable windows
+- **TECHNICAL**: Gateway backend for shell sessions
+  - New class: Python3InteractiveShell.java
+  - Manages persistent shell processes (bash/cmd.exe)
+  - Thread-safe session storage with ConcurrentHashMap
+  - Auto-cleanup of inactive sessions (30 min timeout)
+  - Graceful shutdown on module unload
+- **TECHNICAL**: Designer client updates
+  - Python3RestClient methods for interactive shell
+  - Session tracking in Python3IDE
+  - SwingWorker for async shell command execution
+  - Terminal history StringBuilder for accumulated output
 
 ### 2.5.7 (Critical UX Fix - Restored Grey Borders + Fixed Split Pane Dividers)
 - **CRITICAL FIX**: Restored user-preferred grey borders

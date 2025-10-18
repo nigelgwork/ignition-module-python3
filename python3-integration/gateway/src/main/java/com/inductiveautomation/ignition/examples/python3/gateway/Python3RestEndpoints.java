@@ -499,6 +499,30 @@ public final class Python3RestEndpoints {
             .accessControl(Python3RestEndpoints::checkExecutePermission)  // ✅ AUTH + RATE LIMIT
             .mount();
 
+        // POST /data/python3integration/api/v1/shell-interactive/create - Create interactive shell session (v2.5.8)
+        routes.newRoute("/api/v1/shell-interactive/create")
+            .handler(Python3RestEndpoints::handleCreateShellSession)
+            .method(HttpMethod.POST)
+            .type(RouteGroup.TYPE_JSON)
+            .accessControl(Python3RestEndpoints::checkExecutePermission)  // ✅ AUTH + RATE LIMIT
+            .mount();
+
+        // POST /data/python3integration/api/v1/shell-interactive/exec - Execute command in interactive shell (v2.5.8)
+        routes.newRoute("/api/v1/shell-interactive/exec")
+            .handler(Python3RestEndpoints::handleInteractiveShellExec)
+            .method(HttpMethod.POST)
+            .type(RouteGroup.TYPE_JSON)
+            .accessControl(Python3RestEndpoints::checkExecutePermission)  // ✅ AUTH + RATE LIMIT
+            .mount();
+
+        // POST /data/python3integration/api/v1/shell-interactive/close - Close interactive shell session (v2.5.8)
+        routes.newRoute("/api/v1/shell-interactive/close")
+            .handler(Python3RestEndpoints::handleCloseShellSession)
+            .method(HttpMethod.POST)
+            .type(RouteGroup.TYPE_JSON)
+            .accessControl(Python3RestEndpoints::checkExecutePermission)  // ✅ AUTH + RATE LIMIT
+            .mount();
+
         // POST /data/python3integration/api/v1/eval - Evaluate Python expression
         routes.newRoute("/api/v1/eval")
             .handler(Python3RestEndpoints::handleEval)
@@ -820,6 +844,140 @@ public final class Python3RestEndpoints {
             LOGGER.error("REST API: /shell-exec failed", e);
             applySecurityHeaders(res);
             return createErrorResponse("Shell execution error: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Handles POST /data/python3integration/api/v1/shell-interactive/create
+     * Creates a new interactive shell session.
+     *
+     * Request: {}
+     * Response: {"success": true, "sessionId": "uuid"}
+     *
+     * v2.5.8: Interactive shell session creation
+     */
+    private static JsonObject handleCreateShellSession(RequestContext req, HttpServletResponse res) {
+        LOGGER.debug("REST API: /shell-interactive/create called");
+
+        try {
+            // Apply security headers
+            applySecurityHeaders(res);
+
+            // Audit log
+            auditLog("SHELL_INTERACTIVE_CREATE", "Creating new shell session");
+
+            // Create session
+            String sessionId = Python3InteractiveShell.createSession();
+
+            if (sessionId == null) {
+                return createErrorResponse("Failed to create shell session");
+            }
+
+            JsonObject response = new JsonObject();
+            response.addProperty("success", true);
+            response.addProperty("sessionId", sessionId);
+
+            LOGGER.info("REST API: Created interactive shell session: {}", sessionId);
+            return response;
+
+        } catch (Exception e) {
+            LOGGER.error("REST API: /shell-interactive/create failed", e);
+            applySecurityHeaders(res);
+            return createErrorResponse("Failed to create shell session: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Handles POST /data/python3integration/api/v1/shell-interactive/exec
+     * Executes a command in an existing interactive shell session.
+     *
+     * Request: {"sessionId": "uuid", "command": "ls -la"}
+     * Response: {"success": true, "output": "..."}
+     *
+     * v2.5.8: Interactive shell command execution
+     */
+    private static JsonObject handleInteractiveShellExec(RequestContext req, HttpServletResponse res) {
+        LOGGER.debug("REST API: /shell-interactive/exec called");
+
+        try {
+            // Apply security headers
+            applySecurityHeaders(res);
+
+            JsonObject requestBody = parseJsonBody(req);
+            String sessionId = requestBody.has("sessionId") ? requestBody.get("sessionId").getAsString() : "";
+            String command = requestBody.has("command") ? requestBody.get("command").getAsString() : "";
+
+            if (sessionId == null || sessionId.trim().isEmpty()) {
+                return createErrorResponse("Missing required parameter: sessionId");
+            }
+
+            if (command == null || command.trim().isEmpty()) {
+                return createErrorResponse("Missing required parameter: command");
+            }
+
+            LOGGER.info("REST API: Executing interactive shell command (session: {}): {}", sessionId, command);
+
+            // Audit log
+            auditLog("SHELL_INTERACTIVE_EXEC", "Session: " + sessionId + ", Command: " + command);
+
+            // Execute command in session
+            String output = Python3InteractiveShell.executeCommand(sessionId, command);
+
+            JsonObject response = new JsonObject();
+            response.addProperty("success", true);
+            response.addProperty("output", output);
+
+            LOGGER.info("REST API: Interactive shell command completed (session: {})", sessionId);
+            return response;
+
+        } catch (Exception e) {
+            LOGGER.error("REST API: /shell-interactive/exec failed", e);
+            applySecurityHeaders(res);
+            return createErrorResponse("Interactive shell execution failed: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Handles POST /data/python3integration/api/v1/shell-interactive/close
+     * Closes an interactive shell session.
+     *
+     * Request: {"sessionId": "uuid"}
+     * Response: {"success": true}
+     *
+     * v2.5.8: Interactive shell session closure
+     */
+    private static JsonObject handleCloseShellSession(RequestContext req, HttpServletResponse res) {
+        LOGGER.debug("REST API: /shell-interactive/close called");
+
+        try {
+            // Apply security headers
+            applySecurityHeaders(res);
+
+            JsonObject requestBody = parseJsonBody(req);
+            String sessionId = requestBody.has("sessionId") ? requestBody.get("sessionId").getAsString() : "";
+
+            if (sessionId == null || sessionId.trim().isEmpty()) {
+                return createErrorResponse("Missing required parameter: sessionId");
+            }
+
+            LOGGER.info("REST API: Closing interactive shell session: {}", sessionId);
+
+            // Audit log
+            auditLog("SHELL_INTERACTIVE_CLOSE", "Session: " + sessionId);
+
+            // Close session
+            Python3InteractiveShell.closeSession(sessionId);
+
+            JsonObject response = new JsonObject();
+            response.addProperty("success", true);
+
+            LOGGER.info("REST API: Interactive shell session closed: {}", sessionId);
+            return response;
+
+        } catch (Exception e) {
+            LOGGER.error("REST API: /shell-interactive/close failed", e);
+            applySecurityHeaders(res);
+            return createErrorResponse("Failed to close shell session: " + e.getMessage());
         }
     }
 

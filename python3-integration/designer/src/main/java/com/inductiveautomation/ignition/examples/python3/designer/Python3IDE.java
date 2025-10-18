@@ -63,6 +63,10 @@ public class Python3IDE extends JPanel {
     private AutoCompletion autoCompletion;
     private Python3CompletionProvider completionProvider;  // v2.4.0: Track for status updates
 
+    // v2.5.8: Interactive shell session tracking
+    private String interactiveShellSessionId = null;
+    private StringBuilder terminalHistory = new StringBuilder();
+
     // UI Components
     private JTextField gatewayUrlField;
     private JButton connectButton;
@@ -121,7 +125,7 @@ public class Python3IDE extends JPanel {
     private UnsavedChangesTracker changesTracker;
     private ScriptMetadata currentScript;
 
-    private Python3ExecutionWorker currentWorker;
+    private SwingWorker<ExecutionResult, Void> currentWorker;  // v2.5.8: Changed from Python3ExecutionWorker to support both types
 
     /**
      * Creates a new Python 3 IDE panel.
@@ -174,7 +178,7 @@ public class Python3IDE extends JPanel {
         codeEditor.setPaintTabLines(true);
         codeEditor.setTabSize(4);
         codeEditor.setFont(new Font("Monospaced", Font.PLAIN, fontSize));
-        codeEditor.setText("# Python 3.11 Code Editor");
+        // v2.5.8: Removed hint text - editor starts empty
 
         // Enable parser notifications for real-time error checking
         codeEditor.setMarkOccurrences(true);
@@ -458,9 +462,9 @@ public class Python3IDE extends JPanel {
             editorScroll.getGutter().setBorder(null);
         }
 
-        // v2.5.3: Apply minimal transparent scrollbars
-        applyTransparentScrollBar(editorScroll.getVerticalScrollBar());
-        applyTransparentScrollBar(editorScroll.getHorizontalScrollBar());
+        // v2.5.8: Hide scrollbars completely (Option A - invisible scrolling)
+        editorScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
+        editorScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
         // v2.5.5: Made instance variable to allow dynamic title updates
         editorContainer = new JPanel(new BorderLayout());
@@ -489,8 +493,10 @@ public class Python3IDE extends JPanel {
         outputTabs.setForeground(ModernTheme.FOREGROUND_PRIMARY);
 
         JScrollPane outputScroll = new JScrollPane(outputArea);
-        outputScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);  // Hide when not needed (Issue 4 - v1.15.1)
-        outputScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+
+        // v2.5.8: Hide scrollbars completely (Option A - invisible scrolling)
+        outputScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
+        outputScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
         // v2.5.3: Remove ALL borders (null, not empty)
         outputScroll.setBorder(null);
@@ -499,15 +505,13 @@ public class Python3IDE extends JPanel {
         outputScroll.setBackground(ModernTheme.BACKGROUND_DARKER);
         outputScroll.getViewport().setBackground(ModernTheme.BACKGROUND_DARKER);
 
-        // v2.5.3: Apply minimal transparent scrollbars
-        applyTransparentScrollBar(outputScroll.getVerticalScrollBar());
-        applyTransparentScrollBar(outputScroll.getHorizontalScrollBar());
-
         outputTabs.addTab("Output", outputScroll);
 
         JScrollPane errorScroll = new JScrollPane(errorArea);
-        errorScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);  // Hide when not needed (Issue 4 - v1.15.1)
-        errorScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+
+        // v2.5.8: Hide scrollbars completely (Option A - invisible scrolling)
+        errorScroll.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
+        errorScroll.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
         // v2.5.3: Remove ALL borders (null, not empty)
         errorScroll.setBorder(null);
@@ -515,10 +519,6 @@ public class Python3IDE extends JPanel {
 
         errorScroll.setBackground(ModernTheme.BACKGROUND_DARKER);
         errorScroll.getViewport().setBackground(ModernTheme.BACKGROUND_DARKER);
-
-        // v2.5.3: Apply minimal transparent scrollbars
-        applyTransparentScrollBar(errorScroll.getVerticalScrollBar());
-        applyTransparentScrollBar(errorScroll.getHorizontalScrollBar());
 
         outputTabs.addTab("Errors", errorScroll);
 
@@ -821,7 +821,7 @@ public class Python3IDE extends JPanel {
             currentWorker.cancel(true);
         }
 
-        // Check execution mode (v2.5.0, v2.5.4: Updated to "Terminal")
+        // Check execution mode (v2.5.0, v2.5.4, v2.5.8: Updated to "Terminal" with interactive shell)
         boolean isShellMode = "Terminal".equals(executionModeCombo.getSelectedItem());
 
         clearOutput();
@@ -831,22 +831,79 @@ public class Python3IDE extends JPanel {
         progressBar.setIndeterminate(true);
 
         if (isShellMode) {
-            setStatus("Executing terminal command...", Color.BLUE);  // v2.5.4: Updated terminology
+            // v2.5.8: Use interactive shell for Terminal mode
+            setStatus("Executing terminal command (interactive shell)...", Color.BLUE);
+
+            // Create session if not exists
+            if (interactiveShellSessionId == null) {
+                try {
+                    interactiveShellSessionId = restClient.createInteractiveShellSession();
+                    LOGGER.info("Created interactive shell session: {}", interactiveShellSessionId);
+                } catch (IOException e) {
+                    handleError(e);
+                    return;
+                }
+            }
+
+            // Execute command in interactive session
+            final String sessionId = interactiveShellSessionId;
+            currentWorker = new SwingWorker<ExecutionResult, Void>() {
+                @Override
+                protected ExecutionResult doInBackground() throws Exception {
+                    long startTime = System.currentTimeMillis();
+                    ExecutionResult result = restClient.executeInteractiveShellCommand(sessionId, code);
+
+                    // Add execution time
+                    long execTime = System.currentTimeMillis() - startTime;
+                    return new ExecutionResult(result.isSuccess(), result.getResult(), result.getError(), execTime, System.currentTimeMillis());
+                }
+
+                @Override
+                protected void done() {
+                    try {
+                        ExecutionResult result = get();
+
+                        // Append to terminal history
+                        terminalHistory.append("$ ").append(code).append("\n");
+                        if (result.getResult() != null && !result.getResult().isEmpty()) {
+                            terminalHistory.append(result.getResult()).append("\n");
+                        }
+
+                        // Show accumulated history
+                        outputArea.setText(terminalHistory.toString());
+
+                        executeButton.setEnabled(true);
+                        progressBar.setVisible(false);
+
+                        long time = result.getExecutionTimeMs() != null ? result.getExecutionTimeMs() : 0;
+                        setStatus(String.format("Command executed in %d ms", time), new Color(0, 128, 0));
+
+                        // Clear editor for next command
+                        codeEditor.setText("");
+
+                        refreshDiagnostics();
+                    } catch (Exception e) {
+                        handleError(e);
+                    }
+                }
+            };
+
+            currentWorker.execute();
         } else {
             setStatus("Executing...", Color.BLUE);
+
+            currentWorker = new Python3ExecutionWorker(
+                    restClient,
+                    code,
+                    new HashMap<>(),
+                    false,  // not evaluation
+                    false,  // v2.5.8: Not shell mode (interactive shell handled above)
+                    this::handleSuccess,
+                    this::handleError
+            );
+
+            currentWorker.execute();
         }
-
-        currentWorker = new Python3ExecutionWorker(
-                restClient,
-                code,
-                new HashMap<>(),
-                false,  // not evaluation
-                isShellMode,  // v2.5.0: Shell mode flag
-                this::handleSuccess,
-                this::handleError
-        );
-
-        currentWorker.execute();
     }
 
     /**
@@ -902,11 +959,23 @@ public class Python3IDE extends JPanel {
 
             // v2.5.5/v2.5.6: Update editor panel title and current script label
             editorTitledBorder.setTitle("Terminal");
-            currentScriptLabel.setText("Terminal - Shell Commands");  // v2.5.6: Changed label instead of hiding
+            currentScriptLabel.setText("Terminal - Interactive Shell Session");  // v2.5.8: Updated label
             currentScriptLabel.setVisible(true);
 
-            setStatus("Terminal mode: Enter shell commands (e.g., pip install pandas)", new Color(100, 149, 237));  // Cornflower blue
+            setStatus("Terminal mode: Interactive shell (session persists between commands)", new Color(100, 149, 237));  // Cornflower blue
         } else {
+            // Switching from Terminal to Python - close shell session
+            if (interactiveShellSessionId != null && restClient != null) {
+                try {
+                    restClient.closeInteractiveShellSession(interactiveShellSessionId);
+                    LOGGER.info("Closed interactive shell session on mode switch");
+                } catch (IOException e) {
+                    LOGGER.error("Failed to close interactive shell session", e);
+                }
+                interactiveShellSessionId = null;
+                terminalHistory.setLength(0);  // Clear history
+            }
+
             // Python Code mode: Restore Python syntax highlighting
             codeEditor.setSyntaxEditingStyle(org.fife.ui.rsyntaxtextarea.SyntaxConstants.SYNTAX_STYLE_PYTHON);
             codeEditor.setBackground(new Color(30, 30, 30));  // Standard background
