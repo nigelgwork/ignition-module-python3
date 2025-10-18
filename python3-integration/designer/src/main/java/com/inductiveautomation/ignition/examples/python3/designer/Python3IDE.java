@@ -504,14 +504,14 @@ public class Python3IDE extends JPanel {
         // Toolbar removed - buttons moved to top toolbar (v2.0.16 UX improvement)
         panel.add(centerPanel, BorderLayout.CENTER);
 
-        // Output tabs
+        // Output tabs (v2.5.16: Comprehensive TabbedPane properties now in ThemeManager)
         outputTabs = new JTabbedPane();
         outputTabs.setBackground(ModernTheme.BACKGROUND_DARKER);  // v2.5.13: Match output content background
         outputTabs.setForeground(ModernTheme.FOREGROUND_PRIMARY);
         outputTabs.setOpaque(true);  // v2.5.14: Make background visible
-        // v2.5.14: Fix white rectangle - JTabbedPane content area background
-        UIManager.put("TabbedPane.contentAreaColor", ModernTheme.BACKGROUND_DARKER);
-        outputTabs.updateUI();  // Apply UI changes
+        // v2.5.16: Set client properties to ensure opaque rendering
+        outputTabs.putClientProperty("TabbedPane.contentOpaque", Boolean.TRUE);
+        outputTabs.putClientProperty("TabbedPane.tabsOpaque", Boolean.TRUE);
 
         JScrollPane outputScroll = new JScrollPane(outputArea);
 
@@ -550,6 +550,7 @@ public class Python3IDE extends JPanel {
         JPanel outputPanel = new JPanel(new BorderLayout());
         // v2.5.11: Match outputScroll background (23,23,23) to eliminate white lines
         outputPanel.setBackground(ModernTheme.BACKGROUND_DARKER);
+        outputPanel.setOpaque(true);  // v2.5.16: Ensure panel background is visible
         // v2.5.9: Removed empty border to eliminate white padding
         outputPanel.setBorder(new TitledBorder(BorderFactory.createLineBorder(ModernTheme.BORDER_DEFAULT),
                 "Execution Results",

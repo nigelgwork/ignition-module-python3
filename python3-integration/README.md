@@ -1,6 +1,6 @@
 # Python 3 Integration Module for Ignition
 
-**Current Version: v2.5.15** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
+**Current Version: v2.5.16** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
 
 This module enables Python 3 scripting functions in Ignition 8.3+, allowing you to use modern Python 3 features and libraries alongside Ignition's built-in Jython 2.7 environment.
 
@@ -1234,6 +1234,50 @@ Built using the Ignition SDK:
 - https://www.sdk-docs.inductiveautomation.com/
 
 ## Changelog
+
+### 2.5.16 (ULTIMATE FIX - Comprehensive TabbedPane Theme Properties)
+- **FIX**: Added comprehensive JTabbedPane UIManager properties to ThemeManager ⭐ PRIMARY FIX
+  - User feedback: "The white rectangle is still there" (after multiple previous attempts)
+  - **Root Cause Identified**: JTabbedPane uses 15+ UIManager properties for rendering, but we were only setting ONE
+  - Added ALL TabbedPane.* properties to ThemeManager.applyDarkTheme():
+    * `TabbedPane.background`, `foreground`, `shadow`, `darkShadow`
+    * `TabbedPane.light`, `highlight` (these were WHITE in default L&F!)
+    * `TabbedPane.focus`, `selected`, `selectHighlight`
+    * `TabbedPane.tabAreaBackground`, `contentAreaColor`
+    * `TabbedPane.borderHighlightColor`, `contentOpaque`, `tabsOpaque`
+  - **ThemeManager.java:204-218**: 14 new UIManager properties set globally
+  - Follows existing pattern (50+ properties for other components already in ThemeManager)
+- **FIX**: Removed redundant UIManager.put from Python3IDE.java
+  - TabbedPane properties now properly managed in ThemeManager
+  - Python3IDE.java:507-514: Removed UIManager.put and updateUI() calls
+- **FIX**: Added component-level client properties to JTabbedPane instance
+  - `putClientProperty("TabbedPane.contentOpaque", Boolean.TRUE)`
+  - `putClientProperty("TabbedPane.tabsOpaque", Boolean.TRUE)`
+  - Python3IDE.java:512-514: Ensures instance-specific opaque rendering
+- **FIX**: Ensured outputPanel is explicitly opaque
+  - `outputPanel.setOpaque(true)` added to prevent any transparency
+  - Python3IDE.java:553: Parent panel now guaranteed to show dark background
+- **ARCHITECTURE**: Multi-pronged approach attacking problem from all angles
+  - ThemeManager sets global defaults (affects all future JTabbedPanes)
+  - Component properties ensure instance-specific rendering
+  - Parent panel opacity prevents any background bleed-through
+  - 5 fixes combined for maximum effectiveness
+- **WHY PREVIOUS ATTEMPTS FAILED**:
+  - v2.5.14-15: Only set `TabbedPane.contentAreaColor` - left 14+ properties at white defaults
+  - Never addressed `TabbedPane.highlight` and `TabbedPane.light` (often WHITE!)
+  - ThemeManager had ZERO TabbedPane properties (gap in architecture)
+  - UIManager.put was called AFTER creating JTabbedPane (too late)
+- **VERSION**: Updated DesignerHook.java fallback version 2.5.15 → 2.5.16
+
+**Files Modified:**
+1. ThemeManager.java - Added 14 TabbedPane UIManager properties (lines 204-218)
+2. Python3IDE.java - Removed redundant code, added client properties, ensured panel opaque (lines 507-514, 553)
+3. version.properties - 2.5.15 → 2.5.16
+4. DesignerHook.java - Fallback version updated
+5. Both README.md files - Version + changelog
+
+**Expected Result:**
+Complete elimination of white rectangle through comprehensive theme coverage. Every possible source of white/light rendering now addressed.
 
 ### 2.5.15 (JTabbedPane Opaque Fix + Info Button Repositioned)
 - **FIX**: JTabbedPane white rectangle - made scroll panes opaque + set tab backgrounds

@@ -201,6 +201,22 @@ public class ThemeManager {
         UIManager.put("SplitPane.shadow", ModernTheme.BACKGROUND_DARKER);
         UIManager.put("SplitPane.darkShadow", ModernTheme.BACKGROUND_DARKER);
 
+        // JTabbedPane - v2.5.16: Comprehensive dark theme to eliminate white rectangle
+        UIManager.put("TabbedPane.background", ModernTheme.BACKGROUND_DARKER);
+        UIManager.put("TabbedPane.foreground", ModernTheme.FOREGROUND_PRIMARY);
+        UIManager.put("TabbedPane.shadow", ModernTheme.BACKGROUND_DARKER);
+        UIManager.put("TabbedPane.darkShadow", ModernTheme.BACKGROUND_DARKER);
+        UIManager.put("TabbedPane.light", ModernTheme.BACKGROUND_DARKER);
+        UIManager.put("TabbedPane.highlight", ModernTheme.BACKGROUND_DARKER);
+        UIManager.put("TabbedPane.focus", ModernTheme.ACCENT_PRIMARY);
+        UIManager.put("TabbedPane.selected", ModernTheme.BACKGROUND_DARK);
+        UIManager.put("TabbedPane.selectHighlight", ModernTheme.ACCENT_PRIMARY);
+        UIManager.put("TabbedPane.tabAreaBackground", ModernTheme.BACKGROUND_DARKER);
+        UIManager.put("TabbedPane.contentAreaColor", ModernTheme.BACKGROUND_DARKER);
+        UIManager.put("TabbedPane.borderHighlightColor", ModernTheme.BORDER_DEFAULT);
+        UIManager.put("TabbedPane.contentOpaque", Boolean.TRUE);
+        UIManager.put("TabbedPane.tabsOpaque", Boolean.TRUE);
+
         // Borders - CRITICAL FIX for light borders
         UIManager.put("TitledBorder.border", BorderFactory.createLineBorder(ModernTheme.BORDER_DEFAULT));
         UIManager.put("TitledBorder.titleColor", ModernTheme.FOREGROUND_PRIMARY);
