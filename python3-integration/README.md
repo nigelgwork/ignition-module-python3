@@ -1,6 +1,6 @@
 # Python 3 Integration Module for Ignition
 
-**Current Version: v2.5.1** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
+**Current Version: v2.5.2** | [Changelog](#changelog) | [GitHub](https://github.com/nigelgwork/ignition-module-python3)
 
 This module enables Python 3 scripting functions in Ignition 8.3+, allowing you to use modern Python 3 features and libraries alongside Ignition's built-in Jython 2.7 environment.
 
@@ -35,81 +35,24 @@ This module uses a **subprocess + process pool** approach:
 
 ### Required
 
-1. **Ignition 8.3.0+** with unsigned modules enabled
-2. **Python 3.8+** installed on the Gateway server
-3. **Java 17** (required by Ignition 8.3)
+1. **Ignition 8.3.0+**
+2. **Java 17** (required by Ignition 8.3)
 
-### Installation Steps
+**Note:** The module includes Python 3 bundled - no separate Python installation needed!
 
-#### 1. Install Python 3
+### Optional Configuration
 
-**Windows:**
-```bash
-# Download from python.org or use Chocolatey
-choco install python3
+#### Configure Pool Size (Optional)
 
-# Verify installation
-python --version
-```
+The module maintains a pool of Python processes for efficient execution. Default is 3 processes.
 
-**Linux:**
-```bash
-# Ubuntu/Debian
-sudo apt-get update
-sudo apt-get install python3 python3-pip
-
-# Verify installation
-python3 --version
-```
-
-**macOS:**
-```bash
-# Using Homebrew
-brew install python3
-
-# Verify installation
-python3 --version
-```
-
-#### 2. Enable Unsigned Modules in Ignition
-
-Edit `<ignition-install>/data/ignition.conf` and add:
+To adjust pool size, edit `<ignition-install>/data/ignition.conf`:
 ```properties
-wrapper.java.additional.X=-Dignition.allowunsignedmodules=true
+# In ignition.conf, add:
+wrapper.java.additional.X=-Dignition.python3.poolsize=5
 ```
 
 Restart Ignition after making this change.
-
-#### 3. Configure Python Path (Optional)
-
-The module will try to auto-detect Python 3. To specify a custom path:
-
-**Option A: System Property**
-```properties
-# In ignition.conf, add:
-wrapper.java.additional.Y=-Dignition.python3.path=/path/to/python3
-```
-
-**Option B: Environment Variable**
-```bash
-export IGNITION_PYTHON3_PATH=/path/to/python3
-```
-
-**Option C: Let Auto-Detection Work**
-
-The module checks these locations automatically:
-- Windows: `python3`, `python`, `C:\Python3*\python.exe`
-- Linux: `python3`, `/usr/bin/python3`, `/usr/local/bin/python3`
-- macOS: `python3`, `/usr/local/bin/python3`, `/opt/homebrew/bin/python3`
-
-#### 4. Configure Pool Size (Optional)
-
-```properties
-# In ignition.conf, add:
-wrapper.java.additional.Z=-Dignition.python3.poolsize=5
-```
-
-Default is 3 processes.
 
 ## Building the Module
 
@@ -119,7 +62,7 @@ cd python3-integration
 # Build with Gradle
 ./gradlew build
 
-# Module will be in: build/libs/python3-integration-signed.modl
+# Module will be in: build/Python3Integration-signed.modl
 ```
 
 ## Installation
@@ -561,6 +504,93 @@ total = system.python3.exec(code)
 print(total)  # 15
 ```
 
+#### Use in Gateway Transform Scripts
+
+You can call Python 3 directly from any Gateway script, including Tag Change Scripts, Scheduled Scripts, and **Transform Scripts** on Tag values:
+
+**Example: Tag Value Transform**
+```python
+# In a Tag's Transform Script
+def transform(self, initialValue, newValue, qualifiedValue, valueSource):
+    # Use Python 3 for advanced data processing
+    code = """
+import numpy as np
+
+# Process the value with NumPy
+result = np.round(value * 1.05, 2)  # Apply 5% markup
+"""
+
+    transformed = system.python3.exec(code, {'value': newValue.value})
+    return transformed
+```
+
+**Example: Gateway Scheduled Script (runs every hour)**
+```python
+def execute():
+    # Fetch data and process with Python 3
+    code = """
+import pandas as pd
+import json
+
+# Example: Process data from tags
+data = {
+    'timestamp': timestamps,
+    'temp': temperatures,
+    'pressure': pressures
+}
+
+df = pd.DataFrame(data)
+
+# Calculate statistics
+stats = {
+    'avg_temp': df['temp'].mean(),
+    'max_pressure': df['pressure'].max(),
+    'count': len(df)
+}
+
+result = json.dumps(stats)
+"""
+
+    # Pass tag values to Python
+    temps = system.tag.readBlocking(['[default]Sensor/Temp'])[0].value
+    pressures = system.tag.readBlocking(['[default]Sensor/Pressure'])[0].value
+
+    result = system.python3.exec(code, {
+        'timestamps': [1, 2, 3],  # Your actual timestamps
+        'temperatures': temps,
+        'pressures': pressures
+    })
+
+    # Parse result and write back to tags
+    import json
+    stats = json.loads(result)
+    system.tag.writeBlocking(['[default]Stats/AvgTemp'], [stats['avg_temp']])
+```
+
+**Example: Tag Change Script**
+```python
+# Triggered when a tag value changes
+def valueChanged(tag, tagPath, previousValue, currentValue, initialChange, missedEvents):
+    if currentValue.value > 100:
+        # Complex anomaly detection with Python 3
+        code = """
+from scipy import stats
+
+# Calculate z-score for anomaly detection
+z_score = abs(stats.zscore([current_value])[0])
+result = z_score > 3  # True if anomaly
+"""
+
+        is_anomaly = system.python3.exec(code, {'current_value': currentValue.value})
+
+        if is_anomaly:
+            system.util.sendMessage(
+                project='MyProject',
+                messageHandler='AlarmHandler',
+                payload={'tag': tagPath, 'value': currentValue.value}
+            )
+```
+
 #### Use Python 3 Libraries
 
 ```python
@@ -719,20 +749,16 @@ scripts = system.python3.getAvailableScripts()
 
 ## Installing Python Packages
 
-To use third-party packages in your Python 3 scripts:
+Use the **Shell Command Mode** in the Designer IDE (v2.5.0+) to install packages:
 
-```bash
-# On the Gateway server
-pip3 install numpy pandas requests
+1. Open **Tools → Python 3 IDE** in Designer
+2. Select **"Shell Command"** from the Mode dropdown
+3. Run pip install commands:
+   ```bash
+   pip install numpy pandas requests
+   ```
 
-# Or use a virtual environment (recommended)
-python3 -m venv /opt/ignition-python
-source /opt/ignition-python/bin/activate
-pip install numpy pandas requests
-
-# Then configure module to use venv Python:
-# -Dignition.python3.path=/opt/ignition-python/bin/python
-```
+Packages install on the Gateway's bundled Python and are immediately available for all scripts.
 
 ## Troubleshooting
 
@@ -744,13 +770,8 @@ tail -f <ignition-install>/logs/wrapper.log
 ```
 
 Look for errors like:
-- "Python process is not alive" → Python not found or wrong path
-- "Failed to initialize Python 3 process pool" → Python installation issue
-
-**Verify Python installation:**
-```bash
-python3 --version  # Should show Python 3.8+
-```
+- "Python process is not alive" → Check module initialization in logs
+- "Failed to initialize Python 3 process pool" → Check Gateway logs for details
 
 ### Functions Return Errors
 
@@ -983,6 +1004,24 @@ Built using the Ignition SDK:
 - https://www.sdk-docs.inductiveautomation.com/
 
 ## Changelog
+
+### 2.5.2 (Documentation Corrections - CRITICAL)
+- **FIXED**: Removed incorrect "unsigned modules" requirement
+  - Module uses signed certificates - no need to enable unsigned modules
+- **FIXED**: Removed incorrect Python installation instructions
+  - Module includes bundled Python 3 - no manual installation needed
+  - Clarified that Python is included and auto-configured
+- **FIXED**: Updated package installation instructions
+  - Use Shell Command Mode in Designer IDE
+  - No need for manual pip/venv setup on Gateway server
+- **NEW**: Gateway Transform Script examples
+  - Tag value transformation with Python 3
+  - Gateway Scheduled Scripts with data processing
+  - Tag Change Scripts with anomaly detection
+  - Complete code examples for each use case
+- **IMPROVED**: Prerequisites simplified to just Ignition 8.3+ and Java 17
+- **IMPROVED**: Troubleshooting section updated with correct guidance
+- **DOCS**: Fixed build output path (build/Python3Integration-signed.modl)
 
 ### 2.5.1 (Documentation + In-App User Guide)
 - **NEW**: Comprehensive "How Scripts Work" section in README
